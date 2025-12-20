@@ -14,7 +14,33 @@
 
 ## 📖 À propos
 
-Discord MCP Server est un serveur **Model Context Protocol** qui expose **28 outils** pour interagir avec Discord. Envoyez des messages, créez des embeds, gérez des sondages, et bien plus encore !
+**Imaginez pouvoir contrôler Discord avec votre IA préférée** ! 💬
+
+Discord MCP Server est un **pont** entre votre intelligence artificielle et Discord. Il transforme votre bot Discord en un assistant intelligent capable de comprendre et d'exécuter vos commandes.
+
+### 🤖 Comment ça marche ?
+
+1. **Votre IA** (Claude, Gemini, ChatGPT, etc.) envoie une commande
+2. **Discord MCP Server** traduit cette commande pour Discord
+3. **Votre bot** exécute l'action sur votre serveur
+
+### 🌟 Compatible avec TOUS les assistants IA :
+
+- ✅ **Claude Code** (l'outil que vous utilisez maintenant !)
+- ✅ **Google AI Studio** (Gemini)
+- ✅ **Antigravity**
+- ✅ **Gemini CLI**
+- ✅ **Cursor AI**
+- ✅ **Continue.dev**
+- ✅ Et tous les autres assistants supportant MCP !
+
+**En résumé :** Parlez à votre IA, et votre bot Discord exécute. C'est aussi simple que ça ! 🚀
+
+Avec **28 outils puissants**, vous pouvez faire absolument tout sur Discord :
+- Envoyer des messages
+- Créer des sondages interactifs
+- Gérer votre serveur
+- Et bien plus encore !
 
 ---
 
