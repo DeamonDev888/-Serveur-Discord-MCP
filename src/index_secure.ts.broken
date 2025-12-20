@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { z } from 'zod';
+const originalLog = console.log;
+console.log = (...args) => console.error(...args);
 
 import {
   Client,
@@ -113,101 +114,124 @@ import {
   formatUserInfoMarkdown
 } from './tools/userManager';
 
+let FastMCP: any;
+
+(async () => {
+  const fastmcp = await import('fastmcp');
+  FastMCP = fastmcp.FastMCP;
+
+  const { z } = await import('zod');
 console.log = (...args) => console.error(...args);
+import {
+  Client,
+  GatewayIntentBits,
+  ButtonBuilder,
+  ButtonStyle,
+  ActionRowBuilder,
+  EmbedBuilder,
+  AttachmentBuilder,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ActivityType,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder
+} from 'discord.js';
 
-// Client Discord
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMessageReactions,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildPresences
-  ]
-});
+// Import des configurations et utils
+import { botConfig } from './config.js';
+import { logger } from './utils/logger.js';
+import {
+  loadPolls,
+  savePolls,
+  addPoll,
+  updatePoll,
+  deletePoll,
+  getPoll,
+  cleanExpiredPolls
+} from './utils/pollPersistence.js';
+import {
+  loadCustomButtons,
+  saveCustomButtons,
+  addCustomButton,
+  deleteCustomButton,
+  getCustomButton,
+  cleanOldButtons,
+  CustomButton
+} from './utils/buttonPersistence.js';
 
-// Stockage des données avec persistance en fichier JSON
-let polls: Map<string, PollResult> = new Map();
+// Import des outils
+import {
+  CreatePollSchema,
+  createPollEmbed,
+  createResultsEmbed,
+  PollResult,
+  getPollButtons
+} from './tools/polls';
 
-// Stockage des actions personnalisées pour les boutons (Map: customId -> CustomButton)
-let customButtons: Map<string, CustomButton> = new Map();
+import {
+  FileUploadSchema,
+  createAttachmentFromFile,
+  createFileUploadEmbed
+} from './tools/fileUpload';
 
-// Déclaration du serveur FastMCP
-let server: any;
+import {
+  CreateEmbedSchema,
+  EMBED_TEMPLATES,
+  createEmbedFromTemplate,
+  validateEmbed
+} from './tools/embedBuilder';
 
-// Fonction utilitaire pour exécuter une action de bouton
-async function executeButtonAction(
-  action: any,
-  channel: any,
-  interaction: any
-): Promise<void> {
-  try {
-    if (action.type === 'message') {
-      // Envoyer un message public dans le canal
-      if ('send' in channel) {
-        await channel.send({
-          content: action.data.content || 'Message par défaut'
-        });
-      }
-      if (interaction) {
-        await interaction.reply({
-          content: '✅ Action exécutée !'
-        });
-      }
-    } else if (action.type === 'embed') {
-      const embed = new EmbedBuilder()
-        .setTitle(action.data.title || 'Information')
-        .setDescription(action.data.description || 'Description')
-        .setColor(action.data.color || '#0099ff')
-        .setTimestamp();
+import {
+  CodePreviewSchema,
+  createCodePreviewMessages,
+  validateLanguage
+} from './tools/codePreview';
 
-      // Envoyer un embed public dans le canal
-      if ('send' in channel) {
-        await channel.send({
-          embeds: [embed]
-        });
-      }
-      if (interaction) {
-        await interaction.reply({
-          content: '✅ Action exécutée !'
-        });
-      }
-    } else if (action.type === 'code') {
-      const codeContent = `\`\`\`${action.data.language || ''}\n${action.data.code || ''}\n\`\`\``;
-      if ('send' in channel) {
-        await channel.send({
-          content: codeContent
-        });
-      }
-      if (interaction) {
-        await interaction.reply({
-          content: '✅ Code affiché !'
-        });
-      }
-    } else if (action.type === 'poll') {
-      const pollEmbed = new EmbedBuilder()
-        .setTitle('📊 ' + action.data.question)
-        .setColor('#0099ff')
-        .setDescription(action.data.options.map((opt: any, i: number) => `${i + 1}. ${opt}`).join('\n'))
-        .setTimestamp();
+import {
+  InteractionSchema,
+  buildActionRows,
+  validateComponents
+} from './tools/interactions';
 
-      if ('send' in channel) {
-        await channel.send({
-          embeds: [pollEmbed]
-        });
-      }
-      if (interaction) {
-        await interaction.reply({
-          content: '✅ Sondage créé !'
-        });
-      }
-    } else if (action.type === 'webhook') {
-      if ('send' in channel) {
-        await channel.send({
-          content: 'Action webhook exécutée'
-        });
-      }
+import {
+  SendMessageSchema,
+  EditMessageSchema,
+  DeleteMessageSchema,
+  ReadMessagesSchema,
+  AddReactionSchema,
+  sendMessage,
+  editMessage,
+  deleteMessage,
+  readMessages,
+  addReaction,
+  formatHistoryAsMarkdown
+} from './tools/messageManager';
+
+// Import des outils serveur fragmentés
+import {
+  GetServerInfoSchema,
+  getServerInfo,
+  formatServerInfoMarkdown
+} from './tools/serverInfo';
+
+import {
+  GetChannelsSchema,
+  getChannels,
+  formatChannelsMarkdown
+} from './tools/channelManager';
+
+import {
+  ListMembersSchema,
+  listMembers,
+  formatMembersMarkdown
+} from './tools/memberManager';
+
+import {
+  GetUserInfoSchema,
+  getUserInfo,
+  formatUserInfoMarkdown
+} from './tools/userManager';
       if (interaction) {
         await interaction.reply({
           content: '✅ Action exécutée !'
@@ -230,21 +254,13 @@ async function executeButtonAction(
   }
 }
 
-// Initialisation du serveur FastMCP
-async function initializeServer() {
-  const { FastMCP } = await import('fastmcp');
-  const { z } = await import('zod');
+// Création du serveur FastMCP
+const server = new FastMCP({
+  name: 'discord-server',
+  version: '1.0.0'
+});
 
-  server = new FastMCP({
-    name: 'discord-server',
-    version: '1.0.0'
-  });
-
-  console.log('[MCP_SERVER] Serveur FastMCP créé');
-
-  // Ajout des outils MCP ici
-
-}
+console.log('[MCP_SERVER] Serveur FastMCP créé');
 
 // Vérification de la configuration au démarrage
 function validateConfig(): void {
@@ -1745,7 +1761,7 @@ async function main() {
     transportType: 'stdio'
   }).then(() => {
     console.log('[MCP_SERVER] ✅ Serveur MCP démarré avec succès');
-  }).catch((error: Error) => {
+  }).catch((error) => {
     logger.error('[MCP_SERVER] Erreur lors du démarrage du serveur MCP:', error);
     process.exit(1);
   });
@@ -1759,8 +1775,4 @@ main().catch((error) => {
   process.exit(1);
 });
 
-// Initialisation du serveur
-initializeServer().catch((error) => {
-  logger.error('Erreur lors de l\'initialisation du serveur:', error);
-  process.exit(1);
-});
+})();

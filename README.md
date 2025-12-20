@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://readme-typing-svg.herokuapp.com?font=JetBrains+Mono&size=30&duration=3000&color=5865F2&center=true&vCenter=true&multiline=true&height=50&lines=%F0%9F%A4%96+Discord+MCP+Server;%E2%9C%A8+28+outils+pour+automatiser+Discord" alt="Discord MCP Server">
+  <img src="https://readme-typing-svg.herokuapp.com?font=JetBrains+Mono&size=30&duration=3000&color=5865F2&center=true&vCenter=true&multiline=true&height=50&lines=%F0%9F%A4%96+Discord+MCP+Server;%E2%9C%A8+27+outils+pour+automatiser+Discord" alt="Discord MCP Server">
 </p>
 
 <br>
@@ -122,7 +122,7 @@ Avec **27 outils puissants**, vous pouvez faire absolument tout sur Discord :
 ### Prérequis
 
 - [Node.js](https://nodejs.org/) (v16 ou plus)
-- [pnpm](https://pnpm.io/)
+- [npm](https://www.npmjs.com/) (v8 ou plus)
 - Un bot Discord ([créer ici](https://discord.com/developers/applications))
 
 ### Installation
@@ -133,14 +133,17 @@ git clone <url-repo>
 cd serveur_discord
 
 # Installer les dépendances
-pnpm install
+npm install
 
 # Configurer le bot
 cp .env.example .env
 # Éditer .env avec votre token Discord
 
+# Compiler le projet TypeScript
+npm run build
+
 # Démarrer le serveur
-pnpm start
+npm start
 ```
 
 ---
@@ -154,13 +157,18 @@ Créez un fichier `.env` :
 ```env
 # Token Discord du bot (obligatoire)
 DISCORD_TOKEN=votre_token_ici
+# Alternative
+DISCORD_BOT_TOKEN=votre_token_ici
 
 # ID utilisateur admin (optionnel)
 ADMIN_USER_ID=votre_id_discord
 
+# IDs Discord (optionnels)
+DISCORD_CLIENT_ID=votre_client_id
+DISCORD_GUILD_ID=votre_guild_id
+
 # Configuration du bot
-BOT_PREFIX=!
-BOT_ACTIVITY=Playing with MCP
+NODE_ENV=production
 ```
 
 ### Configuration Claude Code
@@ -173,12 +181,9 @@ Ajoutez à votre configuration MCP :
 {
   "mcpServers": {
     "discord-server": {
-      "command": "cmd",
+      "command": "node",
       "args": [
-        "/c",
-        "npx",
-        "tsx",
-        "CHEMIN_VERS_VOTRE_PROJET\\serveur_discord\\src\\index_secure.ts"
+        "CHEMIN_VERS_VOTRE_PROJET\\serveur_discord\\dist\\index.js"
       ]
     }
   }
@@ -191,10 +196,9 @@ Ajoutez à votre configuration MCP :
 {
   "mcpServers": {
     "discord-server": {
-      "command": "npx",
+      "command": "node",
       "args": [
-        "tsx",
-        "CHEMIN_VERS_VOTRE_PROJET/serveur_discord/src/index_secure.ts"
+        "CHEMIN_VERS_VOTRE_PROJET/serveur_discord/dist/index.js"
       ]
     }
   }
@@ -244,12 +248,42 @@ Avec Discord MCP Server, vous pouvez :
 
 ---
 
+## 🤖 Prompt System Optimisé
+
+Pour exploiter pleinement les 27 outils de Discord MCP Server, utilisez le **prompt système dédié** :
+
+👉 **[Accéder au prompt système ici](https://hackmd.io/@1-f9TrSqR0iVfHGkGYO3zw/rk8_YHVQZl)**
+
+### Qu'est-ce que c'est ?
+
+Un prompt système spécialement conçu pour permettre à votre IA de :
+- 🎯 **Utiliser automatiquement** les bons outils Discord selon vos demandes
+- 🔧 **Comprendre** les interactions complexes (boutons, menus, sondages)
+- 📋 **Générer** des réponses adaptées à chaque contexte Discord
+- 🚀 **Optimiser** l'utilisation des 27 outils disponibles
+
+### Comment l'utiliser ?
+
+1. **Copiez** le prompt système depuis le lien ci-dessus
+2. **Collez-le** dans votre système de prompt (Claude, ChatGPT, etc.)
+3. **Discutez** normalement - l'IA choisira automatiquement les bons outils Discord
+
+Exemple : *"Envoie un message de bienvenue avec des boutons interactifs dans le channel #général"*
+
+L'IA utilisera automatiquement les outils :
+- `get_channels` pour trouver le channel
+- `send_message` pour le message
+- `create_custom_buttons` pour les boutons
+
+---
+
 ## 📚 Documentation
 
 - [🎮 Serveur Discord](https://discord.gg/4AR82phtBz)
 - [📘 Documentation Discord.js](https://discord.js.org/)
 - [🔌 Model Context Protocol](https://modelcontextprotocol.io/)
 - [📚 Guide Discord Developers](https://discord.com/developers/docs/intro)
+- [🤖 Prompt System pour Discord MCP](https://hackmd.io/@1-f9TrSqR0iVfHGkGYO3zw/rk8_YHVQZl) - *Prompt système optimisé pour exploiter tous les outils Discord MCP*
 
 ---
 
