@@ -31,7 +31,7 @@ Discord MCP Server est un **pont** entre votre intelligence artificielle et Disc
 - ✅ **Antigravity**
 - ✅ **Gemini CLI**
 - ✅ **Cursor AI**
-- ✅ **Continue.dev**
+- ✅ **Grok** (xAI)
 - ✅ Et tous les autres assistants supportant MCP !
 
 **En résumé :** Parlez à votre IA, et votre bot Discord exécute. C'est aussi simple que ça ! 🚀
