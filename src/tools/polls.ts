@@ -1,21 +1,27 @@
 import { z } from 'zod';
-import { ButtonStyle, ComponentType, ButtonBuilder } from 'discord.js';
+import { ButtonStyle, ButtonBuilder } from 'discord.js';
 
 // Schema pour la création d'un sondage
 export const CreatePollSchema = z.object({
   channelId: z.string().describe('ID du canal où créer le sondage'),
   question: z.string().describe('Question du sondage'),
   options: z.array(z.string()).min(2).max(10).describe('Options du sondage (2-10 options)'),
-  duration: z.number().min(5).max(604800).optional().default(300).describe('Durée en secondes (min: 5s, max: 7j, défaut: 5m pour tests)'),
+  duration: z
+    .number()
+    .min(5)
+    .max(604800)
+    .optional()
+    .default(300)
+    .describe('Durée en secondes (min: 5s, max: 7j, défaut: 5m pour tests)'),
   allowMultiple: z.boolean().optional().default(false).describe('Autoriser plusieurs réponses'),
-  anonymous: z.boolean().optional().default(false).describe('Sondage anonyme')
+  anonymous: z.boolean().optional().default(false).describe('Sondage anonyme'),
 });
 
 // Type pour les résultats du sondage
 export interface PollResult {
   id: string;
-  messageId?: string;  // ID du message Discord
-  channelId?: string;  // ID du canal Discord
+  messageId?: string; // ID du message Discord
+  channelId?: string; // ID du canal Discord
   question: string;
   options: Array<{
     text: string;
@@ -63,37 +69,45 @@ const getEmojiForIndex = (index: number): string => {
 };
 
 // Créer l'embed du sondage avec interface améliorée
-export const createPollEmbed = (question: string, options: string[], duration: number, anonymous: boolean, allowMultiple: boolean) => {
+export const createPollEmbed = (
+  question: string,
+  options: string[],
+  duration: number,
+  anonymous: boolean,
+  allowMultiple: boolean
+) => {
   // Créer la liste des options avec emojis et espaces pour une meilleure lisibilité
-  const optionsList = options.map((opt, i) => {
-    const emoji = getEmojiForIndex(i);
-    return `> ${emoji} **${opt}**`;
-  }).join('\n');
+  const optionsList = options
+    .map((opt, i) => {
+      const emoji = getEmojiForIndex(i);
+      return `> ${emoji} **${opt}**`;
+    })
+    .join('\n');
 
   return {
     title: '🗳️ Nouveau Sondage',
     description: `**${question}**\n\nCliquez sur le bouton **🗳️ Voter** ci-dessous pour sélectionner votre choix !`,
-    color: 0x5865F2, // Couleur Discord blurple
+    color: 0x5865f2, // Couleur Discord blurple
     fields: [
       {
         name: '📋 Options disponibles',
         value: optionsList || 'Aucune option',
-        inline: false
+        inline: false,
       },
       {
         name: '⚙️ Paramètres',
         value: `⏱️ **Durée:** ${formatDuration(duration)}\n${anonymous ? '👤 **Mode:** Anonyme' : '👁️ **Mode:** Public'}\n${allowMultiple ? '✅ **Choix multiples autorisés**' : '⚪ **Un seul choix possible**'}`,
-        inline: false
-      }
+        inline: false,
+      },
     ],
     thumbnail: {
       // Pour changer l'image (marteau/logo), modifiez l'URL ci-dessous
-      url: 'https://i.imgur.com/4M34hi2.png'
+      url: 'https://i.imgur.com/4M34hi2.png',
     },
     timestamp: new Date().toISOString(),
     footer: {
-      text: '💡 Cliquez sur "Voter" pour participer au sondage'
-    }
+      text: '💡 Cliquez sur "Voter" pour participer au sondage',
+    },
   };
 };
 
@@ -125,32 +139,35 @@ export const createResultsEmbed = (pollResult: PollResult) => {
       const bar = createProgressBar(opt.percentage);
       const winnerMark = opt.text === winner.text && opt.votes > 0 ? ' 👑' : '';
       return `${bar} ${emoji} **${opt.text}**${winnerMark}\n   └─ ${opt.votes} vote(s) (${opt.percentage.toFixed(1)}%)`;
-    }).join('\n\n');
+    })
+    .join('\n\n');
 
   return {
     title: pollResult.ended ? '🏁 Sondage Terminé' : '📊 Résultats en Direct',
     description: `**${pollResult.question}**\n\n${pollResult.ended ? '✅ Le sondage est maintenant fermé.' : '⏳ Le sondage est toujours en cours...'}`,
-    color: pollResult.ended ? 0x00FF00 : 0x5865F2,
+    color: pollResult.ended ? 0x00ff00 : 0x5865f2,
     fields: [
       {
         name: '📊 Résultats détaillés',
         value: resultsWithBars || 'Aucun vote pour le moment',
-        inline: false
+        inline: false,
       },
       {
         name: '📈 Statistiques',
         value: `**Total des votes:** ${pollResult.totalVotes}\n**Statut:** ${pollResult.ended ? '✅ Terminé' : '⏳ En cours'}\n**Fin:** <t:${Math.floor(pollResult.endTime.getTime() / 1000)}:R>`,
-        inline: false
-      }
+        inline: false,
+      },
     ],
     thumbnail: {
       // Pour changer l'image des résultats, modifiez l'URL ci-dessous
-      url: 'https://i.imgur.com/4M34hi2.png'
+      url: 'https://i.imgur.com/4M34hi2.png',
     },
     timestamp: new Date().toISOString(),
     footer: {
-      text: pollResult.ended ? '🏁 Sondage terminé - Merci pour votre participation !' : '⏳ Votez maintenant pour influencer le résultat !'
-    }
+      text: pollResult.ended
+        ? '🏁 Sondage terminé - Merci pour votre participation !'
+        : '⏳ Votez maintenant pour influencer le résultat !',
+    },
   };
 };
 

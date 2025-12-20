@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://readme-typing-svg.herokuapp.com?font=JetBrains+Mono&size=30&duration=3000&color=5865F2&center=true&vCenter=true&multiline=true&height=50&lines=%F0%9F%A4%96+Discord+MCP+Server;%E2%9C%A8+27+outils+pour+automatiser+Discord" alt="Discord MCP Server">
+  <img src="https://readme-typing-svg.herokuapp.com?font=JetBrains+Mono&size=30&duration=3000&color=5865F2&center=true&vCenter=true&multiline=true&height=50&lines=%F0%9F%A4%96+Discord+MCP+Server;%E2%9C%A8+23+outils+pour+automatiser+Discord" alt="Discord MCP Server">
 </p>
 
 <br>
@@ -20,7 +20,7 @@ Discord MCP Server est un **pont** entre votre intelligence artificielle et Disc
 
 ### 🤖 Comment ça marche ?
 
-1. **Votre IA** (Claude, Gemini, Grok, etc.) envoie une commande
+1. **Votre IA** envoie une commande
 2. **Discord MCP Server** traduit cette commande pour Discord
 3. **Votre bot** exécute l'action sur votre serveur
 
@@ -31,11 +31,13 @@ Discord MCP Server est un **pont** entre votre intelligence artificielle et Disc
 - ✅ **Antigravity**
 - ✅ **Gemini CLI**
 - ✅ **Cursor AI**
+- ✅ **Kilo Code**
+- ✅ **Cline**
 - ✅ Et tous les autres assistants supportant MCP !
 
 **En résumé :** Parlez à votre IA, et votre bot Discord exécute. C'est aussi simple que ça ! 🚀
 
-Avec **27 outils puissants**, vous pouvez faire absolument tout sur Discord :
+Avec **26 outils puissants**, vous pouvez faire absolument tout sur Discord :
 
 - Envoyer des messages
 - Créer des sondages interactifs, menu et boutons
@@ -47,16 +49,15 @@ Avec **27 outils puissants**, vous pouvez faire absolument tout sur Discord :
 ## 🛠️ Fonctionnalités
 
 <details>
-<summary>💬 Gestion des Messages (8 outils)</summary>
+<summary>💬 Gestion des Messages (7 outils)</summary>
 
 • `discord_status` - Vérifie le statut de connexion du bot
-• `send_message` - Envoie un message avec options avancées
 • `envoyer_message` - Envoie un message texte simple
+• `read_messages` - Lit l'historique des messages
 • `edit_message` - Modifie un message existant
 • `delete_message` - Supprime un message
-• `read_messages` - Lit l'historique des messages
 • `add_reaction` - Ajoute une réaction emoji
-• `modifier_message` - Modifie tout type de message
+• `creer_sondage` - Crée un sondage interactif
 
 </details>
 
@@ -182,9 +183,7 @@ Ajoutez à votre configuration MCP :
   "mcpServers": {
     "discord-server": {
       "command": "node",
-      "args": [
-        "CHEMIN_VERS_VOTRE_PROJET\\serveur_discord\\dist\\index.js"
-      ]
+      "args": ["CHEMIN_VERS_VOTRE_PROJET\\serveur_discord\\dist\\index.js"]
     }
   }
 }
@@ -197,9 +196,7 @@ Ajoutez à votre configuration MCP :
   "mcpServers": {
     "discord-server": {
       "command": "node",
-      "args": [
-        "CHEMIN_VERS_VOTRE_PROJET/serveur_discord/dist/index.js"
-      ]
+      "args": ["CHEMIN_VERS_VOTRE_PROJET/serveur_discord/dist/index.js"]
     }
   }
 }
@@ -214,7 +211,6 @@ Ajoutez à votre configuration MCP :
 1. **Créez un bot** sur le [Portail Développeur](https://discord.com/developers/applications)
 
 2. **Activez les intents** :
-
    - ✅ Server Members Intent
    - ✅ Message Content Intent
 
@@ -250,17 +246,18 @@ Avec Discord MCP Server, vous pouvez :
 
 ## 🤖 Prompt System Optimisé
 
-Pour exploiter pleinement les 27 outils de Discord MCP Server, utilisez le **prompt système dédié** :
+Pour exploiter pleinement les 26 outils de Discord MCP Server, utilisez le **prompt système dédié** :
 
 👉 **[Accéder au prompt système ici](https://hackmd.io/@1-f9TrSqR0iVfHGkGYO3zw/rk8_YHVQZl)**
 
 ### Qu'est-ce que c'est ?
 
 Un prompt système spécialement conçu pour permettre à votre IA de :
+
 - 🎯 **Utiliser automatiquement** les bons outils Discord selon vos demandes
 - 🔧 **Comprendre** les interactions complexes (boutons, menus, sondages)
 - 📋 **Générer** des réponses adaptées à chaque contexte Discord
-- 🚀 **Optimiser** l'utilisation des 27 outils disponibles
+- 🚀 **Optimiser** l'utilisation des 26 outils disponibles
 
 ### Comment l'utiliser ?
 
@@ -268,11 +265,12 @@ Un prompt système spécialement conçu pour permettre à votre IA de :
 2. **Collez-le** dans votre système de prompt (Claude, ChatGPT, etc.)
 3. **Discutez** normalement - l'IA choisira automatiquement les bons outils Discord
 
-Exemple : *"Envoie un message de bienvenue avec des boutons interactifs dans le channel #général"*
+Exemple : _"Envoie un message de bienvenue avec des boutons interactifs dans le channel #général"_
 
 L'IA utilisera automatiquement les outils :
+
 - `get_channels` pour trouver le channel
-- `send_message` pour le message
+- `envoyer_message` pour le message
 - `create_custom_buttons` pour les boutons
 
 ---
@@ -283,7 +281,7 @@ L'IA utilisera automatiquement les outils :
 - [📘 Documentation Discord.js](https://discord.js.org/)
 - [🔌 Model Context Protocol](https://modelcontextprotocol.io/)
 - [📚 Guide Discord Developers](https://discord.com/developers/docs/intro)
-- [🤖 Prompt System pour Discord MCP](https://hackmd.io/@1-f9TrSqR0iVfHGkGYO3zw/rk8_YHVQZl) - *Prompt système optimisé pour exploiter tous les outils Discord MCP*
+- [🤖 Prompt System pour Discord MCP](https://hackmd.io/@1-f9TrSqR0iVfHGkGYO3zw/rk8_YHVQZl) - _Prompt système optimisé pour exploiter tous les outils Discord MCP_
 
 ---
 

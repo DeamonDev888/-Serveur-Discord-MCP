@@ -52,7 +52,7 @@ export const SUPPORTED_LANGUAGES = {
   makefile: 'makefile',
   ini: 'ini',
   toml: 'toml',
-  properties: 'properties'
+  properties: 'properties',
 } as const;
 
 /**
@@ -60,57 +60,57 @@ export const SUPPORTED_LANGUAGES = {
  */
 export const DISCORD_COLORS = {
   DEFAULT: 0x000000,
-  WHITE: 0xFFFFFF,
-  AQUA: 0x1ABC9C,
-  GREEN: 0x2ECC71,
-  BLUE: 0x3498DB,
-  YELLOW: 0xF1C40F,
-  PURPLE: 0x9B59B6,
-  LUMINOUS_VIVID_PINK: 0xE91E63,
-  FUCHSIA: 0xEB459E,
-  GOLD: 0xF39C12,
-  ORANGE: 0xE67E22,
-  RED: 0xE74C3C,
-  GREY: 0x95A5A6,
-  NAVY: 0x34495E,
-  DARK_AQUA: 0x11806A,
-  DARK_GREEN: 0x1F8B4C,
+  WHITE: 0xffffff,
+  AQUA: 0x1abc9c,
+  GREEN: 0x2ecc71,
+  BLUE: 0x3498db,
+  YELLOW: 0xf1c40f,
+  PURPLE: 0x9b59b6,
+  LUMINOUS_VIVID_PINK: 0xe91e63,
+  FUCHSIA: 0xeb459e,
+  GOLD: 0xf39c12,
+  ORANGE: 0xe67e22,
+  RED: 0xe74c3c,
+  GREY: 0x95a5a6,
+  NAVY: 0x34495e,
+  DARK_AQUA: 0x11806a,
+  DARK_GREEN: 0x1f8b4c,
   DARK_BLUE: 0x206694,
-  DARK_PURPLE: 0x71368A,
-  DARK_VIVID_PINK: 0xAD1457,
-  DARK_GOLD: 0xC27C0E,
-  DARK_ORANGE: 0xA84300,
-  DARK_RED: 0x992D22,
-  DARK_GREY: 0x607D8B,
-  DARKER_GREY: 0x36393F,
-  LIGHT_GREY: 0xBCC0C0,
-  DARK_NAVY: 0x2C3E50,
-  BLURPLE: 0x5865F2,
-  GREYPLE: 0x99AAB5,
-  DARK_BUT_NOT_BLACK: 0x2C2F33,
-  NOT_QUITE_BLACK: 0x23272A
+  DARK_PURPLE: 0x71368a,
+  DARK_VIVID_PINK: 0xad1457,
+  DARK_GOLD: 0xc27c0e,
+  DARK_ORANGE: 0xa84300,
+  DARK_RED: 0x992d22,
+  DARK_GREY: 0x607d8b,
+  DARKER_GREY: 0x36393f,
+  LIGHT_GREY: 0xbcc0c0,
+  DARK_NAVY: 0x2c3e50,
+  BLURPLE: 0x5865f2,
+  GREYPLE: 0x99aab5,
+  DARK_BUT_NOT_BLACK: 0x2c2f33,
+  NOT_QUITE_BLACK: 0x23272a,
 } as const;
 
 /**
  * Styles de boutons Discord
  */
 export const BUTTON_STYLES = {
-  PRIMARY: 1,    // Bleu
-  SECONDARY: 2,  // Gris
-  SUCCESS: 3,    // Vert
-  DANGER: 4,     // Rouge
-  LINK: 5        // Lien (gris, icône de lien)
+  PRIMARY: 1, // Bleu
+  SECONDARY: 2, // Gris
+  SUCCESS: 3, // Vert
+  DANGER: 4, // Rouge
+  LINK: 5, // Lien (gris, icône de lien)
 } as const;
 
 /**
  * Limites des types de fichiers pour upload
  */
 export const FILE_LIMITS = {
-  image: 25 * 1024 * 1024,    // 25MB
-  video: 100 * 1024 * 1024,   // 100MB (serveurs boostés)
-  audio: 100 * 1024 * 1024,   // 100MB (serveurs boostés)
+  image: 25 * 1024 * 1024, // 25MB
+  video: 100 * 1024 * 1024, // 100MB (serveurs boostés)
+  audio: 100 * 1024 * 1024, // 100MB (serveurs boostés)
   document: 25 * 1024 * 1024, // 25MB
-  default: 8 * 1024 * 1024    // 8MB (limite standard)
+  default: 8 * 1024 * 1024, // 8MB (limite standard)
 } as const;
 
 // ============================================================================
@@ -151,14 +151,14 @@ export const LIMITS = {
   POLL_QUESTION_MAX: 512,
 
   // Upload de fichiers
-  FILE_SIZE_DEFAULT: 8 * 1024 * 1024,  // 8MB
-  FILE_SIZE_IMAGE: 25 * 1024 * 1024,   // 25MB
-  FILE_SIZE_VIDEO: 100 * 1024 * 1024,  // 100MB
+  FILE_SIZE_DEFAULT: 8 * 1024 * 1024, // 8MB
+  FILE_SIZE_IMAGE: 25 * 1024 * 1024, // 25MB
+  FILE_SIZE_VIDEO: 100 * 1024 * 1024, // 100MB
 
   // Autres
   CHANNEL_NAME_MAX: 100,
   USER_DISCRIMINATOR_MAX: 4,
-  ROLE_NAME_MAX: 100
+  ROLE_NAME_MAX: 100,
 } as const;
 
 // ============================================================================
@@ -170,28 +170,28 @@ export const EMBED_TEMPLATES = {
     title: '📢 Annonce',
     color: DISCORD_COLORS.AQUA,
     timestamp: true,
-    footer: { text: 'Annonce officielle' }
+    footer: { text: 'Annonce officielle' },
   },
   warning: {
     title: '⚠️ Attention',
     color: DISCORD_COLORS.ORANGE,
     timestamp: true,
-    footer: { text: 'Veuillez noter' }
+    footer: { text: 'Veuillez noter' },
   },
   error: {
     title: '❌ Erreur',
     color: DISCORD_COLORS.RED,
-    timestamp: true
+    timestamp: true,
   },
   success: {
     title: '✅ Succès',
     color: DISCORD_COLORS.GREEN,
-    timestamp: true
+    timestamp: true,
   },
   info: {
     title: 'ℹ️ Information',
     color: DISCORD_COLORS.BLUE,
-    timestamp: true
+    timestamp: true,
   },
   rules: {
     title: '📋 Règles du Serveur',
@@ -199,18 +199,16 @@ export const EMBED_TEMPLATES = {
     fields: [
       { name: 'Règle 1', value: 'Soyez respectueux', inline: false },
       { name: 'Règle 2', value: 'Pas de spam', inline: false },
-      { name: 'Règle 3', value: 'Respectez les directives', inline: false }
+      { name: 'Règle 3', value: 'Respectez les directives', inline: false },
     ],
-    timestamp: true
+    timestamp: true,
   },
   welcome: {
     title: '👋 Bienvenue !',
     description: 'Nous sommes ravis de vous accueillir !',
     color: DISCORD_COLORS.GREEN,
-    fields: [
-      { name: 'Premiers pas', value: '📖 Lisez les règles', inline: false }
-    ],
-    timestamp: true
+    fields: [{ name: 'Premiers pas', value: '📖 Lisez les règles', inline: false }],
+    timestamp: true,
   },
   giveaway: {
     title: '🎁 Giveaway !',
@@ -218,10 +216,10 @@ export const EMBED_TEMPLATES = {
     color: DISCORD_COLORS.GOLD,
     fields: [
       { name: 'Prix', value: '🏆 Prix à définir', inline: true },
-      { name: 'Durée', value: '⏰ 24 heures', inline: true }
+      { name: 'Durée', value: '⏰ 24 heures', inline: true },
     ],
-    timestamp: true
-  }
+    timestamp: true,
+  },
 } as const;
 
 // ============================================================================
@@ -259,7 +257,7 @@ export const ERROR_CODES = {
   // Erreurs internes
   INTERNAL_ERROR: 'INTERNAL_ERROR',
   UNKNOWN_TOOL: 'UNKNOWN_TOOL',
-  NOT_IMPLEMENTED: 'NOT_IMPLEMENTED'
+  NOT_IMPLEMENTED: 'NOT_IMPLEMENTED',
 } as const;
 
 // ============================================================================
@@ -270,14 +268,15 @@ export const ERROR_MESSAGES = {
   [ERROR_CODES.VALIDATION_ERROR]: 'Erreur de validation des paramètres',
   [ERROR_CODES.INVALID_CHANNEL_ID]: 'ID de canal invalide ou inaccessible',
   [ERROR_CODES.INVALID_MESSAGE_ID]: 'ID de message invalide',
-  [ERROR_CODES.INVALID_USER_ID]: 'ID d\'utilisateur invalide',
+  [ERROR_CODES.INVALID_USER_ID]: "ID d'utilisateur invalide",
   [ERROR_CODES.CONTENT_TOO_LONG]: 'Le contenu dépasse la limite de {limit} caractères',
-  [ERROR_CODES.EMBED_TOO_LARGE]: 'L\'embed dépasse les limites Discord',
+  [ERROR_CODES.EMBED_TOO_LARGE]: "L'embed dépasse les limites Discord",
   [ERROR_CODES.TOO_MANY_FIELDS]: 'Nombre maximum de champs dépassé (max: {max})',
-  [ERROR_CODES.INVALID_COLOR_FORMAT]: 'Format de couleur invalide. Utilisez: nom, hex (#RRGGBB) ou décimal',
+  [ERROR_CODES.INVALID_COLOR_FORMAT]:
+    'Format de couleur invalide. Utilisez: nom, hex (#RRGGBB) ou décimal',
   [ERROR_CODES.POLL_INVALID_OPTIONS]: 'Les sondages doivent avoir entre {min} et {max} options',
   [ERROR_CODES.POLL_DURATION_TOO_LONG]: 'La durée ne peut pas dépasser {max} secondes (7 jours)',
-  [ERROR_CODES.POLL_DURATION_TOO_SHORT]: 'La durée doit être d\'au moins {min} secondes',
+  [ERROR_CODES.POLL_DURATION_TOO_SHORT]: "La durée doit être d'au moins {min} secondes",
   [ERROR_CODES.FILE_NOT_FOUND]: 'Fichier non trouvé: {filePath}',
   [ERROR_CODES.FILE_TOO_LARGE]: 'Fichier trop volumineux. Limite: {limit}MB',
   [ERROR_CODES.UNSUPPORTED_FILE_TYPE]: 'Type de fichier non supporté: {type}',
@@ -286,7 +285,7 @@ export const ERROR_MESSAGES = {
   [ERROR_CODES.RATE_LIMIT_EXCEEDED]: 'Limite de débit dépassée. Réessayez plus tard.',
   [ERROR_CODES.INTERNAL_ERROR]: 'Erreur interne du serveur',
   [ERROR_CODES.UNKNOWN_TOOL]: 'Outil inconnu: {tool}',
-  [ERROR_CODES.NOT_IMPLEMENTED]: 'Fonctionnalité non implémentée'
+  [ERROR_CODES.NOT_IMPLEMENTED]: 'Fonctionnalité non implémentée',
 } as const;
 
 // ============================================================================
@@ -372,7 +371,9 @@ export const validateEmbedLimits = (embed: any): { valid: boolean; errors: strin
         errors.push(`Champ #${index + 1}: nom trop long (max: ${LIMITS.EMBED_FIELD_NAME_MAX})`);
       }
       if (field.value.length > LIMITS.EMBED_FIELD_VALUE_MAX) {
-        errors.push(`Champ #${index + 1}: valeur trop longue (max: ${LIMITS.EMBED_FIELD_VALUE_MAX})`);
+        errors.push(
+          `Champ #${index + 1}: valeur trop longue (max: ${LIMITS.EMBED_FIELD_VALUE_MAX})`
+        );
       }
     });
   }
@@ -403,19 +404,19 @@ export const QUICK_START_GUIDE = {
   messages: {
     title: '💬 Envoi de Messages',
     steps: [
-      '1. Utilisez l\'outil envoyer_message',
+      "1. Utilisez l'outil envoyer_message",
       '2. Spécifiez channelId et content',
-      'Optionnel: Ajoutez des embeds, fichiers ou composants'
-    ]
+      'Optionnel: Ajoutez des embeds, fichiers ou composants',
+    ],
   },
   embeds: {
-    title: '📋 Création d\'Embeds',
+    title: "📋 Création d'Embeds",
     steps: [
       '1. Utilisez creer_embed avec les paramètres deseés',
       '2. Ajoutez titre, description, couleur',
       '3. Optionnel: Champs, images, auteur, footer',
-      'Astuce: Utilisez les templates pour gagner du temps'
-    ]
+      'Astuce: Utilisez les templates pour gagner du temps',
+    ],
   },
   polls: {
     title: '🗳️ Sondages Interactifs',
@@ -423,8 +424,8 @@ export const QUICK_START_GUIDE = {
       '1. Utilisez creer_sondage',
       '2. Définissez question et options (2-10)',
       '3. Configurez durée (5s à 7j)',
-      'Optionnel: Mode anonyme ou choix multiples'
-    ]
+      'Optionnel: Mode anonyme ou choix multiples',
+    ],
   },
   buttons: {
     title: '🔘 Boutons Personnalisés',
@@ -432,8 +433,8 @@ export const QUICK_START_GUIDE = {
       '1. Utilisez create_custom_buttons',
       '2. Définissez titre et description',
       '3. Ajoutez boutons (max 8)',
-      '4. Configurez actions (message, embed, sondage)'
-    ]
+      '4. Configurez actions (message, embed, sondage)',
+    ],
   },
   files: {
     title: '📎 Upload de Fichiers',
@@ -441,8 +442,8 @@ export const QUICK_START_GUIDE = {
       '1. Utilisez uploader_fichier',
       '2. Spécifiez filePath et channelId',
       '3. Optionnel: fileName, message, spoiler',
-      'Limite: 8MB standard, 25MB images, 100MB vidéos/audios'
-    ]
+      'Limite: 8MB standard, 25MB images, 100MB vidéos/audios',
+    ],
   },
   code: {
     title: '💻 Affichage de Code',
@@ -450,9 +451,9 @@ export const QUICK_START_GUIDE = {
       '1. Utilisez code_preview',
       '2. Spécifiez language et code',
       'Support: 30+ langages (JS, TS, Python, Rust, etc.)',
-      'Auto-division si message trop long'
-    ]
-  }
+      'Auto-division si message trop long',
+    ],
+  },
 } as const;
 
 // ============================================================================
@@ -476,8 +477,8 @@ export const MCP_DOCUMENTATION = {
     parseColor,
     validateEmbedLimits,
     generatePollId,
-    truncate
-  }
+    truncate,
+  },
 };
 
 export default MCP_DOCUMENTATION;

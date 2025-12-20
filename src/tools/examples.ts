@@ -21,8 +21,8 @@ export const exampleSendSimpleMessage = {
   tool: 'mcp__discord-server__envoyer_message',
   params: {
     channelId: 'VOTRE_CHANNEL_ID',
-    message: '🎉 Message de test envoyé avec succès !'
-  }
+    message: '🎉 Message de test envoyé avec succès !',
+  },
 };
 
 /**
@@ -34,8 +34,8 @@ export const exampleSendReplyMessage = {
     channelId: 'VOTRE_CHANNEL_ID',
     content: 'Réponse à votre message !',
     replyTo: 'ID_DU_MESSAGE_ORIGINAL',
-    mentionRepliedUser: true
-  }
+    mentionRepliedUser: true,
+  },
 };
 
 /**
@@ -48,8 +48,8 @@ export const exampleEditMessage = {
     messageId: 'ID_DU_MESSAGE_A_MODIFIER',
     content: '✨ Message modifié avec succès !',
     embeds: [],
-    components: []
-  }
+    components: [],
+  },
 };
 
 // ============================================================================
@@ -68,10 +68,10 @@ export const exampleEmbedSimple = {
     color: 'success',
     fields: [
       { name: '✅ Statut', value: 'Déployé', inline: true },
-      { name: '📅 Date', value: new Date().toISOString(), inline: true }
+      { name: '📅 Date', value: new Date().toISOString(), inline: true },
     ],
-    timestamp: true
-  }
+    timestamp: true,
+  },
 };
 
 /**
@@ -88,37 +88,37 @@ export const exampleEmbedComplex = {
     author: {
       name: 'Claude Code',
       icon_url: 'https://i.imgur.com/avatar.png',
-      url: 'https://claude.ai'
+      url: 'https://claude.ai',
     },
     thumbnail: {
-      url: 'https://i.imgur.com/thumbnail.png'
+      url: 'https://i.imgur.com/thumbnail.png',
     },
     image: {
-      url: 'https://i.imgur.com/full-image.png'
+      url: 'https://i.imgur.com/full-image.png',
     },
     fields: [
       {
         name: '📈 Métrique 1',
         value: 'Valeur: 85%',
-        inline: true
+        inline: true,
       },
       {
         name: '📉 Métrique 2',
         value: 'Valeur: 1200',
-        inline: true
+        inline: true,
       },
       {
         name: '💡 Analyse',
         value: 'Les résultats montrent une amélioration significative.',
-        inline: false
-      }
+        inline: false,
+      },
     ],
     footer: {
       text: 'Rapport généré automatiquement',
-      icon_url: 'https://i.imgur.com/footer-icon.png'
+      icon_url: 'https://i.imgur.com/footer-icon.png',
     },
-    timestamp: true
-  }
+    timestamp: true,
+  },
 };
 
 // ============================================================================
@@ -136,8 +136,8 @@ export const examplePollSimple = {
     options: ['Rouge', 'Bleu', 'Vert', 'Jaune'],
     duration: 3600,
     allowMultiple: false,
-    anonymous: false
-  }
+    anonymous: false,
+  },
 };
 
 /**
@@ -153,12 +153,12 @@ export const examplePollAnonymous = {
       'Notifications push',
       'API REST',
       'Interface mobile',
-      'Intégration GitHub'
+      'Intégration GitHub',
     ],
     duration: 86400,
     allowMultiple: true,
-    anonymous: true
-  }
+    anonymous: true,
+  },
 };
 
 /**
@@ -172,8 +172,8 @@ export const examplePollTest = {
     options: ['Oui', 'Non'],
     duration: 5,
     allowMultiple: false,
-    anonymous: false
-  }
+    anonymous: false,
+  },
 };
 
 // ============================================================================
@@ -196,8 +196,8 @@ export const exampleButtonsSimple = {
         emoji: '✅',
         action: {
           type: 'message',
-          data: { content: 'Action confirmée !' }
-        }
+          data: { content: 'Action confirmée !' },
+        },
       },
       {
         label: '❌ Annuler',
@@ -205,11 +205,11 @@ export const exampleButtonsSimple = {
         emoji: '❌',
         action: {
           type: 'message',
-          data: { content: 'Action annulée.' }
-        }
-      }
-    ]
-  }
+          data: { content: 'Action annulée.' },
+        },
+      },
+    ],
+  },
 };
 
 /**
@@ -235,14 +235,14 @@ export const exampleButtonsWithEmbed = {
             fields: [
               { name: '👥 Membres', value: '1,234', inline: true },
               { name: '💬 Messages', value: '56,789', inline: true },
-              { name: '🕒 Uptime', value: '99.9%', inline: true }
+              { name: '🕒 Uptime', value: '99.9%', inline: true },
             ],
-            timestamp: true
-          }
-        }
-      }
-    ]
-  }
+            timestamp: true,
+          },
+        },
+      },
+    ],
+  },
 };
 
 // ============================================================================
@@ -259,8 +259,8 @@ export const exampleFileUpload = {
     filePath: '/chemin/vers/fichier.pdf',
     message: '📎 Nouveau document disponible',
     description: 'Documentation technique mise à jour',
-    spoiler: false
-  }
+    spoiler: false,
+  },
 };
 
 /**
@@ -273,8 +273,8 @@ export const exampleFileUploadSpoiler = {
     filePath: '/chemin/vers/image-spoiler.png',
     message: '🖼️ Image avec spoiler',
     description: 'Cliquez pour révéler (SPOILER)',
-    spoiler: true
-  }
+    spoiler: true,
+  },
 };
 
 /**
@@ -288,8 +288,8 @@ export const exampleFileUploadCustomName = {
     fileName: 'export-2025-12-19.json',
     message: '💾 Export des données',
     description: 'Sauvegarde quotidienne',
-    spoiler: false
-  }
+    spoiler: false,
+  },
 };
 
 // ============================================================================
@@ -317,8 +317,8 @@ function formatDate(date) {
 }
 
 // Utilisation
-console.log(formatDate(new Date()));`
-  }
+console.log(formatDate(new Date()));`,
+  },
 };
 
 /**
@@ -349,8 +349,8 @@ class UserManager:
 manager = UserManager()
 manager.add_user("Alice")
 manager.add_user("Bob")
-print(f"Nombre d'utilisateurs: {manager.get_user_count()}")`
-  }
+print(f"Nombre d'utilisateurs: {manager.get_user_count()}")`,
+  },
 };
 
 /**
@@ -389,8 +389,8 @@ impl Message {
             &self.content[..max_len]
         }
     }
-}`
-  }
+}`,
+  },
 };
 
 // ============================================================================
@@ -404,8 +404,8 @@ export const exampleServerInfo = {
   tool: 'mcp__discord-server__get_server_info',
   params: {
     includeStats: true,
-    includeFeatures: true
-  }
+    includeFeatures: true,
+  },
 };
 
 /**
@@ -418,8 +418,8 @@ export const exampleListMembers = {
     sortBy: 'joined',
     order: 'desc',
     filter: 'online',
-    searchRole: 'Admin'
-  }
+    searchRole: 'Admin',
+  },
 };
 
 /**
@@ -431,8 +431,8 @@ export const exampleUserInfo = {
     userId: 'ID_UTILISATEUR',
     guildId: 'ID_SERVEUR',
     includeActivity: true,
-    includePermissions: true
-  }
+    includePermissions: true,
+  },
 };
 
 // ============================================================================
@@ -450,9 +450,9 @@ export const exampleTemplateAnnouncement = {
     customizations: {
       title: '📢 Nouvelle Mise à Jour !',
       description: 'Version 2.0 déployée avec de nouvelles fonctionnalités',
-      color: '#00FF00'
-    }
-  }
+      color: '#00FF00',
+    },
+  },
 };
 
 /**
@@ -468,12 +468,13 @@ export const exampleTemplateWelcome = {
       fields: [
         {
           name: '📚 Ressources',
-          value: '[Documentation](https://docs.example.com)\n[Support](https://support.example.com)',
-          inline: false
-        }
-      ]
-    }
-  }
+          value:
+            '[Documentation](https://docs.example.com)\n[Support](https://support.example.com)',
+          inline: false,
+        },
+      ],
+    },
+  },
 };
 
 /**
@@ -490,11 +491,11 @@ export const exampleTemplateError = {
         {
           name: '🔧 Solution',
           value: 'Veuillez réessayer dans quelques instants ou contacter le support.',
-          inline: false
-        }
-      ]
-    }
-  }
+          inline: false,
+        },
+      ],
+    },
+  },
 };
 
 // ============================================================================
@@ -507,8 +508,8 @@ export const exampleTemplateError = {
 export const exampleMCPDashboard = {
   tool: 'mcp__discord-server__create_mcp_dashboard',
   params: {
-    channelId: 'VOTRE_CHANNEL_ID'
-  }
+    channelId: 'VOTRE_CHANNEL_ID',
+  },
 };
 
 // ============================================================================
@@ -528,11 +529,9 @@ export const exampleComplexMessage = {
         title: '🚀 Fonctionnalité X',
         description: 'Description détaillée de la fonctionnalité.',
         color: '#7289DA',
-        fields: [
-          { name: '✨ Avantages', value: 'Point 1\nPoint 2\nPoint 3', inline: false }
-        ],
-        timestamp: true
-      }
+        fields: [{ name: '✨ Avantages', value: 'Point 1\nPoint 2\nPoint 3', inline: false }],
+        timestamp: true,
+      },
     ],
     components: [
       {
@@ -542,18 +541,18 @@ export const exampleComplexMessage = {
             type: 2,
             style: 1,
             label: 'En savoir plus',
-            custom_id: 'more_info'
+            custom_id: 'more_info',
           },
           {
             type: 2,
             style: 3,
             label: 'Activer',
-            custom_id: 'enable_feature'
-          }
-        ]
-      }
-    ]
-  }
+            custom_id: 'enable_feature',
+          },
+        ],
+      },
+    ],
+  },
 };
 
 /**
@@ -568,12 +567,12 @@ export const examplePollWithEmbed = {
       '🔴 Critique - À faire immédiatement',
       '🟡 Important - À planifier',
       '🟢 Normal - À intégrer dans le planning',
-      '⚪ Faible - Si temps disponible'
+      '⚪ Faible - Si temps disponible',
     ],
     duration: 172800,
     allowMultiple: false,
-    anonymous: true
-  }
+    anonymous: true,
+  },
 };
 
 // ============================================================================
@@ -584,7 +583,7 @@ export const EXAMPLE_SCHEMAS = {
   // Schéma pour message simple
   SendMessageSchema: z.object({
     channelId: z.string(),
-    content: z.string()
+    content: z.string(),
   }),
 
   // Schéma pour embed
@@ -593,12 +592,16 @@ export const EXAMPLE_SCHEMAS = {
     title: z.string().optional(),
     description: z.string().optional(),
     color: z.union([z.string(), z.number()]).optional(),
-    fields: z.array(z.object({
-      name: z.string(),
-      value: z.string(),
-      inline: z.boolean().optional()
-    })).optional(),
-    timestamp: z.boolean().optional()
+    fields: z
+      .array(
+        z.object({
+          name: z.string(),
+          value: z.string(),
+          inline: z.boolean().optional(),
+        })
+      )
+      .optional(),
+    timestamp: z.boolean().optional(),
   }),
 
   // Schéma pour sondage
@@ -608,7 +611,7 @@ export const EXAMPLE_SCHEMAS = {
     options: z.array(z.string()).min(2).max(10),
     duration: z.number().min(5).max(604800).optional(),
     allowMultiple: z.boolean().optional(),
-    anonymous: z.boolean().optional()
+    anonymous: z.boolean().optional(),
   }),
 
   // Schéma pour boutons
@@ -616,16 +619,18 @@ export const EXAMPLE_SCHEMAS = {
     channelId: z.string(),
     title: z.string(),
     description: z.string().optional(),
-    buttons: z.array(z.object({
-      label: z.string(),
-      style: z.enum(['primary', 'secondary', 'success', 'danger']),
-      emoji: z.string().optional(),
-      action: z.object({
-        type: z.enum(['message', 'embed', 'poll']),
-        data: z.record(z.any())
+    buttons: z.array(
+      z.object({
+        label: z.string(),
+        style: z.enum(['primary', 'secondary', 'success', 'danger']),
+        emoji: z.string().optional(),
+        action: z.object({
+          type: z.enum(['message', 'embed', 'poll']),
+          data: z.record(z.any()),
+        }),
       })
-    }))
-  })
+    ),
+  }),
 };
 
 // ============================================================================

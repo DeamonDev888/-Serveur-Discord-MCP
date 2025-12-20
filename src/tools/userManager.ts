@@ -1,18 +1,20 @@
 import { z } from 'zod';
-import {
-  User,
-  Guild,
-  GuildMember,
-  PermissionFlagsBits,
-  PresenceStatus
-} from 'discord.js';
+import { User, Guild, PermissionFlagsBits, PresenceStatus } from 'discord.js';
 
 // Schéma pour obtenir les informations d'un utilisateur
 export const GetUserInfoSchema = z.object({
-  userId: z.string().describe('ID de l\'utilisateur à récupérer'),
-  guildId: z.string().optional().describe('ID du serveur pour les informations de membre'),
-  includeActivity: z.boolean().optional().default(true).describe('Inclure l\'activité de l\'utilisateur'),
-  includePermissions: z.boolean().optional().default(true).describe('Inclure les permissions si membre du serveur')
+  userId: z.string().describe("ID de l'utilisateur à récupérer"),
+  _: z.string().optional().describe('ID du serveur pour les informations de membre'),
+  includeActivity: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe("Inclure l'activité de l'utilisateur"),
+  includePermissions: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe('Inclure les permissions si membre du serveur'),
 });
 
 // Types pour les résultats
@@ -124,8 +126,8 @@ export async function getUserInfo(
   }
 
   // Récupérer le serveur si spécifié
-  if (params.guildId) {
-    guild = await client.guilds.fetch(params.guildId);
+  if (params._) {
+    guild = await client.guilds.fetch(params._);
     await guild?.fetch();
   }
 
@@ -142,7 +144,7 @@ export async function getUserInfo(
     createdAt: user.createdAt.toISOString(),
     verified: (user as any).verified ?? false,
     mfaEnabled: (user as any).mfaEnabled ?? false,
-    locale: (user as any).locale ?? 'fr'
+    locale: (user as any).locale ?? 'fr',
   };
 
   // Ajouter les flags
@@ -169,7 +171,7 @@ export async function getUserInfo(
           system: member.user.system || false,
           verified: (member.user as any).verified ?? false,
           mfaEnabled: (member.user as any).mfaEnabled ?? false,
-          locale: (member.user as any).locale ?? 'fr'
+          locale: (member.user as any).locale ?? 'fr',
         },
         joinedAt: member.joinedAt?.toISOString() || '',
         premiumSince: member.premiumSince?.toISOString(),
@@ -181,46 +183,60 @@ export async function getUserInfo(
           position: role.position,
           hoist: role.hoist,
           mentionable: role.mentionable,
-          permissions: params.includePermissions ? Object.keys(PermissionFlagsBits).filter(
-            (perm: any) => role.permissions.has(PermissionFlagsBits[perm as keyof typeof PermissionFlagsBits])
-          ) : []
+          permissions: params.includePermissions
+            ? Object.keys(PermissionFlagsBits).filter((perm: any) =>
+                role.permissions.has(PermissionFlagsBits[perm as keyof typeof PermissionFlagsBits])
+              )
+            : [],
         })),
-        permissions: params.includePermissions ? Object.keys(PermissionFlagsBits).filter(
-          (perm: any) => member.permissions.has(PermissionFlagsBits[perm as keyof typeof PermissionFlagsBits])
-        ) : [],
+        permissions: params.includePermissions
+          ? Object.keys(PermissionFlagsBits).filter((perm: any) =>
+              member.permissions.has(PermissionFlagsBits[perm as keyof typeof PermissionFlagsBits])
+            )
+          : [],
         highestRole: member.roles.highest.name,
-        presence: params.includeActivity && member.presence ? {
-          status: member.presence.status as PresenceStatus,
-          activities: member.presence.activities.map((activity: any) => ({
-            name: activity.name,
-            type: activity.type,
-            details: activity.details || undefined,
-            state: activity.state || undefined,
-            emoji: activity.emoji ? {
-              name: activity.emoji.name!,
-              id: activity.emoji.id || undefined,
-              animated: activity.emoji.animated || false
-            } : undefined,
-            timestamps: activity.timestamps ? {
-              start: activity.timestamps.start?.getTime(),
-              end: activity.timestamps.end?.getTime()
-            } : undefined
-          }))
-        } : undefined,
+        presence:
+          params.includeActivity && member.presence
+            ? {
+                status: member.presence.status as PresenceStatus,
+                activities: member.presence.activities.map((activity: any) => ({
+                  name: activity.name,
+                  type: activity.type,
+                  details: activity.details || undefined,
+                  state: activity.state || undefined,
+                  emoji: activity.emoji
+                    ? {
+                        name: activity.emoji.name!,
+                        id: activity.emoji.id || undefined,
+                        animated: activity.emoji.animated || false,
+                      }
+                    : undefined,
+                  timestamps: activity.timestamps
+                    ? {
+                        start: activity.timestamps.start?.getTime(),
+                        end: activity.timestamps.end?.getTime(),
+                      }
+                    : undefined,
+                })),
+              }
+            : undefined,
         isOwner: member.id === guild.ownerId,
         isAdmin: member.permissions.has(PermissionFlagsBits.Administrator),
-        isModerator: member.permissions.has(PermissionFlagsBits.KickMembers) ||
-                      member.permissions.has(PermissionFlagsBits.BanMembers),
+        isModerator:
+          member.permissions.has(PermissionFlagsBits.KickMembers) ||
+          member.permissions.has(PermissionFlagsBits.BanMembers),
         isBoosting: !!member.premiumSince,
-        voiceState: member.voice ? {
-          channelId: member.voice.channelId || undefined,
-          mute: member.voice.mute || false,
-          deaf: member.voice.deaf || false,
-          selfMute: member.voice.selfMute || false,
-          selfDeaf: member.voice.selfDeaf || false,
-          streaming: member.voice.streaming || false,
-          suppress: member.voice.suppress || false
-        } : undefined
+        voiceState: member.voice
+          ? {
+              channelId: member.voice.channelId || undefined,
+              mute: member.voice.mute || false,
+              deaf: member.voice.deaf || false,
+              selfMute: member.voice.selfMute || false,
+              selfDeaf: member.voice.selfDeaf || false,
+              streaming: member.voice.streaming || false,
+              suppress: member.voice.suppress || false,
+            }
+          : undefined,
       };
     } catch (error) {
       // L'utilisateur n'est pas membre de ce serveur
@@ -235,7 +251,7 @@ export async function getUserInfo(
     roles: string[];
   }> = [];
 
-  for (const [guildId, guild] of client.guilds.cache) {
+  for (const [, guild] of client.guilds.cache) {
     try {
       const member = await guild.members.fetch(params.userId).catch(() => null);
       if (member) {
@@ -243,7 +259,7 @@ export async function getUserInfo(
           id: guild.id,
           name: guild.name,
           memberSince: member.joinedAt?.toISOString(),
-          roles: member.roles.cache.map((r: any) => r.name)
+          roles: member.roles.cache.map((r: any) => r.name),
         });
       }
     } catch (error) {
@@ -289,7 +305,10 @@ export function formatUserInfoMarkdown(info: UserInfo): string {
     output += `- **Rôle le plus haut:** ${member.highestRole}\n`;
 
     if (member.roles.length > 0) {
-      output += `- **Rôles (${member.roles.length}):** ${member.roles.map(r => r.name).slice(0, 5).join(', ')}${member.roles.length > 5 ? '...' : ''}\n`;
+      output += `- **Rôles (${member.roles.length}):** ${member.roles
+        .map(r => r.name)
+        .slice(0, 5)
+        .join(', ')}${member.roles.length > 5 ? '...' : ''}\n`;
     }
 
     output += '\n';
@@ -331,11 +350,11 @@ export function formatUserInfoMarkdown(info: UserInfo): string {
 // Fonction utilitaire pour obtenir l'icône de statut
 function getStatusIcon(status: string): string {
   const icons: { [key: string]: string } = {
-    'online': '🟢',
-    'idle': '🟡',
-    'dnd': '🔴',
-    'invisible': '⚪',
-    'offline': '⚫'
+    online: '🟢',
+    idle: '🟡',
+    dnd: '🔴',
+    invisible: '⚪',
+    offline: '⚫',
   };
   return icons[status] || '⚫';
 }

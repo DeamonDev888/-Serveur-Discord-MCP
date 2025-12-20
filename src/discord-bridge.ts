@@ -21,12 +21,12 @@ export class DiscordBridge {
 
   async getClient(): Promise<Client> {
     if (this.client && this.client.isReady()) {
-      console.log('🚀 [Bridge] Client déjà prêt - utilisation immédiate');
+      console.error('🚀 [Bridge] Client déjà prêt - utilisation immédiate');
       return this.client;
     }
 
     if (this.connectionPromise) {
-      console.log('⏳ [Bridge] Connexion en cours - attente...');
+      console.error('⏳ [Bridge] Connexion en cours - attente...');
       return this.connectionPromise;
     }
 
@@ -35,7 +35,7 @@ export class DiscordBridge {
   }
 
   private async createConnection(): Promise<Client> {
-    console.log('🔗 [Bridge] Création nouvelle connexion Discord...');
+    console.error('🔗 [Bridge] Création nouvelle connexion Discord...');
 
     this.client = new Client({
       intents: [
@@ -45,8 +45,8 @@ export class DiscordBridge {
         GatewayIntentBits.GuildMessageReactions,
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildEmojisAndStickers,
-        GatewayIntentBits.GuildWebhooks
-      ]
+        GatewayIntentBits.GuildWebhooks,
+      ],
     });
 
     return new Promise((resolve, reject) => {
@@ -59,18 +59,18 @@ export class DiscordBridge {
       this.client!.once('ready', () => {
         clearTimeout(timeout);
         this.isConnected = true;
-        console.log(`✅ [Bridge] Connecté: ${this.client!.user!.tag}`);
+        console.error(`✅ [Bridge] Connecté: ${this.client!.user!.tag}`);
         resolve(this.client!);
       });
 
-      this.client!.once('error', (error) => {
+      this.client!.once('error', error => {
         clearTimeout(timeout);
         this.connectionPromise = null;
         console.error('❌ [Bridge] Erreur Discord:', error.message);
         reject(error);
       });
 
-      this.client!.login(this.token).catch((error) => {
+      this.client!.login(this.token).catch(error => {
         clearTimeout(timeout);
         this.connectionPromise = null;
         console.error('❌ [Bridge] Erreur login:', error.message);
@@ -84,7 +84,7 @@ export class DiscordBridge {
       this.client.destroy();
       this.isConnected = false;
       this.connectionPromise = null;
-      console.log('🧹 [Bridge] Client détruit');
+      console.error('🧹 [Bridge] Client détruit');
     }
   }
 }

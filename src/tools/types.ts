@@ -44,7 +44,7 @@ export interface OperationResult<T = any> {
 /**
  * Schéma pour envoi de message
  */
-export type SendMessageParams = z.infer<typeof import('./messageManager').SendMessageSchema>;
+export type SendMessageParams = z.infer<typeof import('./messageManager').SendSchema>;
 
 /**
  * Schéma pour modification de message
@@ -142,12 +142,14 @@ export interface PollButtonConfig {
 /**
  * Types de composants supportés
  */
-export type ComponentType = typeof import('./interactions').COMPONENT_TYPES[keyof typeof import('./interactions').COMPONENT_TYPES];
+export type ComponentType =
+  (typeof import('./interactions').COMPONENT_TYPES)[keyof typeof import('./interactions').COMPONENT_TYPES];
 
 /**
  * Styles de boutons
  */
-export type ButtonStyle = typeof import('./interactions').BUTTON_STYLES[keyof typeof import('./interactions').BUTTON_STYLES];
+export type ButtonStyle =
+  (typeof import('./interactions').BUTTON_STYLES)[keyof typeof import('./interactions').BUTTON_STYLES];
 
 /**
  * Schéma pour bouton
@@ -177,7 +179,9 @@ export type ChannelSelectParams = z.infer<typeof import('./interactions').Channe
 /**
  * Schéma pour sélecteur mentionnable
  */
-export type MentionableSelectParams = z.infer<typeof import('./interactions').MentionableSelectSchema>;
+export type MentionableSelectParams = z.infer<
+  typeof import('./interactions').MentionableSelectSchema
+>;
 
 /**
  * Schéma pour modal
@@ -352,7 +356,8 @@ export interface ToolConfig {
 /**
  * Code d'erreur
  */
-export type ErrorCode = typeof import('./documentation').ERROR_CODES[keyof typeof import('./documentation').ERROR_CODES];
+export type ErrorCode =
+  (typeof import('./documentation').ERROR_CODES)[keyof typeof import('./documentation').ERROR_CODES];
 
 /**
  * Erreur formatée

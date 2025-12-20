@@ -1,21 +1,20 @@
 import { z } from 'zod';
-import {
-  TextChannel,
-  VoiceChannel,
-  CategoryChannel,
-  NewsChannel,
-  StageChannel,
-  ForumChannel,
-  ThreadChannel,
-  ChannelType
-} from 'discord.js';
+import { TextChannel, VoiceChannel, NewsChannel, ThreadChannel, ChannelType } from 'discord.js';
 
 // Schéma pour lister les canaux
 export const GetChannelsSchema = z.object({
   guildId: z.string().optional().describe('ID du serveur (optionnel)'),
-  channelType: z.enum(['all', 'text', 'voice', 'category', 'news', 'stage', 'forum']).optional().default('all').describe('Type de canaux à lister'),
+  channelType: z
+    .enum(['all', 'text', 'voice', 'category', 'news', 'stage', 'forum'])
+    .optional()
+    .default('all')
+    .describe('Type de canaux à lister'),
   includeThreads: z.boolean().optional().default(false).describe('Inclure les threads'),
-  sortBy: z.enum(['name', 'type', 'position']).optional().default('name').describe('Tri des canaux')
+  sortBy: z
+    .enum(['name', 'type', 'position'])
+    .optional()
+    .default('name')
+    .describe('Tri des canaux'),
 });
 
 // Types pour les résultats
@@ -67,28 +66,27 @@ export async function getChannels(
   // Filtrer par type
   if (params.channelType !== 'all') {
     const typeMap: Record<string, ChannelType[]> = {
-      'text': [ChannelType.GuildText],
-      'voice': [ChannelType.GuildVoice],
-      'category': [ChannelType.GuildCategory],
-      'news': [ChannelType.GuildNews],
-      'stage': [ChannelType.GuildStageVoice],
-      'forum': [ChannelType.GuildForum]
+      text: [ChannelType.GuildText],
+      voice: [ChannelType.GuildVoice],
+      category: [ChannelType.GuildCategory],
+      news: [ChannelType.GuildNews],
+      stage: [ChannelType.GuildStageVoice],
+      forum: [ChannelType.GuildForum],
     };
 
     const targetTypes = typeMap[params.channelType as string] || [];
-    channels = channels.filter((c: any) =>
-      targetTypes.includes(c.type)
-    );
+    channels = channels.filter((c: any) => targetTypes.includes(c.type));
   }
 
   // Inclure ou exclure les threads
   if (!params.includeThreads) {
-    channels = channels.filter((c: any) =>
-      ![
-        ChannelType.PublicThread,
-        ChannelType.PrivateThread,
-        ChannelType.AnnouncementThread
-      ].includes(c.type)
+    channels = channels.filter(
+      (c: any) =>
+        ![
+          ChannelType.PublicThread,
+          ChannelType.PrivateThread,
+          ChannelType.AnnouncementThread,
+        ].includes(c.type)
     );
   }
 
@@ -113,17 +111,28 @@ export async function getChannels(
     const channelInfo: ChannelInfo = {
       id: channel.id,
       name: channel.name || 'Unknown',
-      type: [
-        'Text', 'DM', 'Voice', 'Group', 'Category', 'News',
-        'Store', 'NewsThread', 'PublicThread', 'PrivateThread',
-        'Stage', 'Directory', 'Forum'
-      ][channel.type] || 'Unknown',
+      type:
+        [
+          'Text',
+          'DM',
+          'Voice',
+          'Group',
+          'Category',
+          'News',
+          'Store',
+          'NewsThread',
+          'PublicThread',
+          'PrivateThread',
+          'Stage',
+          'Directory',
+          'Forum',
+        ][channel.type] || 'Unknown',
       position: channel.position || 0,
       parentId: channel.parentId || undefined,
       nsfw: (channel as TextChannel | NewsChannel).nsfw || false,
       permissionsLocked: (channel as TextChannel | VoiceChannel).permissionsLocked || false,
       createdAt: channel.createdAt.toISOString(),
-      createdAtTimestamp: channel.createdTimestamp
+      createdAtTimestamp: channel.createdTimestamp,
     };
 
     // Ajouter des infos spécifiques selon le type
@@ -155,7 +164,7 @@ export async function getChannels(
         archiveDate: thread.archivedAt?.toISOString() || undefined,
         autoArchiveDuration: thread.autoArchiveDuration || 0,
         locked: thread.locked || false,
-        invitable: thread.invitable || false
+        invitable: thread.invitable || false,
       };
     }
 
@@ -185,29 +194,31 @@ export function formatChannelsMarkdown(channels: ChannelInfo[]): string {
   });
 
   // Afficher par catégorie
-  Object.keys(categories).sort().forEach(categoryName => {
-    output += `## 📁 ${categoryName}\n`;
-    categories[categoryName].forEach(channel => {
-      output += `### ${getChannelIcon(channel.type)} **${channel.name}**\n`;
-      output += `- **Type:** ${channel.type}\n`;
-      output += `- **ID:** \`${channel.id}\`\n`;
-      output += `- **Position:** ${channel.position}\n`;
+  Object.keys(categories)
+    .sort()
+    .forEach(categoryName => {
+      output += `## 📁 ${categoryName}\n`;
+      categories[categoryName].forEach(channel => {
+        output += `### ${getChannelIcon(channel.type)} **${channel.name}**\n`;
+        output += `- **Type:** ${channel.type}\n`;
+        output += `- **ID:** \`${channel.id}\`\n`;
+        output += `- **Position:** ${channel.position}\n`;
 
-      if (channel.topic) {
-        output += `- **Sujet:** ${channel.topic}\n`;
-      }
+        if (channel.topic) {
+          output += `- **Sujet:** ${channel.topic}\n`;
+        }
 
-      if (channel.rateLimitPerUser && channel.rateLimitPerUser > 0) {
-        output += `- **Slowmode:** ${channel.rateLimitPerUser}s\n`;
-      }
+        if (channel.rateLimitPerUser && channel.rateLimitPerUser > 0) {
+          output += `- **Slowmode:** ${channel.rateLimitPerUser}s\n`;
+        }
 
-      if (channel.nsfw) {
-        output += `- **NSFW:** ✅\n`;
-      }
+        if (channel.nsfw) {
+          output += `- **NSFW:** ✅\n`;
+        }
 
-      output += '\n';
+        output += '\n';
+      });
     });
-  });
 
   // Canaux sans catégorie
   if (uncategorized.length > 0) {
@@ -226,15 +237,15 @@ export function formatChannelsMarkdown(channels: ChannelInfo[]): string {
 // Fonction utilitaire pour obtenir l'icône du type de canal
 function getChannelIcon(type: string): string {
   const icons: { [key: string]: string } = {
-    'Text': '💬',
-    'Voice': '🔊',
-    'Category': '📁',
-    'News': '📢',
-    'Stage': '🎭',
-    'Forum': '💭',
-    'PublicThread': '🧵',
-    'PrivateThread': '🔒',
-    'AnnouncementThread': '📌'
+    Text: '💬',
+    Voice: '🔊',
+    Category: '📁',
+    News: '📢',
+    Stage: '🎭',
+    Forum: '💭',
+    PublicThread: '🧵',
+    PrivateThread: '🔒',
+    AnnouncementThread: '📌',
   };
   return icons[type] || '📄';
 }

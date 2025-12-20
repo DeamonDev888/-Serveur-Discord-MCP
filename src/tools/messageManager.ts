@@ -1,24 +1,15 @@
 import { z } from 'zod';
-import {
-  Message,
-  TextChannel,
-  DMChannel,
-  NewsChannel,
-  MessageReaction,
-  User,
-  GuildMember,
-  Collection
-} from 'discord.js';
+import { TextChannel, DMChannel, NewsChannel } from 'discord.js';
 
 // Schémas pour les opérations sur les messages
-export const SendMessageSchema = z.object({
+export const SendSchema = z.object({
   channelId: z.string().describe('ID du canal où envoyer le message'),
   content: z.string().describe('Contenu du message'),
   embeds: z.array(z.any()).optional().describe('Embeds à inclure (optionnel)'),
   components: z.array(z.any()).optional().describe('Composants à inclure (optionnel)'),
   files: z.array(z.string()).optional().describe('Chemins des fichiers à attacher (optionnel)'),
   replyTo: z.string().optional().describe('ID du message auquel répondre (optionnel)'),
-  mentionRepliedUser: z.boolean().optional().default(true).describe('Mentionner l\'utilisateur répondu')
+  mentionReplied: z.boolean().optional().default(true).describe("Mentionner l'utilisateur répondu"),
 });
 
 export const EditMessageSchema = z.object({
@@ -27,30 +18,36 @@ export const EditMessageSchema = z.object({
   content: z.string().optional().describe('Nouveau contenu du message'),
   embeds: z.array(z.any()).optional().describe('Nouveaux embeds'),
   components: z.array(z.any()).optional().describe('Nouveaux composants'),
-  attachments: z.array(z.any()).optional().describe('Nouveaux attachements')
+  attachments: z.array(z.any()).optional().describe('Nouveaux attachements'),
 });
 
 export const DeleteMessageSchema = z.object({
   channelId: z.string().describe('ID du canal du message'),
   messageId: z.string().describe('ID du message à supprimer'),
-  reason: z.string().optional().describe('Raison de la suppression (pour les logs)')
+  reason: z.string().optional().describe('Raison de la suppression (pour les logs)'),
 });
 
 export const ReadMessagesSchema = z.object({
   channelId: z.string().describe('ID du canal à lire'),
-  limit: z.number().min(1).max(100).optional().default(50).describe('Nombre de messages à récupérer (1-100)'),
+  limit: z
+    .number()
+    .min(1)
+    .max(100)
+    .optional()
+    .default(50)
+    .describe('Nombre de messages à récupérer (1-100)'),
   before: z.string().optional().describe('ID du message avant lequel récupérer'),
   after: z.string().optional().describe('ID du message après lequel récupérer'),
   around: z.string().optional().describe('ID du message autour duquel récupérer'),
   includeBots: z.boolean().optional().default(true).describe('Inclure les messages de bots'),
-  onlyPinned: z.boolean().optional().default(false).describe('Seulement les messages épinglés')
+  onlyPinned: z.boolean().optional().default(false).describe('Seulement les messages épinglés'),
 });
 
 export const AddReactionSchema = z.object({
   channelId: z.string().describe('ID du canal du message'),
   messageId: z.string().describe('ID du message à réagir'),
   emoji: z.string().describe('Emoji à ajouter (ex: 😊, :custom_emoji:, <:name:id>)'),
-  removeAfter: z.number().optional().describe('Retirer la réaction après X secondes (optionnel)')
+  removeAfter: z.number().optional().describe('Retirer la réaction après X secondes (optionnel)'),
 });
 
 // Types pour les résultats
@@ -92,7 +89,7 @@ export interface MessageHistoryResult {
 // Fonctions utilitaires
 export async function sendMessage(
   client: any,
-  params: z.infer<typeof SendMessageSchema>
+  params: z.infer<typeof SendSchema>
 ): Promise<{ success: boolean; message?: string; messageId?: string; error?: string }> {
   try {
     const channel = await client.channels.fetch(params.channelId);
@@ -104,8 +101,8 @@ export async function sendMessage(
     const options: any = {
       content: params.content,
       allowedMentions: {
-        repliedUser: params.mentionRepliedUser
-      }
+        repliedUser: params.mentionReplied,
+      },
     };
 
     // Ajouter les embeds si présents
@@ -120,8 +117,8 @@ export async function sendMessage(
 
     // Répondre à un message si spécifié
     if (params.replyTo) {
-      const replyToMessage = await (channel as TextChannel | DMChannel | NewsChannel)
-        .messages.fetch(params.replyTo)
+      const replyToMessage = await (channel as TextChannel | DMChannel | NewsChannel).messages
+        .fetch(params.replyTo)
         .catch(() => null);
 
       if (replyToMessage) {
@@ -135,12 +132,12 @@ export async function sendMessage(
     return {
       success: true,
       message: '✅ Message envoyé avec succès',
-      messageId: message.id
+      messageId: message.id,
     };
   } catch (error) {
     return {
       success: false,
-      error: `❌ Erreur lors de l'envoi: ${error}`
+      error: `❌ Erreur lors de l'envoi: ${error}`,
     };
   }
 }
@@ -156,8 +153,9 @@ export async function editMessage(
     }
 
     // Récupérer le message
-    const message = await (channel as TextChannel | DMChannel | NewsChannel)
-      .messages.fetch(params.messageId);
+    const message = await (channel as TextChannel | DMChannel | NewsChannel).messages.fetch(
+      params.messageId
+    );
 
     // Vérifier si le message peut être modifié
     if (message.author.id !== client.user?.id) {
@@ -190,7 +188,7 @@ export async function editMessage(
   } catch (error) {
     return {
       success: false,
-      error: `❌ Erreur lors de la modification: ${error}`
+      error: `❌ Erreur lors de la modification: ${error}`,
     };
   }
 }
@@ -206,8 +204,9 @@ export async function deleteMessage(
     }
 
     // Récupérer le message
-    const message = await (channel as TextChannel | DMChannel | NewsChannel)
-      .messages.fetch(params.messageId);
+    const message = await (channel as TextChannel | DMChannel | NewsChannel).messages.fetch(
+      params.messageId
+    );
 
     // Vérifier si le message peut être supprimé
     if (message.author.id !== client.user?.id && !message.deletable) {
@@ -219,12 +218,12 @@ export async function deleteMessage(
 
     return {
       success: true,
-      message: `✅ Message supprimé${params.reason ? ` (raison: ${params.reason})` : ''}`
+      message: `✅ Message supprimé${params.reason ? ` (raison: ${params.reason})` : ''}`,
     };
   } catch (error) {
     return {
       success: false,
-      error: `❌ Erreur lors de la suppression: ${error}`
+      error: `❌ Erreur lors de la suppression: ${error}`,
     };
   }
 }
@@ -241,7 +240,7 @@ export async function readMessages(
 
     // Préparer les options de récupération
     const fetchOptions: any = {
-      limit: params.limit
+      limit: params.limit,
     };
 
     if (params.before) fetchOptions.before = params.before;
@@ -249,9 +248,10 @@ export async function readMessages(
     if (params.around) fetchOptions.around = params.around;
 
     // Récupérer les messages
-    const fetchedMessages = await (channel as TextChannel | DMChannel | NewsChannel)
-      .messages.fetch(fetchOptions);
-    
+    const fetchedMessages = await (channel as TextChannel | DMChannel | NewsChannel).messages.fetch(
+      fetchOptions
+    );
+
     // Type checking for collection vs single message
     const messagesArray = Array.isArray(fetchedMessages)
       ? fetchedMessages
@@ -269,39 +269,43 @@ export async function readMessages(
     }
 
     // Formater les messages
-    const formattedMessages: MessageInfo[] = filteredMessages.map((msg: any): MessageInfo => ({
-      id: msg.id,
-      content: msg.content,
-      author: {
-        id: msg.author.id,
-        username: msg.author.username,
-        discriminator: msg.author.discriminator,
-        bot: msg.author.bot
-      },
-      timestamp: msg.createdAt.toISOString(),
-      editedTimestamp: msg.editedAt?.toISOString(),
-      attachments: msg.attachments.map((a: any) => a.url),
-      embeds: msg.embeds.length,
-      reactions: msg.reactions.cache.map((r: any): MessageInfo['reactions'][0] => ({
-        emoji: r.emoji.toString(),
-        count: r.count,
-        me: r.me
-      })),
-      pinned: msg.pinned,
-      channelType: (channel.type as any).toString(),
-      replyTo: msg.reference ? {
-        id: msg.reference.messageId!,
-        author: msg.author?.username || 'Unknown',
-        content: msg.content?.substring(0, 100) || ''
-      } : undefined
-    }));
+    const formattedMessages: MessageInfo[] = filteredMessages.map(
+      (msg: any): MessageInfo => ({
+        id: msg.id,
+        content: msg.content,
+        author: {
+          id: msg.author.id,
+          username: msg.author.username,
+          discriminator: msg.author.discriminator,
+          bot: msg.author.bot,
+        },
+        timestamp: msg.createdAt.toISOString(),
+        editedTimestamp: msg.editedAt?.toISOString(),
+        attachments: msg.attachments.map((a: any) => a.url),
+        embeds: msg.embeds.length,
+        reactions: msg.reactions.cache.map((r: any): MessageInfo['reactions'][0] => ({
+          emoji: r.emoji.toString(),
+          count: r.count,
+          me: r.me,
+        })),
+        pinned: msg.pinned,
+        channelType: (channel.type as any).toString(),
+        replyTo: msg.reference
+          ? {
+              id: msg.reference.messageId!,
+              author: msg.author?.username || 'Unknown',
+              content: msg.content?.substring(0, 100) || '',
+            }
+          : undefined,
+      })
+    );
 
     return {
       channelId: params.channelId,
       channelName: (channel as any).name || undefined,
       messageCount: formattedMessages.length,
       messages: formattedMessages,
-      hasMore: filteredMessages.length >= params.limit
+      hasMore: filteredMessages.length >= params.limit,
     };
   } catch (error) {
     throw new Error(`Erreur lors de la lecture: ${error}`);
@@ -319,8 +323,9 @@ export async function addReaction(
     }
 
     // Récupérer le message
-    const message = await (channel as TextChannel | DMChannel | NewsChannel)
-      .messages.fetch(params.messageId);
+    const message = await (channel as TextChannel | DMChannel | NewsChannel).messages.fetch(
+      params.messageId
+    );
 
     // Ajouter la réaction
     await message.react(params.emoji);
@@ -341,12 +346,12 @@ export async function addReaction(
 
     return {
       success: true,
-      message: `✅ Réaction ${params.emoji} ajoutée${params.removeAfter ? ` (retirée après ${params.removeAfter}s)` : ''}`
+      message: `✅ Réaction ${params.emoji} ajoutée${params.removeAfter ? ` (retirée après ${params.removeAfter}s)` : ''}`,
     };
   } catch (error) {
     return {
       success: false,
-      error: `❌ Erreur lors de l'ajout de la réaction: ${error}`
+      error: `❌ Erreur lors de l'ajout de la réaction: ${error}`,
     };
   }
 }
@@ -359,7 +364,7 @@ export function parseEmoji(emoji: string): { name?: string; id?: string; animate
     return {
       animated: customMatch[1] === 'a',
       name: customMatch[2],
-      id: customMatch[3]
+      id: customMatch[3],
     };
   }
 

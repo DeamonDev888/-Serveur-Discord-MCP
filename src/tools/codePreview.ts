@@ -4,57 +4,54 @@ import { z } from 'zod';
 export const CodePreviewSchema = z.object({
   channelId: z.string().describe('ID du canal où afficher le code'),
   code: z.string().describe('Code à afficher avec coloration syntaxique'),
-  language: z.string().describe('Langage de programmation (js, ts, py, bash, etc.)')
+  language: z.string().describe('Langage de programmation (js, ts, py, bash, etc.)'),
 });
 
 // Langages supportés avec leurs balises markdown
 export const SUPPORTED_LANGUAGES: { [key: string]: string } = {
-  'javascript': 'js',
-  'js': 'js',
-  'typescript': 'ts',
-  'ts': 'ts',
-  'python': 'py',
-  'py': 'py',
-  'diff': 'diff',
-  'markdown': 'md',
-  'md': 'md',
-  'json': 'json',
-  'yaml': 'yaml',
-  'bash': 'bash',
-  'shell': 'bash',
-  'sh': 'bash',
-  'css': 'css',
-  'html': 'html',
-  'xml': 'xml',
-  'sql': 'sql',
-  'java': 'java',
-  'c': 'c',
-  'cpp': 'cpp',
-  'csharp': 'cs',
-  'cs': 'cs',
-  'php': 'php',
-  'ruby': 'rb',
-  'go': 'go',
-  'rust': 'rs',
-  'kotlin': 'kt',
-  'swift': 'swift',
-  'r': 'r',
-  'scala': 'scala',
-  'perl': 'pl',
-  'lua': 'lua',
-  'vim': 'vim',
-  'dockerfile': 'dockerfile',
-  'makefile': 'makefile',
-  'ini': 'ini',
-  'toml': 'toml',
-  'properties': 'properties'
+  javascript: 'js',
+  js: 'js',
+  typescript: 'ts',
+  ts: 'ts',
+  python: 'py',
+  py: 'py',
+  diff: 'diff',
+  markdown: 'md',
+  md: 'md',
+  json: 'json',
+  yaml: 'yaml',
+  bash: 'bash',
+  shell: 'bash',
+  sh: 'bash',
+  css: 'css',
+  html: 'html',
+  xml: 'xml',
+  sql: 'sql',
+  java: 'java',
+  c: 'c',
+  cpp: 'cpp',
+  csharp: 'cs',
+  cs: 'cs',
+  php: 'php',
+  ruby: 'rb',
+  go: 'go',
+  rust: 'rs',
+  kotlin: 'kt',
+  swift: 'swift',
+  r: 'r',
+  scala: 'scala',
+  perl: 'pl',
+  lua: 'lua',
+  vim: 'vim',
+  dockerfile: 'dockerfile',
+  makefile: 'makefile',
+  ini: 'ini',
+  toml: 'toml',
+  properties: 'properties',
 };
 
 // Créer un ou plusieurs messages avec code (division automatique si trop long)
-export const createCodePreviewMessages = (
-  code: string,
-  language: string
-): string[] => {
+export const createCodePreviewMessages = (code: string, language: string): string[] => {
   // Normaliser le langage
   const normalizedLang = language.toLowerCase();
   const langTag = SUPPORTED_LANGUAGES[normalizedLang] || normalizedLang;
@@ -81,7 +78,10 @@ Lignes: ${lineCount}
   console.log('[CODE_PREVIEW] DEBUG - baseHeader.length:', baseHeader.length);
   console.log('[CODE_PREVIEW] DEBUG - footer.length:', footer.length);
   console.log('[CODE_PREVIEW] DEBUG - baseAvailableCodeLength:', baseAvailableCodeLength);
-  console.log('[CODE_PREVIEW] DEBUG - code.length <= baseAvailableCodeLength?', code.length <= baseAvailableCodeLength);
+  console.log(
+    '[CODE_PREVIEW] DEBUG - code.length <= baseAvailableCodeLength?',
+    code.length <= baseAvailableCodeLength
+  );
 
   // Si le code est assez petit, envoyer un seul message
   if (code.length <= baseAvailableCodeLength) {
@@ -128,7 +128,9 @@ Lignes: ${lineCount}
     }
   }
 
-  console.log(`[CODE_PREVIEW] Division: ${messages.length} message(s) créé(s) pour ${totalLength} caractères`);
+  console.log(
+    `[CODE_PREVIEW] Division: ${messages.length} message(s) créé(s) pour ${totalLength} caractères`
+  );
   return messages;
 };
 
@@ -138,5 +140,8 @@ export const createCodePreviewMessage = createCodePreviewMessages;
 // Valider le langage
 export const validateLanguage = (language: string): boolean => {
   const normalizedLang = language.toLowerCase();
-  return normalizedLang in SUPPORTED_LANGUAGES || Object.values(SUPPORTED_LANGUAGES).includes(normalizedLang);
+  return (
+    normalizedLang in SUPPORTED_LANGUAGES ||
+    Object.values(SUPPORTED_LANGUAGES).includes(normalizedLang)
+  );
 };

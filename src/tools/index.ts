@@ -16,7 +16,7 @@ export {
   getMimeTypeFromExtension,
   checkFileSize,
   createAttachmentFromFile,
-  createFileUploadEmbed
+  createFileUploadEmbed,
 } from './fileUpload';
 
 // Outils d'embeds
@@ -27,7 +27,13 @@ export { DISCORD_COLORS } from './embedBuilder';
 export { buildActionRows, BUTTON_STYLES } from './interactions';
 
 // Outils de gestion de messages
-export { sendMessage, editMessage, deleteMessage, readMessages, addReaction } from './messageManager';
+export {
+  sendMessage,
+  editMessage,
+  deleteMessage,
+  readMessages,
+  addReaction,
+} from './messageManager';
 
 // Outils de gestion de serveur
 export * from './serverInfo';
@@ -93,7 +99,7 @@ export type {
   DiscordId,
   DiscordColor,
   ErrorCode,
-  FormattedError
+  FormattedError,
 } from './types';
 
 // ============================================================================

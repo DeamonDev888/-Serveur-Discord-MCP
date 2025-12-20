@@ -22,7 +22,7 @@ export class Logger {
       debug: 0,
       info: 1,
       warn: 2,
-      error: 3
+      error: 3,
     };
     return levels[level] >= levels[this.logLevel];
   }
@@ -33,11 +33,13 @@ export class Logger {
 
     // Retirer les emojis et caractères spéciaux pour éviter les erreurs d'encodage MCP
     let cleanMessage = message.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}]/gu, '');
-    
+
     if (args.length > 0) {
       const cleanArgs = args.map(arg => {
         if (typeof arg === 'string') {
-          return arg.replace(/([A-Za-z0-9_-]{24,})\./g, '[TOKEN_HIDDEN].').replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}]/gu, '');
+          return arg
+            .replace(/([A-Za-z0-9_-]{24,})\./g, '[TOKEN_HIDDEN].')
+            .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}]/gu, '');
         }
         return arg;
       });
@@ -65,12 +67,11 @@ export class Logger {
     }
   }
 
-  error(message: string, error?: Error | any, ...args: any[]): void {
+  error(message: string, error?: Error | any): void {
     if (this.shouldLog('error')) {
       if (error instanceof Error) {
         process.stderr.write(
-          this.formatMessage('error', message) + 
-          (error.stack || error.message) + '\n'
+          this.formatMessage('error', message) + (error.stack || error.message) + '\n'
         );
       } else {
         process.stderr.write(this.formatMessage('error', message, error));

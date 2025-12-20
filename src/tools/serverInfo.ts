@@ -1,16 +1,18 @@
 import { z } from 'zod';
-import {
-  Guild,
-  Role,
-  PermissionFlagsBits,
-  ChannelType
-} from 'discord.js';
+import { PermissionFlagsBits, ChannelType } from 'discord.js';
 
 // Schéma pour les informations du serveur
 export const GetServerInfoSchema = z.object({
-  guildId: z.string().optional().describe('ID du serveur (optionnel, utilise le serveur par défaut)'),
-  includeFeatures: z.boolean().optional().default(true).describe('Inclure les fonctionnalités du serveur'),
-  includeStats: z.boolean().optional().default(true).describe('Inclure les statistiques')
+  guildId: z
+    .string()
+    .optional()
+    .describe('ID du serveur (optionnel, utilise le serveur par défaut)'),
+  includeFeatures: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe('Inclure les fonctionnalités du serveur'),
+  includeStats: z.boolean().optional().default(true).describe('Inclure les statistiques'),
 });
 
 // Types pour les résultats
@@ -86,22 +88,24 @@ export async function getServerInfo(
   const boostLevel = guild.premiumTier;
 
   // Récupérer les rôles
-  const roles = guild.roles.cache.map((role: any) => ({
-    id: role.id,
-    name: role.name,
-    color: role.hexColor,
-    position: role.position,
-    permissions: Object.keys(PermissionFlagsBits).filter(
-      (perm: any) => role.permissions.has(PermissionFlagsBits[perm as keyof typeof PermissionFlagsBits])
-    )
-  })).sort((a: any, b: any) => b.position - a.position);
+  const roles = guild.roles.cache
+    .map((role: any) => ({
+      id: role.id,
+      name: role.name,
+      color: role.hexColor,
+      position: role.position,
+      permissions: Object.keys(PermissionFlagsBits).filter((perm: any) =>
+        role.permissions.has(PermissionFlagsBits[perm as keyof typeof PermissionFlagsBits])
+      ),
+    }))
+    .sort((a: any, b: any) => b.position - a.position);
 
   // Récupérer les emojis
   const emojis = guild.emojis.cache.map((emoji: any) => ({
     name: emoji.name!,
     id: emoji.id,
     animated: emoji.animated,
-    available: emoji.available
+    available: emoji.available,
   }));
 
   // Récupérer les stickers
@@ -109,7 +113,7 @@ export async function getServerInfo(
     name: sticker.name,
     id: sticker.id,
     description: sticker.description,
-    tags: sticker.tags
+    tags: sticker.tags,
   }));
 
   // Compter les canaux par type
@@ -122,11 +126,12 @@ export async function getServerInfo(
     news: channels.filter((c: any) => c.type === ChannelType.GuildNews).size,
     stage: channels.filter((c: any) => c.type === ChannelType.GuildStageVoice).size,
     forum: channels.filter((c: any) => c.type === ChannelType.GuildForum).size,
-    threads: channels.filter((c: any) =>
-      c.type === ChannelType.PublicThread ||
-      c.type === ChannelType.PrivateThread ||
-      c.type === ChannelType.AnnouncementThread
-    ).size
+    threads: channels.filter(
+      (c: any) =>
+        c.type === ChannelType.PublicThread ||
+        c.type === ChannelType.PrivateThread ||
+        c.type === ChannelType.AnnouncementThread
+    ).size,
   };
 
   const serverInfo: ServerInfo = {
@@ -147,17 +152,17 @@ export async function getServerInfo(
     roles,
     emojis,
     stickers,
-    channels: channelCounts
+    channels: channelCounts,
   };
 
   // Ajouter les statistiques si demandées
   if (params.includeStats) {
-    const onlineMembers = guild.members.cache.filter((m: any) =>
-      m.presence?.status !== 'offline' && !m.user.bot
+    const onlineMembers = guild.members.cache.filter(
+      (m: any) => m.presence?.status !== 'offline' && !m.user.bot
     ).size;
 
     serverInfo.stats = {
-      onlineMembers
+      onlineMembers,
     };
   }
 
@@ -218,9 +223,10 @@ export function formatServerInfoMarkdown(info: ServerInfo): string {
   // Emojis
   if (info.emojis.length > 0) {
     output += `\n## 😀 Emojis (${info.emojis.length})\n`;
-    output += info.emojis.slice(0, 20).map(e =>
-      e.id ? `<${e.animated ? 'a' : ''}:${e.name}:${e.id}>` : e.name
-    ).join(' ');
+    output += info.emojis
+      .slice(0, 20)
+      .map(e => (e.id ? `<${e.animated ? 'a' : ''}:${e.name}:${e.id}>` : e.name))
+      .join(' ');
 
     if (info.emojis.length > 20) {
       output += ` ... et ${info.emojis.length - 20} autres`;

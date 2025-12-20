@@ -2,10 +2,7 @@ import { EventEmitter } from 'events';
 import { createInterface } from 'readline';
 import { spawn, ChildProcess } from 'child_process';
 
-import { dirname, join } from 'path';
-
-
-
+import { join } from 'path';
 
 // Types pour la communication
 interface BridgeMessage {
@@ -15,24 +12,11 @@ interface BridgeMessage {
   timestamp: number;
 }
 
-interface MCPCommand {
-  tool: string;
-  args: any;
-  requestId: string;
-}
-
-interface DiscordResponse {
-  success: boolean;
-  result?: any;
-  error?: string;
-  requestId: string;
-}
-
 // Pont de communication entre MCP et Discord
 export class DiscordBridge extends EventEmitter {
   private discordProcess: ChildProcess | null = null;
   private mcpProcess: ChildProcess | null = null;
-  private pendingRequests: Map<string, { resolve: Function; reject: Function; }> = new Map();
+  private pendingRequests: Map<string, { resolve: Function; reject: Function }> = new Map();
   private isDiscordConnected = false;
 
   constructor() {
@@ -46,11 +30,9 @@ export class DiscordBridge extends EventEmitter {
       console.log('🔗 Démarrage du processus Discord...');
 
       // Créer le processus Discord
-      this.discordProcess = spawn('node', [
-        join(__dirname, 'discordProcess.js')
-      ], {
+      this.discordProcess = spawn('node', [join(__dirname, 'discordProcess.js')], {
         stdio: ['pipe', 'pipe', 'pipe'],
-        env: process.env
+        env: process.env,
       });
 
       this.discordProcess.on('spawn', () => {
@@ -58,12 +40,12 @@ export class DiscordBridge extends EventEmitter {
         resolve();
       });
 
-      this.discordProcess.on('error', (error) => {
+      this.discordProcess.on('error', error => {
         console.error('❌ Erreur processus Discord:', error);
         reject(error);
       });
 
-      this.discordProcess.on('exit', (code) => {
+      this.discordProcess.on('exit', code => {
         console.log(`📡 Processus Discord terminé avec code ${code}`);
         this.isDiscordConnected = false;
       });
@@ -79,7 +61,7 @@ export class DiscordBridge extends EventEmitter {
             type: 'mcp_to_discord',
             id: 'connect',
             data: { action: 'connect', token },
-            timestamp: Date.now()
+            timestamp: Date.now(),
           });
         } else {
           console.error('❌ Token Discord non trouvé');
@@ -94,11 +76,9 @@ export class DiscordBridge extends EventEmitter {
       console.log('🔗 Démarrage du processus MCP...');
 
       // Créer le processus MCP avec le vrai index_secure
-      this.mcpProcess = spawn('node', [
-        join(__dirname, '../index_secure.js')
-      ], {
+      this.mcpProcess = spawn('node', [join(__dirname, '../index_secure.js')], {
         stdio: ['pipe', 'pipe', 'pipe'],
-        env: process.env
+        env: process.env,
       });
 
       this.mcpProcess.on('spawn', () => {
@@ -106,24 +86,24 @@ export class DiscordBridge extends EventEmitter {
         resolve();
       });
 
-      this.mcpProcess.on('error', (error) => {
+      this.mcpProcess.on('error', error => {
         console.error('❌ Erreur processus MCP:', error);
         reject(error);
       });
 
-      this.mcpProcess.on('exit', (code) => {
+      this.mcpProcess.on('exit', code => {
         console.log(`📡 Processus MCP terminé avec code ${code}`);
       });
 
       // Rediriger stdout/stderr du MCP pour les logs
       if (this.mcpProcess.stdout) {
-        this.mcpProcess.stdout.on('data', (data) => {
+        this.mcpProcess.stdout.on('data', data => {
           process.stdout.write(data);
         });
       }
 
       if (this.mcpProcess.stderr) {
-        this.mcpProcess.stderr.on('data', (data) => {
+        this.mcpProcess.stderr.on('data', data => {
           process.stderr.write(data);
         });
       }
@@ -136,7 +116,7 @@ export class DiscordBridge extends EventEmitter {
 
     const rl = createInterface({
       input: this.discordProcess.stdout!,
-      output: this.discordProcess.stdin!
+      output: this.discordProcess.stdin!,
     });
 
     // Envoyer des messages au processus Discord
@@ -147,7 +127,7 @@ export class DiscordBridge extends EventEmitter {
     };
 
     // Recevoir des messages du processus Discord
-    rl.on('line', (line) => {
+    rl.on('line', line => {
       try {
         const message: BridgeMessage = JSON.parse(line);
         this.handleDiscordMessage(message);
@@ -190,7 +170,7 @@ export class DiscordBridge extends EventEmitter {
         type: 'mcp_to_discord',
         id: requestId,
         data: { tool, args, requestId },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       // Timeout après 30 secondes

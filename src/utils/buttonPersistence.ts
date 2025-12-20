@@ -47,7 +47,7 @@ export async function loadCustomButtons(): Promise<Map<string, CustomButton>> {
     return buttonsMap;
   } catch (error) {
     // Si le fichier n'existe pas, créer un fichier vide
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
       console.log('📄 Aucun fichier de boutons existant, création du fichier...');
       await fs.writeFile(BUTTONS_FILE, JSON.stringify([], null, 2), 'utf-8');
       console.log('📄 Fichier de boutons créé, démarrage avec une Map vide');
@@ -71,17 +71,24 @@ export async function saveCustomButtons(buttons: Map<string, CustomButton>): Pro
     // Convertir les dates en strings pour la sérialisation JSON
     const buttonsToSave = buttonsArray.map(button => ({
       ...button,
-      createdAt: button.createdAt.toISOString()
+      createdAt: button.createdAt.toISOString(),
     }));
 
-    console.log(`[BUTTON_PERSISTENCE] Données à sauvegarder:`, JSON.stringify(buttonsToSave, null, 2));
+    console.log(
+      `[BUTTON_PERSISTENCE] Données à sauvegarder:`,
+      JSON.stringify(buttonsToSave, null, 2)
+    );
 
     await fs.writeFile(BUTTONS_FILE, JSON.stringify(buttonsToSave, null, 2), 'utf-8');
-    console.log(`[BUTTON_PERSISTENCE] ✅ ${buttons.size} boutons personnalisés sauvegardés dans le fichier`);
+    console.log(
+      `[BUTTON_PERSISTENCE] ✅ ${buttons.size} boutons personnalisés sauvegardés dans le fichier`
+    );
 
     // Vérifier que le fichier a été écrit
     const verifyData = await fs.readFile(BUTTONS_FILE, 'utf-8');
-    console.log(`[BUTTON_PERSISTENCE] Vérification - Taille du fichier: ${verifyData.length} caractères`);
+    console.log(
+      `[BUTTON_PERSISTENCE] Vérification - Taille du fichier: ${verifyData.length} caractères`
+    );
   } catch (error) {
     console.error('[BUTTON_PERSISTENCE] ❌ Erreur lors de la sauvegarde des boutons:', error);
     throw error;
@@ -89,19 +96,28 @@ export async function saveCustomButtons(buttons: Map<string, CustomButton>): Pro
 }
 
 // Ajouter un nouveau bouton
-export async function addCustomButton(button: CustomButton, buttons: Map<string, CustomButton>): Promise<void> {
+export async function addCustomButton(
+  button: CustomButton,
+  buttons: Map<string, CustomButton>
+): Promise<void> {
   buttons.set(button.id, button);
   await saveCustomButtons(buttons);
 }
 
 // Supprimer un bouton
-export async function deleteCustomButton(buttonId: string, buttons: Map<string, CustomButton>): Promise<void> {
+export async function deleteCustomButton(
+  buttonId: string,
+  buttons: Map<string, CustomButton>
+): Promise<void> {
   buttons.delete(buttonId);
   await saveCustomButtons(buttons);
 }
 
 // Obtenir un bouton par ID
-export function getCustomButton(buttonId: string, buttons: Map<string, CustomButton>): CustomButton | undefined {
+export function getCustomButton(
+  buttonId: string,
+  buttons: Map<string, CustomButton>
+): CustomButton | undefined {
   return buttons.get(buttonId);
 }
 

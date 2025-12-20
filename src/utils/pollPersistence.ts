@@ -39,7 +39,7 @@ export async function loadPolls(): Promise<Map<string, PollResult>> {
     return pollsMap;
   } catch (error) {
     // Si le fichier n'existe pas, créer un fichier vide
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
       console.log('📄 Aucun fichier de sondages existant, création du fichier...');
       await fs.writeFile(POLLS_FILE, JSON.stringify([], null, 2), 'utf-8');
       console.log('📄 Fichier de sondages créé, démarrage avec une Map vide');
@@ -62,7 +62,7 @@ export async function savePolls(polls: Map<string, PollResult>): Promise<void> {
     // Convertir les dates en strings pour la sérialisation JSON
     const pollsToSave = pollsArray.map(poll => ({
       ...poll,
-      endTime: poll.endTime.toISOString()
+      endTime: poll.endTime.toISOString(),
     }));
 
     await fs.writeFile(POLLS_FILE, JSON.stringify(pollsToSave, null, 2), 'utf-8');
@@ -80,7 +80,11 @@ export async function addPoll(poll: PollResult, polls: Map<string, PollResult>):
 }
 
 // Mettre à jour un sondage existant
-export async function updatePoll(pollId: string, updates: Partial<PollResult>, polls: Map<string, PollResult>): Promise<void> {
+export async function updatePoll(
+  pollId: string,
+  updates: Partial<PollResult>,
+  polls: Map<string, PollResult>
+): Promise<void> {
   const poll = polls.get(pollId);
   if (poll) {
     Object.assign(poll, updates);
@@ -118,7 +122,7 @@ export async function cleanExpiredPolls(polls: Map<string, PollResult>): Promise
   const now = new Date();
   let expiredCount = 0;
 
-  for (const [pollId, poll] of polls.entries()) {
+  for (const [, poll] of polls.entries()) {
     if (poll.endTime <= now && !poll.ended) {
       poll.ended = true;
       expiredCount++;

@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import {
   ButtonStyle,
-  ComponentType,
   TextInputStyle,
   ActionRowBuilder,
   ButtonBuilder,
@@ -11,7 +10,7 @@ import {
   ChannelSelectMenuBuilder,
   MentionableSelectMenuBuilder,
   ModalBuilder,
-  TextInputBuilder
+  TextInputBuilder,
 } from 'discord.js';
 
 // Types de composants supportés
@@ -21,58 +20,81 @@ export const COMPONENT_TYPES = {
   USER_SELECT: 'user_select',
   ROLE_SELECT: 'role_select',
   CHANNEL_SELECT: 'channel_select',
-  MENTIONABLE_SELECT: 'mentionable_select'
+  MENTIONABLE_SELECT: 'mentionable_select',
 } as const;
 
 // Styles de boutons
 export const BUTTON_STYLES = {
-  PRIMARY: ButtonStyle.Primary,      // Bleu
-  SECONDARY: ButtonStyle.Secondary,  // Gris
-  SUCCESS: ButtonStyle.Success,      // Vert
-  DANGER: ButtonStyle.Danger,        // Rouge
-  LINK: ButtonStyle.Link            // Lien (gris, icône de lien)
+  PRIMARY: ButtonStyle.Primary, // Bleu
+  SECONDARY: ButtonStyle.Secondary, // Gris
+  SUCCESS: ButtonStyle.Success, // Vert
+  DANGER: ButtonStyle.Danger, // Rouge
+  LINK: ButtonStyle.Link, // Lien (gris, icône de lien)
 } as const;
 
 // Styles de champs de texte
 export const INPUT_STYLES = {
-  SHORT: TextInputStyle.Short,       // Ligne simple
-  PARAGRAPH: TextInputStyle.Paragraph // Zone de texte multiligne
+  SHORT: TextInputStyle.Short, // Ligne simple
+  PARAGRAPH: TextInputStyle.Paragraph, // Zone de texte multiligne
 } as const;
 
 // Schéma pour les boutons
-export const ButtonSchema = z.object({
-  type: z.literal(COMPONENT_TYPES.BUTTON),
-  label: z.string().min(1).max(80).describe('Texte du bouton'),
-  style: z.nativeEnum(BUTTON_STYLES).default(BUTTON_STYLES.PRIMARY).describe('Style du bouton'),
-  emoji: z.string().optional().describe('Emoji du bouton'),
-  customId: z.string().optional().describe('ID personnalisé (requis sauf pour les liens)'),
-  url: z.string().url().optional().describe('URL (requis pour les boutons de type lien)'),
-  disabled: z.boolean().optional().default(false).describe('Désactiver le bouton')
-}).refine(data => {
-  if (data.style === BUTTON_STYLES.LINK) {
-    return !!data.url && !data.customId;
-  } else {
-    return !!data.customId && !data.url;
-  }
-}, {
-  message: "Les boutons de type lien nécessitent une URL, les autres nécessitent un customId"
-});
+export const ButtonSchema = z
+  .object({
+    type: z.literal(COMPONENT_TYPES.BUTTON),
+    label: z.string().min(1).max(80).describe('Texte du bouton'),
+    style: z.nativeEnum(BUTTON_STYLES).default(BUTTON_STYLES.PRIMARY).describe('Style du bouton'),
+    emoji: z.string().optional().describe('Emoji du bouton'),
+    customId: z.string().optional().describe('ID personnalisé (requis sauf pour les liens)'),
+    url: z.string().url().optional().describe('URL (requis pour les boutons de type lien)'),
+    disabled: z.boolean().optional().default(false).describe('Désactiver le bouton'),
+  })
+  .refine(
+    data => {
+      if (data.style === BUTTON_STYLES.LINK) {
+        return !!data.url && !data.customId;
+      } else {
+        return !!data.customId && !data.url;
+      }
+    },
+    {
+      message: 'Les boutons de type lien nécessitent une URL, les autres nécessitent un customId',
+    }
+  );
 
 // Schéma pour les menus de sélection de chaînes
 export const StringSelectSchema = z.object({
   type: z.literal(COMPONENT_TYPES.STRING_SELECT),
   customId: z.string().describe('ID personnalisé du menu'),
   placeholder: z.string().max(150).optional().describe('Texte placeholder'),
-  minValues: z.number().min(0).max(25).optional().default(1).describe('Nombre minimum de sélections'),
-  maxValues: z.number().min(1).max(25).optional().default(1).describe('Nombre maximum de sélections'),
+  minValues: z
+    .number()
+    .min(0)
+    .max(25)
+    .optional()
+    .default(1)
+    .describe('Nombre minimum de sélections'),
+  maxValues: z
+    .number()
+    .min(1)
+    .max(25)
+    .optional()
+    .default(1)
+    .describe('Nombre maximum de sélections'),
   disabled: z.boolean().optional().default(false).describe('Désactiver le menu'),
-  options: z.array(z.object({
-    label: z.string().min(1).max(100).describe('Texte de l\'option'),
-    value: z.string().max(100).describe('Valeur de l\'option'),
-    description: z.string().max(100).optional().describe('Description de l\'option'),
-    emoji: z.string().optional().describe('Emoji de l\'option'),
-    default: z.boolean().optional().default(false).describe('Sélectionnée par défaut')
-  })).min(1).max(25).describe('Options du menu (1-25)')
+  options: z
+    .array(
+      z.object({
+        label: z.string().min(1).max(100).describe("Texte de l'option"),
+        value: z.string().max(100).describe("Valeur de l'option"),
+        description: z.string().max(100).optional().describe("Description de l'option"),
+        emoji: z.string().optional().describe("Emoji de l'option"),
+        default: z.boolean().optional().default(false).describe('Sélectionnée par défaut'),
+      })
+    )
+    .min(1)
+    .max(25)
+    .describe('Options du menu (1-25)'),
 });
 
 // Schéma pour les sélecteurs d'utilisateurs
@@ -80,10 +102,22 @@ export const UserSelectSchema = z.object({
   type: z.literal(COMPONENT_TYPES.USER_SELECT),
   customId: z.string().describe('ID personnalisé du menu'),
   placeholder: z.string().max(150).optional().describe('Texte placeholder'),
-  minValues: z.number().min(0).max(25).optional().default(1).describe('Nombre minimum de sélections'),
-  maxValues: z.number().min(1).max(25).optional().default(1).describe('Nombre maximum de sélections'),
+  minValues: z
+    .number()
+    .min(0)
+    .max(25)
+    .optional()
+    .default(1)
+    .describe('Nombre minimum de sélections'),
+  maxValues: z
+    .number()
+    .min(1)
+    .max(25)
+    .optional()
+    .default(1)
+    .describe('Nombre maximum de sélections'),
   disabled: z.boolean().optional().default(false).describe('Désactiver le menu'),
-  defaultUsers: z.array(z.string()).optional().describe('Utilisateurs sélectionnés par défaut')
+  defaultUsers: z.array(z.string()).optional().describe('Utilisateurs sélectionnés par défaut'),
 });
 
 // Schéma pour les sélecteurs de rôles
@@ -91,10 +125,22 @@ export const RoleSelectSchema = z.object({
   type: z.literal(COMPONENT_TYPES.ROLE_SELECT),
   customId: z.string().describe('ID personnalisé du menu'),
   placeholder: z.string().max(150).optional().describe('Texte placeholder'),
-  minValues: z.number().min(0).max(25).optional().default(1).describe('Nombre minimum de sélections'),
-  maxValues: z.number().min(1).max(25).optional().default(1).describe('Nombre maximum de sélections'),
+  minValues: z
+    .number()
+    .min(0)
+    .max(25)
+    .optional()
+    .default(1)
+    .describe('Nombre minimum de sélections'),
+  maxValues: z
+    .number()
+    .min(1)
+    .max(25)
+    .optional()
+    .default(1)
+    .describe('Nombre maximum de sélections'),
   disabled: z.boolean().optional().default(false).describe('Désactiver le menu'),
-  defaultRoles: z.array(z.string()).optional().describe('Rôles sélectionnés par défaut')
+  defaultRoles: z.array(z.string()).optional().describe('Rôles sélectionnés par défaut'),
 });
 
 // Schéma pour les sélecteurs de salons
@@ -102,11 +148,23 @@ export const ChannelSelectSchema = z.object({
   type: z.literal(COMPONENT_TYPES.CHANNEL_SELECT),
   customId: z.string().describe('ID personnalisé du menu'),
   placeholder: z.string().max(150).optional().describe('Texte placeholder'),
-  minValues: z.number().min(0).max(25).optional().default(1).describe('Nombre minimum de sélections'),
-  maxValues: z.number().min(1).max(25).optional().default(1).describe('Nombre maximum de sélections'),
+  minValues: z
+    .number()
+    .min(0)
+    .max(25)
+    .optional()
+    .default(1)
+    .describe('Nombre minimum de sélections'),
+  maxValues: z
+    .number()
+    .min(1)
+    .max(25)
+    .optional()
+    .default(1)
+    .describe('Nombre maximum de sélections'),
   disabled: z.boolean().optional().default(false).describe('Désactiver le menu'),
   channelTypes: z.array(z.number()).optional().describe('Types de canaux autorisés'),
-  defaultChannels: z.array(z.string()).optional().describe('Canaux sélectionnés par défaut')
+  defaultChannels: z.array(z.string()).optional().describe('Canaux sélectionnés par défaut'),
 });
 
 // Schéma pour les sélecteurs mentionnables
@@ -114,30 +172,59 @@ export const MentionableSelectSchema = z.object({
   type: z.literal(COMPONENT_TYPES.MENTIONABLE_SELECT),
   customId: z.string().describe('ID personnalisé du menu'),
   placeholder: z.string().max(150).optional().describe('Texte placeholder'),
-  minValues: z.number().min(0).max(25).optional().default(1).describe('Nombre minimum de sélections'),
-  maxValues: z.number().min(1).max(25).optional().default(1).describe('Nombre maximum de sélections'),
+  minValues: z
+    .number()
+    .min(0)
+    .max(25)
+    .optional()
+    .default(1)
+    .describe('Nombre minimum de sélections'),
+  maxValues: z
+    .number()
+    .min(1)
+    .max(25)
+    .optional()
+    .default(1)
+    .describe('Nombre maximum de sélections'),
   disabled: z.boolean().optional().default(false).describe('Désactiver le menu'),
-  defaultValues: z.array(z.object({
-    id: z.string(),
-    type: z.enum(['user', 'role'])
-  })).optional().describe('Valeurs sélectionnées par défaut')
+  defaultValues: z
+    .array(
+      z.object({
+        id: z.string(),
+        type: z.enum(['user', 'role']),
+      })
+    )
+    .optional()
+    .describe('Valeurs sélectionnées par défaut'),
 });
 
 // Schéma pour les modals (fenêtres de saisie)
 export const ModalSchema = z.object({
   title: z.string().min(1).max(45).describe('Titre de la modal'),
   customId: z.string().describe('ID personnalisé de la modal'),
-  components: z.array(z.object({
-    type: z.literal('text_input'),
-    customId: z.string().describe('ID du champ'),
-    label: z.string().min(1).max(45).describe('Étiquette du champ'),
-    placeholder: z.string().max(4000).optional().describe('Texte placeholder'),
-    style: z.nativeEnum(INPUT_STYLES).default(INPUT_STYLES.SHORT).describe('Style du champ'),
-    minLength: z.number().min(0).max(4000).optional().describe('Longueur minimale'),
-    maxLength: z.number().min(1).max(4000).optional().default(4000).describe('Longueur maximale'),
-    required: z.boolean().optional().default(true).describe('Champ requis'),
-    value: z.string().optional().describe('Valeur par défaut')
-  })).min(1).max(5).describe('Champs de la modal (1-5)')
+  components: z
+    .array(
+      z.object({
+        type: z.literal('text_input'),
+        customId: z.string().describe('ID du champ'),
+        label: z.string().min(1).max(45).describe('Étiquette du champ'),
+        placeholder: z.string().max(4000).optional().describe('Texte placeholder'),
+        style: z.nativeEnum(INPUT_STYLES).default(INPUT_STYLES.SHORT).describe('Style du champ'),
+        minLength: z.number().min(0).max(4000).optional().describe('Longueur minimale'),
+        maxLength: z
+          .number()
+          .min(1)
+          .max(4000)
+          .optional()
+          .default(4000)
+          .describe('Longueur maximale'),
+        required: z.boolean().optional().default(true).describe('Champ requis'),
+        value: z.string().optional().describe('Valeur par défaut'),
+      })
+    )
+    .min(1)
+    .max(5)
+    .describe('Champs de la modal (1-5)'),
 });
 
 // Schéma principal pour les composants interactifs
@@ -145,14 +232,19 @@ export const InteractionSchema = z.object({
   channelId: z.string().describe('ID du canal où envoyer les composants'),
   content: z.string().optional().describe('Message de texte'),
   embeds: z.array(z.any()).optional().describe('Embeds à inclure'),
-  components: z.array(z.union([
-    ButtonSchema,
-    StringSelectSchema,
-    UserSelectSchema,
-    RoleSelectSchema,
-    ChannelSelectSchema,
-    MentionableSelectSchema
-  ])).max(5).describe('Composants (max 5 rangées de 5 composants)')
+  components: z
+    .array(
+      z.union([
+        ButtonSchema,
+        StringSelectSchema,
+        UserSelectSchema,
+        RoleSelectSchema,
+        ChannelSelectSchema,
+        MentionableSelectSchema,
+      ])
+    )
+    .max(5)
+    .describe('Composants (max 5 rangées de 5 composants)'),
 });
 
 // Construire un bouton
@@ -178,7 +270,9 @@ export const buildButton = (data: z.infer<typeof ButtonSchema>): ButtonBuilder =
 };
 
 // Construire un menu de sélection de chaînes
-export const buildStringSelect = (data: z.infer<typeof StringSelectSchema>): StringSelectMenuBuilder => {
+export const buildStringSelect = (
+  data: z.infer<typeof StringSelectSchema>
+): StringSelectMenuBuilder => {
   const menu = new StringSelectMenuBuilder()
     .setCustomId(data.customId)
     .setPlaceholder(data.placeholder || '')
@@ -192,7 +286,7 @@ export const buildStringSelect = (data: z.infer<typeof StringSelectSchema>): Str
       value: option.value,
       description: option.description,
       emoji: option.emoji,
-      default: option.default
+      default: option.default,
     });
   });
 
@@ -222,7 +316,9 @@ export const buildRoleSelect = (data: z.infer<typeof RoleSelectSchema>): RoleSel
 };
 
 // Construire un sélecteur de salons
-export const buildChannelSelect = (data: z.infer<typeof ChannelSelectSchema>): ChannelSelectMenuBuilder => {
+export const buildChannelSelect = (
+  data: z.infer<typeof ChannelSelectSchema>
+): ChannelSelectMenuBuilder => {
   return new ChannelSelectMenuBuilder()
     .setCustomId(data.customId)
     .setPlaceholder(data.placeholder || '')
@@ -234,7 +330,9 @@ export const buildChannelSelect = (data: z.infer<typeof ChannelSelectSchema>): C
 };
 
 // Construire un sélecteur mentionnable
-export const buildMentionableSelect = (data: z.infer<typeof MentionableSelectSchema>): MentionableSelectMenuBuilder => {
+export const buildMentionableSelect = (
+  data: z.infer<typeof MentionableSelectSchema>
+): MentionableSelectMenuBuilder => {
   return new MentionableSelectMenuBuilder()
     .setCustomId(data.customId)
     .setPlaceholder(data.placeholder || '')
@@ -246,9 +344,7 @@ export const buildMentionableSelect = (data: z.infer<typeof MentionableSelectSch
 
 // Construire une modal
 export const buildModal = (data: z.infer<typeof ModalSchema>): ModalBuilder => {
-  const modal = new ModalBuilder()
-    .setTitle(data.title)
-    .setCustomId(data.customId);
+  const modal = new ModalBuilder().setTitle(data.title).setCustomId(data.customId);
 
   data.components.forEach(component => {
     const textInput = new TextInputBuilder()
@@ -282,22 +378,30 @@ export const buildActionRows = (components: any[]): any[] => {
           currentButtons = [];
         }
         break;
-      default:
+      default: {
         if (currentButtons.length > 0) {
           rows.push(new ActionRowBuilder<ButtonBuilder>().addComponents(currentButtons));
           currentButtons = [];
         }
-        
-        const builder = component.type === COMPONENT_TYPES.STRING_SELECT ? buildStringSelect(component) :
-                        component.type === COMPONENT_TYPES.USER_SELECT ? buildUserSelect(component) :
-                        component.type === COMPONENT_TYPES.ROLE_SELECT ? buildRoleSelect(component) :
-                        component.type === COMPONENT_TYPES.CHANNEL_SELECT ? buildChannelSelect(component) :
-                        component.type === COMPONENT_TYPES.MENTIONABLE_SELECT ? buildMentionableSelect(component) : null;
-        
+
+        const builder =
+          component.type === COMPONENT_TYPES.STRING_SELECT
+            ? buildStringSelect(component)
+            : component.type === COMPONENT_TYPES.USER_SELECT
+              ? buildUserSelect(component)
+              : component.type === COMPONENT_TYPES.ROLE_SELECT
+                ? buildRoleSelect(component)
+                : component.type === COMPONENT_TYPES.CHANNEL_SELECT
+                  ? buildChannelSelect(component)
+                  : component.type === COMPONENT_TYPES.MENTIONABLE_SELECT
+                    ? buildMentionableSelect(component)
+                    : null;
+
         if (builder) {
           rows.push(new ActionRowBuilder<any>().addComponents(builder));
         }
         break;
+      }
     }
   });
 
@@ -317,7 +421,7 @@ export const validateComponents = (components: any[]): { valid: boolean; errors:
   }
 
   // Vérifier chaque rangée
-  components.forEach((row, rowIndex) => {
+  components.forEach(row => {
     if (row.type === COMPONENT_TYPES.BUTTON) {
       // Les rangées de boutons ne peuvent pas dépasser 5 éléments
       // (c'est géré automatiquement par buildActionRows)
@@ -331,6 +435,6 @@ export const validateComponents = (components: any[]): { valid: boolean; errors:
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 };

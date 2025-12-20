@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, TextChannel } from 'discord.js';
+import { Client, GatewayIntentBits } from 'discord.js';
 import { config } from 'dotenv';
 
 // Charger les variables d'environnement
@@ -19,12 +19,9 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildPresences,
-    GatewayIntentBits.GuildMessageReactions
-  ]
+    GatewayIntentBits.GuildMessageReactions,
+  ],
 });
-
-// État du processus
-let isConnected = false;
 
 // Gestionnaire de communication
 const handleCommand = async (command: any): Promise<void> => {
@@ -32,16 +29,17 @@ const handleCommand = async (command: any): Promise<void> => {
     switch (command.action) {
       case 'connect':
         await client.login(command.token);
-        isConnected = true;
         console.log('✅ Bot Discord connecté avec succès');
 
         // Envoyer confirmation au MCP
-        process.stdout.write(JSON.stringify({
-          type: 'discord_to_mcp',
-          id: 'connect_response',
-          data: { success: true, message: 'Bot connecté' },
-          timestamp: Date.now()
-        }) + '\n');
+        process.stdout.write(
+          JSON.stringify({
+            type: 'discord_to_mcp',
+            id: 'connect_response',
+            data: { success: true, message: 'Bot connecté' },
+            timestamp: Date.now(),
+          }) + '\n'
+        );
         break;
 
       case 'send_message':
@@ -74,32 +72,36 @@ const handleCommand = async (command: any): Promise<void> => {
 
     // Envoyer confirmation de succès
     if (command.requestId) {
-      process.stdout.write(JSON.stringify({
-        type: 'discord_to_mcp',
-        id: 'response',
-        data: {
-          success: true,
-          requestId: command.requestId,
-          message: 'Commande exécutée avec succès'
-        },
-        timestamp: Date.now()
-      }) + '\n');
+      process.stdout.write(
+        JSON.stringify({
+          type: 'discord_to_mcp',
+          id: 'response',
+          data: {
+            success: true,
+            requestId: command.requestId,
+            message: 'Commande exécutée avec succès',
+          },
+          timestamp: Date.now(),
+        }) + '\n'
+      );
     }
   } catch (error) {
-    console.error('❌ Erreur lors de l\'exécution de la commande:', error);
+    console.error("❌ Erreur lors de l'exécution de la commande:", error);
 
     // Envoyer l'erreur au MCP
     if (command.requestId) {
-      process.stdout.write(JSON.stringify({
-        type: 'discord_to_mcp',
-        id: 'error',
-        data: {
-          success: false,
-          requestId: command.requestId,
-          error: error instanceof Error ? error.message : String(error)
-        },
-        timestamp: Date.now()
-      }) + '\n');
+      process.stdout.write(
+        JSON.stringify({
+          type: 'discord_to_mcp',
+          id: 'error',
+          data: {
+            success: false,
+            requestId: command.requestId,
+            error: error instanceof Error ? error.message : String(error),
+          },
+          timestamp: Date.now(),
+        }) + '\n'
+      );
     }
   }
 };
@@ -138,10 +140,12 @@ async function readMessages(args: any): Promise<void> {
 
   const messages = await channel.messages.fetch({ limit });
 
-  let output = `# 📜 Messages récents (${messages.size})\n\n`;
+  console.log(`# 📜 Messages récents (${messages.size})`);
   messages.forEach((msg, index) => {
-    output += `${index + 1}. **${msg.author.username}** - <t:${Math.floor(msg.createdTimestamp / 1000)}:R>\n`;
-    output += `   ${msg.content}\n\n`;
+    console.log(
+      `${index + 1}. **${msg.author.username}** - <t:${Math.floor(msg.createdTimestamp / 1000)}:R>`
+    );
+    console.log(`   ${msg.content}\n`);
   });
 
   console.log(`Messages lus du canal ${channelId}: ${messages.size} messages`);
@@ -181,7 +185,7 @@ async function addReaction(args: any): Promise<void> {
 
 // Lecteur stdin pour les commandes du MCP
 process.stdin.setEncoding('utf8');
-process.stdin.on('data', (data) => {
+process.stdin.on('data', data => {
   const lines = data.toString().trim().split('\n');
   lines.forEach(line => {
     if (line.trim()) {
@@ -200,31 +204,32 @@ process.stdin.on('data', (data) => {
 // Gestion du client Discord
 client.on('ready', () => {
   console.log(`Bot Discord prêt: ${client.user?.tag}`);
-  isConnected = true;
 });
 
-client.on('messageCreate', (message) => {
+client.on('messageCreate', message => {
   if (message.author.bot) return;
 
   // Envoyer les messages au MCP pour traitement
-  process.stdout.write(JSON.stringify({
-    type: 'discord_to_mcp',
-    id: 'new_message',
-    data: {
-      channelId: message.channelId,
-      messageId: message.id,
-      content: message.content,
-      author: {
-        id: message.author.id,
-        username: message.author.username,
-        discriminator: message.author.discriminator
+  process.stdout.write(
+    JSON.stringify({
+      type: 'discord_to_mcp',
+      id: 'new_message',
+      data: {
+        channelId: message.channelId,
+        messageId: message.id,
+        content: message.content,
+        author: {
+          id: message.author.id,
+          username: message.author.username,
+          discriminator: message.author.discriminator,
+        },
+        timestamp: message.createdTimestamp,
       },
-      timestamp: message.createdTimestamp
-    }
-  }) + '\n');
+    }) + '\n'
+  );
 });
 
-client.on('error', (error) => {
+client.on('error', error => {
   console.error('Erreur client Discord:', error);
 });
 

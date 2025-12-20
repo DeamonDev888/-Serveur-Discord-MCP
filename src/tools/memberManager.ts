@@ -1,18 +1,28 @@
 import { z } from 'zod';
-import {
-  GuildMember,
-  PermissionFlagsBits,
-  PresenceStatus
-} from 'discord.js';
+import { PermissionFlagsBits, PresenceStatus } from 'discord.js';
 
 // Schéma pour lister les membres
 export const ListMembersSchema = z.object({
   guildId: z.string().optional().describe('ID du serveur (optionnel)'),
-  limit: z.number().min(1).max(1000).optional().default(100).describe('Nombre maximum de membres (1-1000)'),
-  filter: z.enum(['all', 'online', 'offline', 'bots', 'humans', 'verified', 'unverified']).optional().default('all').describe('Filtrer les membres'),
+  limit: z
+    .number()
+    .min(1)
+    .max(1000)
+    .optional()
+    .default(100)
+    .describe('Nombre maximum de membres (1-1000)'),
+  filter: z
+    .enum(['all', 'online', 'offline', 'bots', 'humans', 'verified', 'unverified'])
+    .optional()
+    .default('all')
+    .describe('Filtrer les membres'),
   searchRole: z.string().optional().describe('Nom ou ID du rôle pour filtrer'),
-  sortBy: z.enum(['joined', 'username', 'id']).optional().default('joined').describe('Tri des membres'),
-  order: z.enum(['asc', 'desc']).optional().default('desc').describe('Ordre de tri')
+  sortBy: z
+    .enum(['joined', 'username', 'id'])
+    .optional()
+    .default('joined')
+    .describe('Tri des membres'),
+  order: z.enum(['asc', 'desc']).optional().default('desc').describe('Ordre de tri'),
 });
 
 // Types pour les résultats
@@ -123,8 +133,8 @@ export async function listMembers(
 
   // Filtrer par rôle
   if (params.searchRole) {
-    const role = guild.roles.cache.find((r: any) =>
-      r.name === params.searchRole || r.id === params.searchRole
+    const role = guild.roles.cache.find(
+      (r: any) => r.name === params.searchRole || r.id === params.searchRole
     );
     if (role) {
       members = members.filter((m: any) => m.roles.cache.has(role.id));
@@ -166,7 +176,7 @@ export async function listMembers(
       system: member.user.system || false,
       verified: (member.user as any).verified ?? false,
       mfaEnabled: (member.user as any).mfaEnabled ?? false,
-      locale: (member.user as any).locale ?? 'fr'
+      locale: (member.user as any).locale ?? 'fr',
     },
     joinedAt: member.joinedAt?.toISOString() || '',
     premiumSince: member.premiumSince?.toISOString(),
@@ -178,46 +188,55 @@ export async function listMembers(
       position: role.position,
       hoist: role.hoist,
       mentionable: role.mentionable,
-      permissions: Object.keys(PermissionFlagsBits).filter(
-        (perm: any) => role.permissions.has(PermissionFlagsBits[perm as keyof typeof PermissionFlagsBits])
-      )
+      permissions: Object.keys(PermissionFlagsBits).filter((perm: any) =>
+        role.permissions.has(PermissionFlagsBits[perm as keyof typeof PermissionFlagsBits])
+      ),
     })),
-    permissions: Object.keys(PermissionFlagsBits).filter(
-      (perm: any) => member.permissions.has(PermissionFlagsBits[perm as keyof typeof PermissionFlagsBits])
+    permissions: Object.keys(PermissionFlagsBits).filter((perm: any) =>
+      member.permissions.has(PermissionFlagsBits[perm as keyof typeof PermissionFlagsBits])
     ),
     highestRole: member.roles.highest.name,
-    presence: member.presence ? {
-      status: member.presence.status as PresenceStatus,
-      activities: member.presence.activities.map((activity: any) => ({
-        name: activity.name,
-        type: activity.type,
-        details: activity.details || undefined,
-        state: activity.state || undefined,
-        emoji: activity.emoji ? {
-          name: activity.emoji.name!,
-          id: activity.emoji.id || undefined,
-          animated: activity.emoji.animated || false
-        } : undefined,
-        timestamps: activity.timestamps ? {
-          start: activity.timestamps.start?.getTime(),
-          end: activity.timestamps.end?.getTime()
-        } : undefined
-      }))
-    } : undefined,
+    presence: member.presence
+      ? {
+          status: member.presence.status as PresenceStatus,
+          activities: member.presence.activities.map((activity: any) => ({
+            name: activity.name,
+            type: activity.type,
+            details: activity.details || undefined,
+            state: activity.state || undefined,
+            emoji: activity.emoji
+              ? {
+                  name: activity.emoji.name!,
+                  id: activity.emoji.id || undefined,
+                  animated: activity.emoji.animated || false,
+                }
+              : undefined,
+            timestamps: activity.timestamps
+              ? {
+                  start: activity.timestamps.start?.getTime(),
+                  end: activity.timestamps.end?.getTime(),
+                }
+              : undefined,
+          })),
+        }
+      : undefined,
     isOwner: member.id === guild.ownerId,
     isAdmin: member.permissions.has(PermissionFlagsBits.Administrator),
-    isModerator: member.permissions.has(PermissionFlagsBits.KickMembers) ||
-                  member.permissions.has(PermissionFlagsBits.BanMembers),
+    isModerator:
+      member.permissions.has(PermissionFlagsBits.KickMembers) ||
+      member.permissions.has(PermissionFlagsBits.BanMembers),
     isBoosting: !!member.premiumSince,
-    voiceState: member.voice ? {
-      channelId: member.voice.channelId || undefined,
-      mute: member.voice.mute,
-      deaf: member.voice.deaf,
-      selfMute: member.voice.selfMute,
-      selfDeaf: member.voice.selfDeaf,
-      streaming: member.voice.streaming,
-      suppress: member.voice.suppress
-    } : undefined
+    voiceState: member.voice
+      ? {
+          channelId: member.voice.channelId || undefined,
+          mute: member.voice.mute,
+          deaf: member.voice.deaf,
+          selfMute: member.voice.selfMute,
+          selfDeaf: member.voice.selfDeaf,
+          streaming: member.voice.streaming,
+          suppress: member.voice.suppress,
+        }
+      : undefined,
   }));
 }
 
@@ -228,9 +247,7 @@ export function formatMembersMarkdown(members: MemberInfo[]): string {
   // Statistiques
   const bots = members.filter(m => m.user.bot).length;
   const humans = members.filter(m => !m.user.bot).length;
-  const online = members.filter(m =>
-    m.presence?.status !== 'offline' && !m.user.bot
-  ).length;
+  const online = members.filter(m => m.presence?.status !== 'offline' && !m.user.bot).length;
 
   output += `## 📊 Statistiques\n`;
   output += `- **Humains:** ${humans}\n`;
@@ -239,9 +256,14 @@ export function formatMembersMarkdown(members: MemberInfo[]): string {
 
   // Liste des membres
   members.forEach((member, index) => {
-    const statusIcon = member.presence?.status === 'online' ? '🟢' :
-                      member.presence?.status === 'idle' ? '🟡' :
-                      member.presence?.status === 'dnd' ? '🔴' : '⚫';
+    const statusIcon =
+      member.presence?.status === 'online'
+        ? '🟢'
+        : member.presence?.status === 'idle'
+          ? '🟡'
+          : member.presence?.status === 'dnd'
+            ? '🔴'
+            : '⚫';
 
     const badges = [];
     if (member.user.bot) badges.push('🤖');
@@ -255,13 +277,16 @@ export function formatMembersMarkdown(members: MemberInfo[]): string {
     output += `   - **Rejoint:** <t:${Math.floor(new Date(member.joinedAt).getTime() / 1000)}:R>\n`;
 
     if (member.roles.length > 0) {
-      output += `   - **Rôles:** ${member.roles.slice(0, 5).map(r => r.name).join(', ')}${member.roles.length > 5 ? '...' : ''}\n`;
+      output += `   - **Rôles:** ${member.roles
+        .slice(0, 5)
+        .map(r => r.name)
+        .join(', ')}${member.roles.length > 5 ? '...' : ''}\n`;
     }
 
     if (member.presence?.activities && member.presence.activities.length > 0) {
-      const activities = member.presence.activities.map(a =>
-        `**${a.name}**${a.state ? ` - ${a.state}` : ''}`
-      ).join(', ');
+      const activities = member.presence.activities
+        .map(a => `**${a.name}**${a.state ? ` - ${a.state}` : ''}`)
+        .join(', ');
       output += `   - **Activité:** ${activities}\n`;
     }
 

@@ -2,7 +2,8 @@ import fs from 'fs';
 import path from 'path';
 
 // Chemin absolu vers le fichier de statut
-const STATUS_FILE = 'C:\\Users\\Deamon\\Desktop\\Backup\\Serveur MCP\\serveur_discord\\discord-status.json';
+const STATUS_FILE =
+  'C:\\Users\\Deamon\\Desktop\\Backup\\Serveur MCP\\serveur_discord\\discord-status.json';
 
 export interface DiscordStatus {
   connected: boolean;
@@ -18,7 +19,7 @@ export function saveDiscordStatus(status: Partial<DiscordStatus>): void {
     const current: DiscordStatus = {
       connected: false,
       lastUpdate: Date.now(),
-      ...status
+      ...status,
     };
 
     // S'assurer que le répertoire existe
