@@ -234,6 +234,13 @@ Avec Discord MCP Server, vous pouvez :
 - 🔔 **Configurer des webhooks** pour les notifications
 - 🎮 **Créer des boutons** pour les commandes rapides
 - 📈 **Surveiller** l'activité du serveur
+- 🤖 **Créer un bot IA qui répond à TOUT** - Le bot ultime qui peut :
+  - Répondre aux questions des membres
+  - Aider à la modération automatiquement
+  - Animer le serveur avec des jeux et quiz
+  - Donner des informations en temps réel
+  - Apprendre et s'adapter à votre communauté
+  - Interagir avec tous les services externes (API, bases de données, etc.)
 
 ---
 
