@@ -1,0 +1,53 @@
+{
+  "name": "discord-mcp-server",
+"type": "module",
+  "version": "1.0.0",
+  "description": "A comprehensive MCP server for Discord interaction with powerful tools and features",
+  "main": "dist/index_secure.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsx src/index_secure.ts",
+    "dev": "tsx src/index_secure.ts",
+    "start:bridge": "node scripts/start.js",
+    "start:original": "node dist/index.js",
+    "check": "node -e \"import('./src/config.js').then(m=>console.log('✅ Configuration OK')).catch(e=>{console.error('❌ Configuration:',e.message);process.exit(1)})\"",
+    "test": "node test_complet.js",
+    "clean": "rm -rf dist && rm -f *.log"
+  },
+  "keywords": [
+    "mcp",
+    "discord",
+    "discord.js",
+    "fastmcp",
+    "typescript",
+    "bot",
+    "chat",
+    "automation",
+    "model-context-protocol"
+  ],
+  "author": {
+    "name": "Your Name",
+    "email": "your.email@example.com",
+    "url": "https://github.com/yourusername"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/discord-mcp-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/discord-mcp-server/issues"
+  },
+  "homepage": "https://github.com/yourusername/discord-mcp-server#readme",
+  "dependencies": {
+    "fastmcp": "^3.25.4",
+    "zod": "^3.22.4",
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0",
+    "tsx": "^4.6.0"
+  }
+}

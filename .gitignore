@@ -1,0 +1,58 @@
+# Fichiers sensibles et environnement
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+*.log
+logs
+server*.log
+build_errors.log
+nul
+
+# Build et dépendances
+node_modules/
+dist/
+build/
+
+# Fichiers temporaires
+*.tmp
+*.temp
+.cache/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Tests et coverage
+coverage/
+.nyc_output/
+test_complet.ts
+test_direct.ts
+
+# Documentation de développement
+RESULTATS_DES_CORRECTIONS.md
+CORRECTIONS_APPORTEES.md
+RESULTATS_FINAUX.md
+RESUME_EXECUTIF.md
+INVENTAIRE_LIVRABLES.md
+GUIDE_UTILISATION.md
+README_FINAL.md
+
+# Lock files (optionnel - garder si nécessaire pour le projet)
+# package-lock.json
+# pnpm-lock.yaml
+
+# Data et fichiers de configuration locale
+data/
+config/local.json
+
+# Certificats et clés
+*.pem
+*.key
+*.crt
+*.p12
