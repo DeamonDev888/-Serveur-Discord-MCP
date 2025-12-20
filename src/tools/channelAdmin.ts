@@ -52,7 +52,7 @@ export async function createChannel(client: any, args: any): Promise<string> {
 
     // Vérifier les permissions
     if (!guild.members.me?.permissions.has(PermissionFlagsBits.ManageChannels)) {
-      return '❌ Le bot n\'a pas la permission de gérer les canaux';
+      return "❌ Le bot n'a pas la permission de gérer les canaux";
     }
 
     // Déterminer le type de canal
@@ -89,7 +89,7 @@ export async function deleteChannel(client: any, args: any): Promise<string> {
 
     // Vérifier les permissions
     if (!guild.members.me?.permissions.has(PermissionFlagsBits.ManageChannels)) {
-      return '❌ Le bot n\'a pas la permission de gérer les canaux';
+      return "❌ Le bot n'a pas la permission de gérer les canaux";
     }
 
     // Supprimer le canal
@@ -116,7 +116,7 @@ export async function editChannel(client: any, args: any): Promise<string> {
 
     // Vérifier les permissions
     if (!guild.members.me?.permissions.has(PermissionFlagsBits.ManageChannels)) {
-      return '❌ Le bot n\'a pas la permission de gérer les canaux';
+      return "❌ Le bot n'a pas la permission de gérer les canaux";
     }
 
     // Préparer les modifications
@@ -127,7 +127,10 @@ export async function editChannel(client: any, args: any): Promise<string> {
     if (position) updates.position = position;
 
     // Only add topic for text/news channels
-    if (topic && (channel.type === ChannelType.GuildText || channel.type === ChannelType.GuildNews)) {
+    if (
+      topic &&
+      (channel.type === ChannelType.GuildText || channel.type === ChannelType.GuildNews)
+    ) {
       updates.topic = topic;
     }
 
@@ -161,7 +164,7 @@ export async function moveMemberToChannel(client: any, args: any): Promise<strin
 
     // Vérifier les permissions
     if (!guild.members.me?.permissions.has(PermissionFlagsBits.MoveMembers)) {
-      return '❌ Le bot n\'a pas la permission de déplacer des membres';
+      return "❌ Le bot n'a pas la permission de déplacer des membres";
     }
 
     // Déplacer le membre
@@ -180,21 +183,15 @@ export async function moveMemberToChannel(client: any, args: any): Promise<strin
 // Obtenir le type de canal Discord
 function getChannelType(type: string): ChannelType {
   const typeMap: { [key: string]: ChannelType } = {
-    'text': ChannelType.GuildText,
-    'voice': ChannelType.GuildVoice,
-    'category': ChannelType.GuildCategory,
-    'news': ChannelType.GuildNews,
-    'stage': ChannelType.GuildStageVoice,
-    'forum': ChannelType.GuildForum,
+    text: ChannelType.GuildText,
+    voice: ChannelType.GuildVoice,
+    category: ChannelType.GuildCategory,
+    news: ChannelType.GuildNews,
+    stage: ChannelType.GuildStageVoice,
+    forum: ChannelType.GuildForum,
   };
 
   return typeMap[type] || ChannelType.GuildText;
 }
 
-// Exporter les schémas
-export {
-  CreateChannelSchema,
-  DeleteChannelSchema,
-  EditChannelSchema,
-  MoveMemberToChannelSchema,
-};
+// Les schémas sont déjà exportés avec export const ci-dessus

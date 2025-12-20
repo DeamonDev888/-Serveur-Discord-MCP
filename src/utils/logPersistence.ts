@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import Logger from './logger.js';
 
 // Configuration
 const DATA_DIR = join(process.cwd(), 'data');
@@ -28,7 +29,7 @@ async function ensureDataDir(): Promise<void> {
   try {
     await fs.mkdir(DATA_DIR, { recursive: true });
   } catch (error) {
-    console.error('Erreur lors de la création du dossier data:', error);
+    Logger.error('Erreur lors de la création du dossier data:', error);
   }
 }
 
@@ -48,18 +49,18 @@ export async function loadLogs(): Promise<Map<string, LogEntry>> {
       logsMap.set(log.id, log);
     });
 
-    console.log(`✅ ${logsMap.size} logs chargés depuis le fichier`);
+    Logger.info(`✅ ${logsMap.size} logs chargés depuis le fichier`);
     return logsMap;
   } catch (error) {
     // Si le fichier n'existe pas, créer un fichier vide
     if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      console.log('📄 Aucun fichier de logs existant, création du fichier...');
+      Logger.info('📄 Aucun fichier de logs existant, création du fichier...');
       await fs.writeFile(LOGS_FILE, JSON.stringify([], null, 2), 'utf-8');
-      console.log('📄 Fichier de logs créé, démarrage avec une Map vide');
+      Logger.info('📄 Fichier de logs créé, démarrage avec une Map vide');
       return new Map<string, LogEntry>();
     }
 
-    console.error('❌ Erreur lors du chargement des logs:', error);
+    Logger.error('❌ Erreur lors du chargement des logs:', error);
     return new Map<string, LogEntry>();
   }
 }
@@ -79,9 +80,9 @@ export async function saveLogs(logs: Map<string, LogEntry>): Promise<void> {
     }));
 
     await fs.writeFile(LOGS_FILE, JSON.stringify(logsToSave, null, 2), 'utf-8');
-    console.log(`💾 ${logs.size} logs sauvegardés dans le fichier`);
+    Logger.info(`💾 ${logs.size} logs sauvegardés dans le fichier`);
   } catch (error) {
-    console.error('❌ Erreur lors de la sauvegarde des logs:', error);
+    Logger.error('❌ Erreur lors de la sauvegarde des logs:', error);
     throw error;
   }
 }
@@ -146,7 +147,7 @@ export async function cleanOldLogs(logs: Map<string, LogEntry>): Promise<number>
 
   if (removedCount > 0) {
     await saveLogs(logs);
-    console.log(`🧹 ${removedCount} logs anciens supprimés`);
+    Logger.info(`🧹 ${removedCount} logs anciens supprimés`);
   }
 
   return removedCount;

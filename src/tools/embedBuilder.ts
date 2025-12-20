@@ -107,7 +107,7 @@ export const CreateEmbedSchema = z.object({
       data: z.array(z.object({ label: z.string(), value: z.number() })),
     })
     .optional()
-    .describe('Graphique à intégrer dans l\'embed'),
+    .describe("Graphique à intégrer dans l'embed"),
   miniIcon: z.string().optional().describe('Mini icône (emoji ou URL)'),
   imageText: z
     .object({
@@ -116,7 +116,7 @@ export const CreateEmbedSchema = z.object({
       position: z.enum(['top', 'bottom', 'center']).optional(),
     })
     .optional()
-    .describe('Texte superposé sur l\'image'),
+    .describe("Texte superposé sur l'image"),
   minigame: z
     .object({
       type: z.enum(['tic-tac-toe', 'hangman', 'quiz']),

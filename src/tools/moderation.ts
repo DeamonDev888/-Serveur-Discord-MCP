@@ -17,19 +17,26 @@ import {
   Mute,
 } from '../utils/moderationPersistence.js';
 import { createLog } from '../utils/logPersistence.js';
+import Logger from '../utils/logger.js';
 
 // Schémas de validation
 export const KickMemberSchema = z.object({
   guildId: z.string().describe('ID du serveur'),
   userId: z.string().describe('ID du membre à expulser'),
-  reason: z.string().optional().describe('Raison de l\'expulsion'),
+  reason: z.string().optional().describe("Raison de l'expulsion"),
 });
 
 export const BanMemberSchema = z.object({
   guildId: z.string().describe('ID du serveur'),
   userId: z.string().describe('ID du membre à bannir'),
   reason: z.string().optional().describe('Raison du bannissement'),
-  deleteMessageDays: z.number().min(0).max(7).optional().default(0).describe('Supprimer les messages des derniers jours (0-7)'),
+  deleteMessageDays: z
+    .number()
+    .min(0)
+    .max(7)
+    .optional()
+    .default(0)
+    .describe('Supprimer les messages des derniers jours (0-7)'),
 });
 
 export const UnbanMemberSchema = z.object({
@@ -54,7 +61,7 @@ export const UnmuteMemberSchema = z.object({
 export const WarnMemberSchema = z.object({
   guildId: z.string().describe('ID du serveur'),
   userId: z.string().describe('ID du membre à avertir'),
-  reason: z.string().describe('Raison de l\'avertissement'),
+  reason: z.string().describe("Raison de l'avertissement"),
 });
 
 export const ClearWarningsSchema = z.object({
@@ -77,7 +84,7 @@ export async function initializeModeration() {
   moderationActions = await loadModerationActions();
   warnings = await loadWarnings();
   mutes = await loadMutes();
-  console.log('✅ Système de modération initialisé');
+  Logger.info('✅ Système de modération initialisé');
 }
 
 // ===============================
@@ -99,7 +106,7 @@ export async function kickMember(client: any, args: any): Promise<string> {
 
     // Vérifier les permissions
     if (!guild.members.me?.permissions.has(PermissionFlagsBits.KickMembers)) {
-      return '❌ Le bot n\'a pas la permission d\'expulser des membres';
+      return "❌ Le bot n'a pas la permission d'expulser des membres";
     }
 
     // Expulser le membre
@@ -141,7 +148,7 @@ export async function banMember(client: any, args: any): Promise<string> {
 
     // Vérifier les permissions
     if (!guild.members.me?.permissions.has(PermissionFlagsBits.BanMembers)) {
-      return '❌ Le bot n\'a pas la permission de bannir des membres';
+      return "❌ Le bot n'a pas la permission de bannir des membres";
     }
 
     // Bannir le membre
@@ -191,7 +198,7 @@ export async function unbanMember(client: any, args: any): Promise<string> {
 
     // Vérifier les permissions
     if (!guild.members.me?.permissions.has(PermissionFlagsBits.BanMembers)) {
-      return '❌ Le bot n\'a pas la permission de débannir des membres';
+      return "❌ Le bot n'a pas la permission de débannir des membres";
     }
 
     // Débannir le membre
@@ -237,7 +244,7 @@ export async function muteMember(client: any, args: any): Promise<string> {
 
     // Vérifier les permissions
     if (!guild.members.me?.permissions.has(PermissionFlagsBits.ModerateMembers)) {
-      return '❌ Le bot n\'a pas la permission de mute des membres';
+      return "❌ Le bot n'a pas la permission de mute des membres";
     }
 
     // Vérifier s'il y a déjà un mute actif
@@ -307,7 +314,7 @@ export async function unmuteMember(client: any, args: any): Promise<string> {
 
     // Vérifier les permissions
     if (!guild.members.me?.permissions.has(PermissionFlagsBits.ModerateMembers)) {
-      return '❌ Le bot n\'a pas la permission de démute des membres';
+      return "❌ Le bot n'a pas la permission de démute des membres";
     }
 
     // Démute le membre

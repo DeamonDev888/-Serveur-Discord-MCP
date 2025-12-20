@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import Logger from './logger.js';
 
 // Chemin absolu vers le fichier de statut
 const STATUS_FILE =
@@ -30,7 +31,7 @@ export function saveDiscordStatus(status: Partial<DiscordStatus>): void {
 
     fs.writeFileSync(STATUS_FILE, JSON.stringify(current, null, 2));
   } catch (error) {
-    console.error('Erreur lors de la sauvegarde du statut:', error);
+    Logger.error('Erreur lors de la sauvegarde du statut:', error);
   }
 }
 
@@ -49,7 +50,7 @@ export function loadDiscordStatus(): DiscordStatus | null {
       return status;
     }
   } catch (error) {
-    console.error('Erreur lors de la lecture du statut:', error);
+    Logger.error('Erreur lors de la lecture du statut:', error);
   }
 
   return null;
@@ -61,6 +62,6 @@ export function clearDiscordStatus(): void {
       fs.unlinkSync(STATUS_FILE);
     }
   } catch (error) {
-    console.error('Erreur lors de la suppression du statut:', error);
+    Logger.error('Erreur lors de la suppression du statut:', error);
   }
 }

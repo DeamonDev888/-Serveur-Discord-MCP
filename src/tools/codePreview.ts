@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import Logger from '../utils/logger.js';
 
 // Schéma pour la validation de l'outil code_preview
 export const CodePreviewSchema = z.object({
@@ -123,12 +124,12 @@ Lignes: ${lineCount}
 
     // Protection contre les boucles infinies
     if (codeChunk.length === 0 && currentPosition < totalLength) {
-      console.error('[CODE_PREVIEW] Erreur: chunk vide détecté, arrêt de la division');
+      Logger.error('[CODE_PREVIEW] Erreur: chunk vide détecté, arrêt de la division');
       break;
     }
   }
 
-  console.log(
+  Logger.info(
     `[CODE_PREVIEW] Division: ${messages.length} message(s) créé(s) pour ${totalLength} caractères`
   );
   return messages;

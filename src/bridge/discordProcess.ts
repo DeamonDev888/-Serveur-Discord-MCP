@@ -66,6 +66,19 @@ const handleCommand = async (command: any): Promise<void> => {
         await addReaction(command.args);
         break;
 
+      // Gestion des sondages
+      case 'update_poll_message':
+        await updatePollMessage(command);
+        break;
+
+      case 'end_poll':
+        await endPollMessage(command);
+        break;
+
+      case 'show_poll_results':
+        await showPollResultsMessage(command);
+        break;
+
       default:
         throw new Error(`Commande non reconnue: ${command.action}`);
     }
@@ -183,6 +196,145 @@ async function addReaction(args: any): Promise<void> {
   console.log(`Réaction ${emoji} ajoutée au message ${messageId}`);
 }
 
+// ===============================
+// GESTION DES SONDAGES
+// ===============================
+
+// Mettre à jour le message du sondage après un vote
+async function updatePollMessage(command: any): Promise<void> {
+  const { channelId, messageId, poll } = command;
+
+  const channel = await client.channels.fetch(channelId);
+  if (!channel || !('messages' in channel)) {
+    throw new Error('Canal invalide ou permissions insuffisantes');
+  }
+
+  const message = await channel.messages.fetch(messageId);
+
+  // Créer l'embed mis à jour
+  const { EmbedBuilder } = await import('discord.js');
+  const embed = new EmbedBuilder()
+    .setTitle('🗳️ Sondage')
+    .setDescription(`**${poll.question}**\n\n🗳️ Cliquez sur les boutons pour voter !`)
+    .setColor(0x5865f2)
+    .addFields(
+      {
+        name: '📊 Options',
+        value: poll.options
+          .map(
+            (opt: any, i: number) =>
+              `${['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'][i] || '📍'} **${opt.text}**\n   └─ ${opt.votes} vote(s) (${opt.percentage.toFixed(1)}%)`
+          )
+          .join('\n\n'),
+        inline: false,
+      },
+      {
+        name: '📈 Statistiques',
+        value: `**Total:** ${poll.totalVotes} vote(s)\n**Statut:** ${poll.ended ? '✅ Terminé' : '⏳ En cours'}`,
+        inline: false,
+      }
+    )
+    .setTimestamp();
+
+  await message.edit({ embeds: [embed] });
+  console.log(`✅ Message sondage mis à jour (${poll.totalVotes} votes)`);
+}
+
+// Terminer un sondage
+async function endPollMessage(command: any): Promise<void> {
+  const { channelId, messageId, poll, winner } = command;
+
+  const channel = await client.channels.fetch(channelId);
+  if (!channel || !('messages' in channel)) {
+    throw new Error('Canal invalide ou permissions insuffisantes');
+  }
+
+  const message = await channel.messages.fetch(messageId);
+
+  // Créer l'embed de fin
+  const { EmbedBuilder } = await import('discord.js');
+  const embed = new EmbedBuilder()
+    .setTitle('🏁 Sondage Terminé')
+    .setDescription(`**${poll.question}**\n\n✅ Le sondage est maintenant fermé.`)
+    .setColor(0x00ff00)
+    .addFields(
+      {
+        name: '🏆 Résultat',
+        value: `**Gagnant:** ${winner}`,
+        inline: false,
+      },
+      {
+        name: '📊 Résultats détaillés',
+        value: poll.options
+          .map(
+            (opt: any, i: number) =>
+              `${['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'][i] || '📍'} **${opt.text}**\n   └─ ${opt.votes} vote(s) (${opt.percentage.toFixed(1)}%)`
+          )
+          .join('\n\n'),
+        inline: false,
+      },
+      {
+        name: '📈 Statistiques finales',
+        value: `**Total:** ${poll.totalVotes} vote(s)`,
+        inline: false,
+      }
+    )
+    .setTimestamp();
+
+  await message.edit({ embeds: [embed], components: [] });
+  console.log(`✅ Sondage terminé. Gagnant: ${winner}`);
+}
+
+// Afficher les résultats d'un sondage
+async function showPollResultsMessage(command: any): Promise<void> {
+  const { channelId, poll } = command;
+
+  const channel = await client.channels.fetch(channelId);
+  if (!channel || !('send' in channel)) {
+    throw new Error('Canal invalide ou permissions insuffisantes');
+  }
+
+  // Créer l'embed des résultats
+  const { EmbedBuilder } = await import('discord.js');
+  const winner = poll.options.reduce((prev: any, current: any) =>
+    prev.votes > current.votes ? prev : current
+  );
+
+  const embed = new EmbedBuilder()
+    .setTitle('📊 Résultats du Sondage')
+    .setDescription(`**${poll.question}**`)
+    .setColor(0x5865f2)
+    .addFields(
+      {
+        name: '🏆 Leader',
+        value: winner.votes > 0 ? winner.text : 'Aucun vote',
+        inline: false,
+      },
+      {
+        name: '📊 Résultats',
+        value: poll.options
+          .map((opt: any, i: number) => {
+            const bar =
+              '█'.repeat(Math.round(opt.percentage / 10)) +
+              '░'.repeat(10 - Math.round(opt.percentage / 10));
+            const mark = opt.text === winner.text && opt.votes > 0 ? ' 👑' : '';
+            return `${['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'][i] || '📍'} **${opt.text}**${mark}\n   ${bar} ${opt.votes} vote(s) (${opt.percentage.toFixed(1)}%)`;
+          })
+          .join('\n\n'),
+        inline: false,
+      },
+      {
+        name: '📈 Statistiques',
+        value: `**Total:** ${poll.totalVotes} vote(s)\n**Statut:** ${poll.ended ? '✅ Terminé' : '⏳ En cours'}`,
+        inline: false,
+      }
+    )
+    .setTimestamp();
+
+  await channel.send({ embeds: [embed] });
+  console.log(`✅ Résultats envoyés pour le sondage ${poll.id}`);
+}
+
 // Lecteur stdin pour les commandes du MCP
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', data => {
@@ -244,18 +396,18 @@ client.on('interactionCreate', async interaction => {
       await handleModalSubmit(interaction);
     }
   } catch (error) {
-    console.error('Erreur lors du traitement de l\'interaction:', error);
+    console.error("Erreur lors du traitement de l'interaction:", error);
 
     const replyable = interaction as any;
     if (replyable.replied || replyable.deferred) {
       await replyable.followUp({
         content: '❌ Une erreur est survenue lors du traitement de votre action.',
-        ephemeral: true
+        ephemeral: true,
       });
     } else {
       await replyable.reply({
         content: '❌ Une erreur est survenue lors du traitement de votre action.',
-        ephemeral: true
+        ephemeral: true,
       });
     }
   }
@@ -319,9 +471,11 @@ async function handleModalSubmit(interaction: any) {
 
   // Extraire tous les champs du modal
   for (const component of interaction.components) {
-    if (component.type === 1) { // ActionRow
+    if (component.type === 1) {
+      // ActionRow
       for (const field of component.components) {
-        if (field.type === 4) { // TextInput
+        if (field.type === 4) {
+          // TextInput
           fields[field.customId] = field.value;
         }
       }

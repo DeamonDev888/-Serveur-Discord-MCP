@@ -1,95 +1,85 @@
-import { botConfig } from '../config.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-export class Logger {
-  private static instance: Logger;
-  private logLevel: LogLevel;
+// Chemin absolu vers le fichier de log à la racine du projet
+const LOG_DIR = path.resolve(__dirname, '../../logs');
+const LOG_FILE = path.join(LOG_DIR, 'server.log');
 
-  private constructor() {
-    this.logLevel = botConfig.environment === 'production' ? 'info' : 'debug';
-  }
+// S'assurer que le répertoire de logs existe
+if (!fs.existsSync(LOG_DIR)) {
+  fs.mkdirSync(LOG_DIR, { recursive: true });
+}
 
-  public static getInstance(): Logger {
-    if (!Logger.instance) {
-      Logger.instance = new Logger();
-    }
-    return Logger.instance;
-  }
+export enum LogLevel {
+  DEBUG = 'DEBUG',
+  INFO = 'INFO',
+  WARN = 'WARN',
+  ERROR = 'ERROR',
+}
 
-  private shouldLog(level: LogLevel): boolean {
-    const levels: Record<LogLevel, number> = {
-      debug: 0,
-      info: 1,
-      warn: 2,
-      error: 3,
-    };
-    return levels[level] >= levels[this.logLevel];
-  }
-
-  private formatMessage(level: LogLevel, message: string, ...args: any[]): string {
+class Logger {
+  private static logToFile(level: LogLevel, message: string, ...args: any[]) {
     const timestamp = new Date().toISOString();
-    const prefix = `[${timestamp}] [${level.toUpperCase()}]`;
+    const formattedArgs = args.length > 0 ? '\n' + JSON.stringify(args, null, 2) : '';
+    const logLine = `[${timestamp}] [${level}] ${message}${formattedArgs}\n`;
 
-    // Retirer les emojis et caractères spéciaux pour éviter les erreurs d'encodage MCP
-    let cleanMessage = message.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}]/gu, '');
+    try {
+      fs.appendFileSync(LOG_FILE, logLine);
+    } catch (err) {
+      process.stderr.write(`[LOGGER ERROR] Impossible d'écrire dans le fichier de log: ${err}\n`);
+    }
+  }
 
+  private static logToStderr(level: LogLevel, message: string, ...args: any[]) {
+    const timestamp = new Date().toLocaleTimeString();
+    const color = this.getColor(level);
+    const reset = '\x1b[0m';
+    
+    const formattedMessage = `[${timestamp}] ${color}[${level}]${reset} ${message}`;
+    
     if (args.length > 0) {
-      const cleanArgs = args.map(arg => {
-        if (typeof arg === 'string') {
-          return arg
-            .replace(/([A-Za-z0-9_-]{24,})\./g, '[TOKEN_HIDDEN].')
-            .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}]/gu, '');
-        }
-        return arg;
-      });
-      return `${prefix} ${cleanMessage} ${JSON.stringify(cleanArgs)}\n`;
-    }
-
-    return `${prefix} ${cleanMessage}\n`;
-  }
-
-  debug(message: string, ...args: any[]): void {
-    if (this.shouldLog('debug')) {
-      process.stderr.write(this.formatMessage('debug', message, ...args));
-    }
-  }
-
-  info(message: string, ...args: any[]): void {
-    if (this.shouldLog('info')) {
-      process.stderr.write(this.formatMessage('info', message, ...args));
-    }
-  }
-
-  warn(message: string, ...args: any[]): void {
-    if (this.shouldLog('warn')) {
-      process.stderr.write(this.formatMessage('warn', message, ...args));
-    }
-  }
-
-  error(message: string, error?: Error | any): void {
-    if (this.shouldLog('error')) {
-      if (error instanceof Error) {
-        process.stderr.write(
-          this.formatMessage('error', message) + (error.stack || error.message) + '\n'
-        );
-      } else {
-        process.stderr.write(this.formatMessage('error', message, error));
+      process.stderr.write(`${formattedMessage}\n`);
+      for (const arg of args) {
+        process.stderr.write(`${JSON.stringify(arg, null, 2)}\n`);
       }
+    } else {
+      process.stderr.write(`${formattedMessage}\n`);
     }
   }
 
-  // Pour les événements Discord
-  logDiscordEvent(event: string, userId?: string, details?: any): void {
-    const message = `Discord Event: ${event}${userId ? ` | User: ${userId}` : ''}`;
-    this.debug(message, details);
+  private static getColor(level: LogLevel): string {
+    switch (level) {
+      case LogLevel.DEBUG: return '\x1b[90m'; // Gris
+      case LogLevel.INFO: return '\x1b[32m'; // Vert
+      case LogLevel.WARN: return '\x1b[33m'; // Jaune
+      case LogLevel.ERROR: return '\x1b[31m'; // Rouge
+      default: return '\x1b[0m';
+    }
   }
 
-  // Pour les erreurs Discord
-  logDiscordError(event: string, error: any, userId?: string): void {
-    const message = `Discord Error in ${event}${userId ? ` | User: ${userId}` : ''}`;
-    this.error(message, error);
+  static debug(message: string, ...args: any[]) {
+    this.logToStderr(LogLevel.DEBUG, message, ...args);
+    this.logToFile(LogLevel.DEBUG, message, ...args);
+  }
+
+  static info(message: string, ...args: any[]) {
+    this.logToStderr(LogLevel.INFO, message, ...args);
+    this.logToFile(LogLevel.INFO, message, ...args);
+  }
+
+  static warn(message: string, ...args: any[]) {
+    this.logToStderr(LogLevel.WARN, message, ...args);
+    this.logToFile(LogLevel.WARN, message, ...args);
+  }
+
+  static error(message: string, ...args: any[]) {
+    this.logToStderr(LogLevel.ERROR, message, ...args);
+    this.logToFile(LogLevel.ERROR, message, ...args);
   }
 }
 
-export const logger = Logger.getInstance();
+export default Logger;

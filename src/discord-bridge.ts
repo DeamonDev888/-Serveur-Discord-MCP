@@ -1,4 +1,5 @@
 import { Client, GatewayIntentBits } from 'discord.js';
+import Logger from './utils/logger.js';
 
 // Pool de connexions Discord pour éviter les timeouts MCP
 export class DiscordBridge {
@@ -21,12 +22,12 @@ export class DiscordBridge {
 
   async getClient(): Promise<Client> {
     if (this.client && this.client.isReady()) {
-      console.error('🚀 [Bridge] Client déjà prêt - utilisation immédiate');
+      Logger.debug('🚀 [Bridge] Client déjà prêt - utilisation immédiate');
       return this.client;
     }
 
     if (this.connectionPromise) {
-      console.error('⏳ [Bridge] Connexion en cours - attente...');
+      Logger.debug('⏳ [Bridge] Connexion en cours - attente...');
       return this.connectionPromise;
     }
 
@@ -35,7 +36,7 @@ export class DiscordBridge {
   }
 
   private async createConnection(): Promise<Client> {
-    console.error('🔗 [Bridge] Création nouvelle connexion Discord...');
+    Logger.info('🔗 [Bridge] Création nouvelle connexion Discord...');
 
     this.client = new Client({
       intents: [
@@ -47,11 +48,12 @@ export class DiscordBridge {
         GatewayIntentBits.GuildEmojisAndStickers,
         GatewayIntentBits.GuildWebhooks,
       ],
+      // Configuration par défaut (stable)
     });
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-        console.error('❌ [Bridge] Timeout connexion 20s');
+        Logger.error('❌ [Bridge] Timeout connexion 20s');
         this.connectionPromise = null;
         reject(new Error('Timeout de connexion Discord (20s)'));
       }, 20000);
@@ -59,21 +61,25 @@ export class DiscordBridge {
       this.client!.once('ready', () => {
         clearTimeout(timeout);
         this.isConnected = true;
-        console.error(`✅ [Bridge] Connecté: ${this.client!.user!.tag}`);
+        Logger.info(`✅ [Bridge] Connecté: ${this.client!.user!.tag}`);
         resolve(this.client!);
       });
 
       this.client!.once('error', error => {
         clearTimeout(timeout);
         this.connectionPromise = null;
-        console.error('❌ [Bridge] Erreur Discord:', error.message);
+        Logger.error('❌ [Bridge] Erreur Discord:', error.message);
         reject(error);
+      });
+
+      this.client!.once('warn', warning => {
+        Logger.warn('⚠️ [Bridge] Avertissement Discord:', warning);
       });
 
       this.client!.login(this.token).catch(error => {
         clearTimeout(timeout);
         this.connectionPromise = null;
-        console.error('❌ [Bridge] Erreur login:', error.message);
+        Logger.error('❌ [Bridge] Erreur login:', error.message);
         reject(error);
       });
     });
@@ -84,7 +90,7 @@ export class DiscordBridge {
       this.client.destroy();
       this.isConnected = false;
       this.connectionPromise = null;
-      console.error('🧹 [Bridge] Client détruit');
+      Logger.info('🧹 [Bridge] Client détruit');
     }
   }
 }

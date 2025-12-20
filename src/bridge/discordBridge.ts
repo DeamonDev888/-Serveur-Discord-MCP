@@ -151,13 +151,23 @@ export class DiscordBridge extends EventEmitter {
           }
           this.pendingRequests.delete(message.data.requestId);
         }
+      } else {
+        // Forward event messages to MCP
+        this.sendToMCP(message);
       }
       this.emit('discord_message', message.data);
     }
   }
 
   // Envoyer une commande au processus Discord
-  private sendToDiscord: (message: BridgeMessage) => void = () => {};
+  private sendToDiscord!: (message: BridgeMessage) => void;
+
+  // Envoyer un message au processus MCP
+  private sendToMCP(message: BridgeMessage): void {
+    if (this.mcpProcess && this.mcpProcess.stdin) {
+      this.mcpProcess.stdin.write(JSON.stringify(message) + '\n');
+    }
+  }
 
   // Exécuter une commande Discord via le pont
   async executeDiscordCommand(tool: string, args: any): Promise<any> {

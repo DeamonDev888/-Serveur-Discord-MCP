@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import Logger from './logger.js';
 
 // Configuration
 const DATA_DIR = join(process.cwd(), 'data');
@@ -45,7 +46,7 @@ export interface Mute {
   username: string;
   moderatorId: string;
   moderatorUsername: string;
-  reason: string;
+  reason?: string;
   expiresAt: Date;
   active: boolean;
 }
@@ -59,7 +60,7 @@ async function ensureDataDir(): Promise<void> {
   try {
     await fs.mkdir(DATA_DIR, { recursive: true });
   } catch (error) {
-    console.error('Erreur lors de la création du dossier data:', error);
+    Logger.error('Erreur lors de la création du dossier data:', error);
   }
 }
 
@@ -77,14 +78,14 @@ export async function loadModerationActions(): Promise<Map<string, ModerationAct
       actionsMap.set(action.id, action);
     });
 
-    console.log(`✅ ${actionsMap.size} actions de modération chargées`);
+    Logger.info(`✅ ${actionsMap.size} actions de modération chargées`);
     return actionsMap;
   } catch (error) {
     if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
       await fs.writeFile(MODERATION_FILE, JSON.stringify([], null, 2), 'utf-8');
       return new Map<string, ModerationAction>();
     }
-    console.error('❌ Erreur lors du chargement des actions de modération:', error);
+    Logger.error('❌ Erreur lors du chargement des actions de modération:', error);
     return new Map<string, ModerationAction>();
   }
 }
@@ -101,7 +102,7 @@ export async function saveModerationActions(actions: Map<string, ModerationActio
 
     await fs.writeFile(MODERATION_FILE, JSON.stringify(actionsArray, null, 2), 'utf-8');
   } catch (error) {
-    console.error('❌ Erreur lors de la sauvegarde des actions:', error);
+    Logger.error('❌ Erreur lors de la sauvegarde des actions:', error);
     throw error;
   }
 }
@@ -134,14 +135,14 @@ export async function loadWarnings(): Promise<Map<string, Warning>> {
       warningsMap.set(warning.id, warning);
     });
 
-    console.log(`✅ ${warningsMap.size} warns chargés`);
+    Logger.info(`✅ ${warningsMap.size} warns chargés`);
     return warningsMap;
   } catch (error) {
     if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
       await fs.writeFile(WARNINGS_FILE, JSON.stringify([], null, 2), 'utf-8');
       return new Map<string, Warning>();
     }
-    console.error('❌ Erreur lors du chargement des warns:', error);
+    Logger.error('❌ Erreur lors du chargement des warns:', error);
     return new Map<string, Warning>();
   }
 }
@@ -159,7 +160,7 @@ export async function saveWarnings(warnings: Map<string, Warning>): Promise<void
 
     await fs.writeFile(WARNINGS_FILE, JSON.stringify(warningsArray, null, 2), 'utf-8');
   } catch (error) {
-    console.error('❌ Erreur lors de la sauvegarde des warns:', error);
+    Logger.error('❌ Erreur lors de la sauvegarde des warns:', error);
     throw error;
   }
 }
@@ -176,7 +177,10 @@ export function getUserWarnings(userId: string, warnings: Map<string, Warning>):
 }
 
 // Supprimer un warn
-export async function deleteWarning(warningId: string, warnings: Map<string, Warning>): Promise<void> {
+export async function deleteWarning(
+  warningId: string,
+  warnings: Map<string, Warning>
+): Promise<void> {
   warnings.delete(warningId);
   await saveWarnings(warnings);
 }
@@ -200,14 +204,14 @@ export async function loadMutes(): Promise<Map<string, Mute>> {
       mutesMap.set(mute.id, mute);
     });
 
-    console.log(`✅ ${mutesMap.size} mutes chargés`);
+    Logger.info(`✅ ${mutesMap.size} mutes chargés`);
     return mutesMap;
   } catch (error) {
     if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
       await fs.writeFile(MUTES_FILE, JSON.stringify([], null, 2), 'utf-8');
       return new Map<string, Mute>();
     }
-    console.error('❌ Erreur lors du chargement des mutes:', error);
+    Logger.error('❌ Erreur lors du chargement des mutes:', error);
     return new Map<string, Mute>();
   }
 }
@@ -225,7 +229,7 @@ export async function saveMutes(mutes: Map<string, Mute>): Promise<void> {
 
     await fs.writeFile(MUTES_FILE, JSON.stringify(mutesArray, null, 2), 'utf-8');
   } catch (error) {
-    console.error('❌ Erreur lors de la sauvegarde des mutes:', error);
+    Logger.error('❌ Erreur lors de la sauvegarde des mutes:', error);
     throw error;
   }
 }
@@ -237,7 +241,11 @@ export async function addMute(mute: Mute, mutes: Map<string, Mute>): Promise<voi
 }
 
 // Obtenir un mute actif d'un utilisateur
-export function getActiveMute(userId: string, guildId: string, mutes: Map<string, Mute>): Mute | undefined {
+export function getActiveMute(
+  userId: string,
+  guildId: string,
+  mutes: Map<string, Mute>
+): Mute | undefined {
   return Array.from(mutes.values()).find(
     m => m.userId === userId && m.guildId === guildId && m.active
   );
@@ -266,7 +274,7 @@ export async function cleanExpiredMutes(mutes: Map<string, Mute>): Promise<numbe
 
   if (removedCount > 0) {
     await saveMutes(mutes);
-    console.log(`🧹 ${removedCount} mutes expirés marqués comme inactifs`);
+    Logger.info(`🧹 ${removedCount} mutes expirés marqués comme inactifs`);
   }
 
   return removedCount;

@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import Logger from './logger.js';
 
 // Configuration
 const DATA_DIR = join(process.cwd(), 'data');
@@ -23,7 +24,7 @@ async function ensureDataDir(): Promise<void> {
   try {
     await fs.mkdir(DATA_DIR, { recursive: true });
   } catch (error) {
-    console.error('Erreur lors de la création du dossier data:', error);
+    Logger.error('Erreur lors de la création du dossier data:', error);
   }
 }
 
@@ -43,18 +44,18 @@ export async function loadCustomButtons(): Promise<Map<string, CustomButton>> {
       buttonsMap.set(button.id, button);
     });
 
-    console.log(`✅ ${buttonsMap.size} boutons personnalisés chargés depuis le fichier`);
+    Logger.info(`✅ ${buttonsMap.size} boutons personnalisés chargés depuis le fichier`);
     return buttonsMap;
   } catch (error) {
     // Si le fichier n'existe pas, créer un fichier vide
     if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      console.log('📄 Aucun fichier de boutons existant, création du fichier...');
+      Logger.info('📄 Aucun fichier de boutons existant, création du fichier...');
       await fs.writeFile(BUTTONS_FILE, JSON.stringify([], null, 2), 'utf-8');
-      console.log('📄 Fichier de boutons créé, démarrage avec une Map vide');
+      Logger.info('📄 Fichier de boutons créé, démarrage avec une Map vide');
       return new Map<string, CustomButton>();
     }
 
-    console.error('❌ Erreur lors du chargement des boutons:', error);
+    Logger.error('❌ Erreur lors du chargement des boutons:', error);
     return new Map<string, CustomButton>();
   }
 }
@@ -66,7 +67,7 @@ export async function saveCustomButtons(buttons: Map<string, CustomButton>): Pro
   try {
     // Convertir la Map en tableau
     const buttonsArray = Array.from(buttons.values());
-    console.log(`[BUTTON_PERSISTENCE] Tentative de sauvegarde de ${buttonsArray.length} boutons`);
+    Logger.debug(`[BUTTON_PERSISTENCE] Tentative de sauvegarde de ${buttonsArray.length} boutons`);
 
     // Convertir les dates en strings pour la sérialisation JSON
     const buttonsToSave = buttonsArray.map(button => ({
@@ -74,23 +75,12 @@ export async function saveCustomButtons(buttons: Map<string, CustomButton>): Pro
       createdAt: button.createdAt.toISOString(),
     }));
 
-    console.log(
-      `[BUTTON_PERSISTENCE] Données à sauvegarder:`,
-      JSON.stringify(buttonsToSave, null, 2)
-    );
-
     await fs.writeFile(BUTTONS_FILE, JSON.stringify(buttonsToSave, null, 2), 'utf-8');
-    console.log(
+    Logger.info(
       `[BUTTON_PERSISTENCE] ✅ ${buttons.size} boutons personnalisés sauvegardés dans le fichier`
     );
-
-    // Vérifier que le fichier a été écrit
-    const verifyData = await fs.readFile(BUTTONS_FILE, 'utf-8');
-    console.log(
-      `[BUTTON_PERSISTENCE] Vérification - Taille du fichier: ${verifyData.length} caractères`
-    );
   } catch (error) {
-    console.error('[BUTTON_PERSISTENCE] ❌ Erreur lors de la sauvegarde des boutons:', error);
+    Logger.error('[BUTTON_PERSISTENCE] ❌ Erreur lors de la sauvegarde des boutons:', error);
     throw error;
   }
 }
@@ -136,7 +126,7 @@ export async function cleanOldButtons(buttons: Map<string, CustomButton>): Promi
 
   if (deletedCount > 0) {
     await saveCustomButtons(buttons);
-    console.log(`🧹 ${deletedCount} anciens boutons personnalisés supprimés`);
+    Logger.info(`🧹 ${deletedCount} anciens boutons personnalisés supprimés`);
   }
 
   return deletedCount;

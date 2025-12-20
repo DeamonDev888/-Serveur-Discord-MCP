@@ -61,7 +61,7 @@ export async function createRole(client: any, args: any): Promise<string> {
 
     // Vérifier les permissions
     if (!guild.members.me?.permissions.has(PermissionFlagsBits.ManageRoles)) {
-      return '❌ Le bot n\'a pas la permission de gérer les rôles';
+      return "❌ Le bot n'a pas la permission de gérer les rôles";
     }
 
     // Créer le rôle
@@ -94,7 +94,7 @@ export async function deleteRole(client: any, args: any): Promise<string> {
 
     // Vérifier les permissions
     if (!guild.members.me?.permissions.has(PermissionFlagsBits.ManageRoles)) {
-      return '❌ Le bot n\'a pas la permission de gérer les rôles';
+      return "❌ Le bot n'a pas la permission de gérer les rôles";
     }
 
     // Supprimer le rôle
@@ -121,7 +121,7 @@ export async function editRole(client: any, args: any): Promise<string> {
 
     // Vérifier les permissions
     if (!guild.members.me?.permissions.has(PermissionFlagsBits.ManageRoles)) {
-      return '❌ Le bot n\'a pas la permission de gérer les rôles';
+      return "❌ Le bot n'a pas la permission de gérer les rôles";
     }
 
     // Préparer les modifications
@@ -157,7 +157,7 @@ export async function addRoleToMember(client: any, args: any): Promise<string> {
 
     // Vérifier les permissions
     if (!guild.members.me?.permissions.has(PermissionFlagsBits.ManageRoles)) {
-      return '❌ Le bot n\'a pas la permission de gérer les rôles';
+      return "❌ Le bot n'a pas la permission de gérer les rôles";
     }
 
     // Donner le rôle
@@ -185,7 +185,7 @@ export async function removeRoleFromMember(client: any, args: any): Promise<stri
 
     // Vérifier les permissions
     if (!guild.members.me?.permissions.has(PermissionFlagsBits.ManageRoles)) {
-      return '❌ Le bot n\'a pas la permission de gérer les rôles';
+      return "❌ Le bot n'a pas la permission de gérer les rôles";
     }
 
     // Retirer le rôle
@@ -215,8 +215,8 @@ export async function getMemberRoles(client: any, args: any): Promise<string> {
     }
 
     const roles = Array.from(member.roles.cache.values())
-      .sort((a, b) => b.position - a.position)
-      .map(role => role.name)
+      .sort((a: any, b: any) => b.position - a.position)
+      .map((role: any) => role.name)
       .join(', ');
 
     return `📋 Rôles de ${member.user.username} (${member.roles.cache.size}):\n${roles}`;
@@ -243,19 +243,19 @@ function parseColor(color: string): number {
 
   // Couleurs nommées communes
   const colorMap: { [key: string]: number } = {
-    'RED': 0xe74c3c,
-    'GREEN': 0x2ecc71,
-    'BLUE': 0x3498db,
-    'YELLOW': 0xf1c40f,
-    'PURPLE': 0x9b59b6,
-    'ORANGE': 0xe67e22,
-    'AQUA': 0x1abc9c,
-    'WHITE': 0xffffff,
-    'BLACK': 0x000000,
-    'GREY': 0x95a5a6,
-    'DARK_RED': 0xc0392b,
-    'DARK_GREEN': 0x27ae60,
-    'DARK_BLUE': 0x2980b9,
+    RED: 0xe74c3c,
+    GREEN: 0x2ecc71,
+    BLUE: 0x3498db,
+    YELLOW: 0xf1c40f,
+    PURPLE: 0x9b59b6,
+    ORANGE: 0xe67e22,
+    AQUA: 0x1abc9c,
+    WHITE: 0xffffff,
+    BLACK: 0x000000,
+    GREY: 0x95a5a6,
+    DARK_RED: 0xc0392b,
+    DARK_GREEN: 0x27ae60,
+    DARK_BLUE: 0x2980b9,
   };
 
   return colorMap[color.toUpperCase()] || 0x000000;
@@ -265,19 +265,19 @@ function parseColor(color: string): number {
 function parsePermissions(permissions: string[]): bigint {
   let result = 0n;
   const permissionMap: { [key: string]: bigint } = {
-    'ADMINISTRATOR': PermissionFlagsBits.Administrator,
-    'MANAGE_GUILD': PermissionFlagsBits.ManageGuild,
-    'MANAGE_ROLES': PermissionFlagsBits.ManageRoles,
-    'MANAGE_CHANNELS': PermissionFlagsBits.ManageChannels,
-    'KICK_MEMBERS': PermissionFlagsBits.KickMembers,
-    'BAN_MEMBERS': PermissionFlagsBits.BanMembers,
-    'VIEW_AUDIT_LOG': PermissionFlagsBits.ViewAuditLog,
-    'SEND_MESSAGES': PermissionFlagsBits.SendMessages,
-    'EMBED_LINKS': PermissionFlagsBits.EmbedLinks,
-    'ATTACH_FILES': PermissionFlagsBits.AttachFiles,
-    'READ_MESSAGE_HISTORY': PermissionFlagsBits.ReadMessageHistory,
-    'USE_EXTERNAL_EMOJIS': PermissionFlagsBits.UseExternalEmojis,
-    'ADD_REACTIONS': PermissionFlagsBits.AddReactions,
+    ADMINISTRATOR: PermissionFlagsBits.Administrator,
+    MANAGE_GUILD: PermissionFlagsBits.ManageGuild,
+    MANAGE_ROLES: PermissionFlagsBits.ManageRoles,
+    MANAGE_CHANNELS: PermissionFlagsBits.ManageChannels,
+    KICK_MEMBERS: PermissionFlagsBits.KickMembers,
+    BAN_MEMBERS: PermissionFlagsBits.BanMembers,
+    VIEW_AUDIT_LOG: PermissionFlagsBits.ViewAuditLog,
+    SEND_MESSAGES: PermissionFlagsBits.SendMessages,
+    EMBED_LINKS: PermissionFlagsBits.EmbedLinks,
+    ATTACH_FILES: PermissionFlagsBits.AttachFiles,
+    READ_MESSAGE_HISTORY: PermissionFlagsBits.ReadMessageHistory,
+    USE_EXTERNAL_EMOJIS: PermissionFlagsBits.UseExternalEmojis,
+    ADD_REACTIONS: PermissionFlagsBits.AddReactions,
   };
 
   for (const perm of permissions) {

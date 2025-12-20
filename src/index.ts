@@ -14,43 +14,63 @@ import {
 import { config } from 'dotenv';
 import fs from 'fs';
 import { DiscordBridge } from './discord-bridge.js';
+import Logger from './utils/logger.js';
 
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 // Imports des utilitaires (compilés en JS)
-// Ces imports sont résolus au moment de l'exécution
+// Ces imports sont résolus au moment de l'exécution avec cache
 let toolsCodePreview: any = null;
 let toolsFileUpload: any = null;
 let toolsPolls: any = null;
 let toolsEmbedBuilder: any = null;
+const toolsCache = new Map<string, any>();
 
-// Fonction pour charger les utilitaires à la demande
+// Fonction pour charger les utilitaires à la demande avec cache
 async function loadTools() {
-  if (!toolsCodePreview) {
+  // Chargement avec cache pour éviter les imports répétés
+  if (!toolsCodePreview && !toolsCache.has('codePreview')) {
     toolsCodePreview = await import('./tools/codePreview.js');
+    toolsCache.set('codePreview', toolsCodePreview);
+  } else if (toolsCache.has('codePreview')) {
+    toolsCodePreview = toolsCache.get('codePreview');
   }
-  if (!toolsFileUpload) {
+
+  if (!toolsFileUpload && !toolsCache.has('fileUpload')) {
     toolsFileUpload = await import('./tools/fileUpload.js');
+    toolsCache.set('fileUpload', toolsFileUpload);
+  } else if (toolsCache.has('fileUpload')) {
+    toolsFileUpload = toolsCache.get('fileUpload');
   }
-  if (!toolsPolls) {
+
+  if (!toolsPolls && !toolsCache.has('polls')) {
     toolsPolls = await import('./tools/polls.js');
+    toolsCache.set('polls', toolsPolls);
+  } else if (toolsCache.has('polls')) {
+    toolsPolls = toolsCache.get('polls');
   }
-  if (!toolsEmbedBuilder) {
+
+  if (!toolsEmbedBuilder && !toolsCache.has('embedBuilder')) {
     toolsEmbedBuilder = await import('./tools/embedBuilder.js');
+    toolsCache.set('embedBuilder', toolsEmbedBuilder);
+  } else if (toolsCache.has('embedBuilder')) {
+    toolsEmbedBuilder = toolsCache.get('embedBuilder');
   }
 }
 
-// Rediriger console.log vers stderr pour ne pas polluer stdout (utilisé par MCP)
-const originalLog = console.log;
-console.log = (...args) => console.error(...args);
+// IMPORTANT: Ne PAS utiliser console.log car cela corrupt le protocole MCP sur stdout !
+// Redirigeons console.log vers Logger.info pour que les logs aillent sur stderr/fichier sans casser MCP.
+console.log = (...args: any[]) => {
+  Logger.info('[STDOUT REDIRECT]', ...args);
+};
 
 // Charger les variables d'environnement avec chemin robuste
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const envPath = path.resolve(__dirname, '../.env'); // Si le .env est à la racine de serveur_discord
 
-console.error(`📂 Chargement .env depuis: ${envPath}`);
+// Logger.debug(`📂 Chargement .env depuis: ${envPath}`);
 config({ path: envPath });
 
 // Configuration
@@ -64,14 +84,14 @@ const botConfig = {
 };
 
 // Debug: Afficher les variables d'environnement au démarrage
-console.error('🔍 Debug ENV:');
+// console.error('🔍 Debug ENV:');
 const tokenPreview =
   botConfig.token && botConfig.token !== 'YOUR_BOT_TOKEN'
     ? `${botConfig.token.substring(0, 5)}...${botConfig.token.substring(botConfig.token.length - 5)}`
     : 'NON DÉFINI/DEFAULT';
-console.error(`  Token Status: ${tokenPreview}`);
-console.error('  DISCORD_BOT_TOKEN:', process.env.DISCORD_BOT_TOKEN ? '✅ Présent' : '❌ Absent');
-console.error('  NODE_ENV:', process.env.NODE_ENV);
+// console.error(`  Token Status: ${tokenPreview}`);
+// console.error('  DISCORD_BOT_TOKEN:', process.env.DISCORD_BOT_TOKEN ? '✅ Présent' : '❌ Absent');
+// console.error('  NODE_ENV:', process.env.NODE_ENV);
 
 // Initialisation du serveur MCP
 const server = new FastMCP({
@@ -93,18 +113,29 @@ const globalState = {
 const STATUS_FILE =
   'C:\\Users\\Deamon\\Desktop\\Backup\\Serveur MCP\\serveur_discord\\discord-status.json';
 
-// Fonction pour sauvegarder l'état dans un fichier
+// Debounce timer pour éviter les sauvegardes trop fréquentes
+let saveTimeout: NodeJS.Timeout | null = null;
+
+// Fonction pour sauvegarder l'état dans un fichier (version asynchrone avec debouncing)
 function saveStateToFile() {
-  try {
-    const state = {
-      ...globalState,
-      lastUpdate: Date.now(),
-    };
-    fs.writeFileSync(STATUS_FILE, JSON.stringify(state, null, 2));
-    console.error('💾 État sauvegardé:', state);
-  } catch (error) {
-    console.error('❌ Erreur sauvegarde:', error);
+  // Annuler le timeout précédent si existe
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
   }
+
+  // Sauvegarder après 2 secondes d'inactivité
+  saveTimeout = setTimeout(async () => {
+    try {
+      const state = {
+        ...globalState,
+        lastUpdate: Date.now(),
+      };
+      await fs.promises.writeFile(STATUS_FILE, JSON.stringify(state, null, 2));
+      // Logger.debug('💾 État sauvegardé (async):', state);
+    } catch (error) {
+      // Logger.error('❌ Erreur sauvegarde async:', error);
+    }
+  }, 2000);
 }
 
 // Fonction pour mettre à jour l'état global
@@ -127,7 +158,7 @@ async function updateGlobalState(connected: boolean, error?: string) {
     }
   }
 
-  console.error('🔄 État global mis à jour:', globalState);
+  // Logger.debug('🔄 État global mis à jour:', globalState);
   saveStateToFile();
 }
 
@@ -178,30 +209,70 @@ async function ensureDiscordConnection(): Promise<Client> {
 }
 
 // ============================================================================
+// SYSTÈME DE RATE LIMITING
+// ============================================================================
+
+// Map pour stocker les compteurs de requêtes par outil
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const RATE_LIMIT_MAX = 30; // Max 30 requêtes par minute par outil
+
+// Fonction de rate limiting
+function checkRateLimit(toolName: string): boolean {
+  const now = Date.now();
+  const toolLimit = rateLimitMap.get(toolName);
+
+  if (!toolLimit || now > toolLimit.resetTime) {
+    // Nouvelle fenêtre ou premier appel
+    rateLimitMap.set(toolName, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+
+  if (toolLimit.count >= RATE_LIMIT_MAX) {
+    // Limite atteinte
+    return false;
+  }
+
+  // Incrémenter le compteur
+  toolLimit.count++;
+  return true;
+}
+
+// Wrapper pour les outils avec rate limiting
+function withRateLimit<T extends any[], R>(toolName: string, fn: (...args: T) => Promise<R>) {
+  return async (...args: T): Promise<R> => {
+    if (!checkRateLimit(toolName)) {
+      throw new Error(`Rate limit atteint pour ${toolName}. Réessayez dans 1 minute.`);
+    }
+    return fn(...args);
+  };
+}
+
+// ============================================================================
 // OUTILS MCP
 // ============================================================================
 
-// 1. Discord Status - SOLUTION FINALE
+// 1. Discord Status - SOLUTION FINALE avec rate limiting
 server.addTool({
   name: 'discord_status',
   description: 'Vérifie le statut de connexion du bot',
   parameters: z.object({}),
-  execute: async () => {
+  execute: withRateLimit('discord_status', async () => {
     try {
       if (!botConfig.token || botConfig.token === 'YOUR_BOT_TOKEN') {
         return '❌ Token Discord non configuré';
       }
 
-      console.error('🔍 [discord_status] Bridge connection...');
+      Logger.info('🔍 [discord_status] Checking bridge connection...');
       const bridge = DiscordBridge.getInstance(botConfig.token);
       const client = await bridge.getClient();
 
       return `✅ Bot connecté | User: ${client.user!.tag} | Servers: ${client.guilds.cache.size} | Uptime: ${client.uptime}ms`;
     } catch (error: any) {
-      console.error('❌ [discord_status]', error.message);
+      Logger.error('❌ [discord_status] Erreur', error.message);
       return `❌ Bot déconnecté | Erreur: ${error.message}`;
     }
-  },
+  }),
 });
 
 // ============================================================================
@@ -239,12 +310,12 @@ server.addTool({
   parameters: KickMemberSchema,
   execute: async args => {
     try {
-      console.error(`👢 [kick_member] User: ${args.userId}`);
+      Logger.info(`👢 [kick_member] User: ${args.userId}`);
       const client = await ensureDiscordConnection();
       const result = await kickMember(client, args);
       return result;
     } catch (error: any) {
-      console.error(`❌ [kick_member]`, error.message);
+      Logger.error(`❌ [kick_member]`, error.message);
       return `❌ Erreur: ${error.message}`;
     }
   },
@@ -257,12 +328,12 @@ server.addTool({
   parameters: BanMemberSchema,
   execute: async args => {
     try {
-      console.error(`🔨 [ban_member] User: ${args.userId}`);
+      Logger.info(`🔨 [ban_member] User: ${args.userId}`);
       const client = await ensureDiscordConnection();
       const result = await banMember(client, args);
       return result;
     } catch (error: any) {
-      console.error(`❌ [ban_member]`, error.message);
+      Logger.error(`❌ [ban_member]`, error.message);
       return `❌ Erreur: ${error.message}`;
     }
   },
@@ -275,12 +346,12 @@ server.addTool({
   parameters: UnbanMemberSchema,
   execute: async args => {
     try {
-      console.error(`🔓 [unban_member] User: ${args.userId}`);
+      Logger.info(`🔓 [unban_member] User: ${args.userId}`);
       const client = await ensureDiscordConnection();
       const result = await unbanMember(client, args);
       return result;
     } catch (error: any) {
-      console.error(`❌ [unban_member]`, error.message);
+      Logger.error(`❌ [unban_member]`, error.message);
       return `❌ Erreur: ${error.message}`;
     }
   },
@@ -293,12 +364,12 @@ server.addTool({
   parameters: MuteMemberSchema,
   execute: async args => {
     try {
-      console.error(`🤐 [mute_member] User: ${args.userId}, Duration: ${args.duration}s`);
+      Logger.info(`🤐 [mute_member] User: ${args.userId}, Duration: ${args.duration}s`);
       const client = await ensureDiscordConnection();
       const result = await muteMember(client, args);
       return result;
     } catch (error: any) {
-      console.error(`❌ [mute_member]`, error.message);
+      Logger.error(`❌ [mute_member]`, error.message);
       return `❌ Erreur: ${error.message}`;
     }
   },
@@ -343,7 +414,7 @@ server.addTool({
 // 7. Voir les warns
 server.addTool({
   name: 'get_warnings',
-  description: 'Affiche les avertissements d\'un membre',
+  description: "Affiche les avertissements d'un membre",
   parameters: GetWarningsSchema,
   execute: async args => {
     try {
@@ -361,16 +432,16 @@ server.addTool({
 // 8. Effacer les warns
 server.addTool({
   name: 'clear_warnings',
-  description: 'Efface tous les avertissements d\'un membre',
+  description: "Efface tous les avertissements d'un membre",
   parameters: ClearWarningsSchema,
   execute: async args => {
     try {
-      console.error(`🧹 [clear_warnings] User: ${args.userId}`);
+      Logger.info(`🧹 [clear_warnings] User: ${args.userId}`);
       const client = await ensureDiscordConnection();
       const result = await clearWarnings(client, args);
       return result;
     } catch (error: any) {
-      console.error(`❌ [clear_warnings]`, error.message);
+      Logger.error(`❌ [clear_warnings]`, error.message);
       return `❌ Erreur: ${error.message}`;
     }
   },
@@ -403,12 +474,12 @@ server.addTool({
   parameters: CreateRoleSchema,
   execute: async args => {
     try {
-      console.error(`🎭 [create_role] Name: ${args.name}`);
+      Logger.info(`🎭 [create_role] Name: ${args.name}`);
       const client = await ensureDiscordConnection();
       const result = await createRole(client, args);
       return result;
     } catch (error: any) {
-      console.error(`❌ [create_role]`, error.message);
+      Logger.error(`❌ [create_role]`, error.message);
       return `❌ Erreur: ${error.message}`;
     }
   },
@@ -421,12 +492,12 @@ server.addTool({
   parameters: DeleteRoleSchema,
   execute: async args => {
     try {
-      console.error(`🗑️ [delete_role] Role: ${args.roleId}`);
+      Logger.info(`🗑️ [delete_role] Role: ${args.roleId}`);
       const client = await ensureDiscordConnection();
       const result = await deleteRole(client, args);
       return result;
     } catch (error: any) {
-      console.error(`❌ [delete_role]`, error.message);
+      Logger.error(`❌ [delete_role]`, error.message);
       return `❌ Erreur: ${error.message}`;
     }
   },
@@ -439,12 +510,12 @@ server.addTool({
   parameters: EditRoleSchema,
   execute: async args => {
     try {
-      console.error(`✏️ [edit_role] Role: ${args.roleId}`);
+      Logger.info(`✏️ [edit_role] Role: ${args.roleId}`);
       const client = await ensureDiscordConnection();
       const result = await editRole(client, args);
       return result;
     } catch (error: any) {
-      console.error(`❌ [edit_role]`, error.message);
+      Logger.error(`❌ [edit_role]`, error.message);
       return `❌ Erreur: ${error.message}`;
     }
   },
@@ -457,12 +528,12 @@ server.addTool({
   parameters: AddRoleToMemberSchema,
   execute: async args => {
     try {
-      console.error(`➕ [add_role_to_member] User: ${args.userId}, Role: ${args.roleId}`);
+      Logger.info(`➕ [add_role_to_member] User: ${args.userId}, Role: ${args.roleId}`);
       const client = await ensureDiscordConnection();
       const result = await addRoleToMember(client, args);
       return result;
     } catch (error: any) {
-      console.error(`❌ [add_role_to_member]`, error.message);
+      Logger.error(`❌ [add_role_to_member]`, error.message);
       return `❌ Erreur: ${error.message}`;
     }
   },
@@ -471,7 +542,7 @@ server.addTool({
 // 5. Retirer un rôle d'un membre
 server.addTool({
   name: 'remove_role_from_member',
-  description: 'Retire un rôle d\'un membre',
+  description: "Retire un rôle d'un membre",
   parameters: RemoveRoleFromMemberSchema,
   execute: async args => {
     try {
@@ -489,7 +560,7 @@ server.addTool({
 // 6. Voir les rôles d'un membre
 server.addTool({
   name: 'get_member_roles',
-  description: 'Affiche les rôles d\'un membre',
+  description: "Affiche les rôles d'un membre",
   parameters: GetMemberRolesSchema,
   execute: async args => {
     try {
@@ -527,12 +598,12 @@ server.addTool({
   parameters: CreateChannelSchema,
   execute: async args => {
     try {
-      console.error(`📝 [create_channel] Name: ${args.name}, Type: ${args.type}`);
+      Logger.info(`📝 [create_channel] Name: ${args.name}, Type: ${args.type}`);
       const client = await ensureDiscordConnection();
       const result = await createChannel(client, args);
       return result;
     } catch (error: any) {
-      console.error(`❌ [create_channel]`, error.message);
+      Logger.error(`❌ [create_channel]`, error.message);
       return `❌ Erreur: ${error.message}`;
     }
   },
@@ -545,12 +616,12 @@ server.addTool({
   parameters: DeleteChannelSchema,
   execute: async args => {
     try {
-      console.error(`🗑️ [delete_channel] Channel: ${args.channelId}`);
+      Logger.info(`🗑️ [delete_channel] Channel: ${args.channelId}`);
       const client = await ensureDiscordConnection();
       const result = await deleteChannel(client, args);
       return result;
     } catch (error: any) {
-      console.error(`❌ [delete_channel]`, error.message);
+      Logger.error(`❌ [delete_channel]`, error.message);
       return `❌ Erreur: ${error.message}`;
     }
   },
@@ -581,12 +652,12 @@ server.addTool({
   parameters: MoveMemberToChannelSchema,
   execute: async args => {
     try {
-      console.error(`🔄 [move_member_to_channel] User: ${args.userId}, Channel: ${args.channelId}`);
+      Logger.info(`🔄 [move_member_to_channel] User: ${args.userId}, Channel: ${args.channelId}`);
       const client = await ensureDiscordConnection();
       const result = await moveMemberToChannel(client, args);
       return result;
     } catch (error: any) {
-      console.error(`❌ [move_member_to_channel]`, error.message);
+      Logger.error(`❌ [move_member_to_channel]`, error.message);
       return `❌ Erreur: ${error.message}`;
     }
   },
@@ -616,7 +687,9 @@ server.addTool({
   description: 'Crée un embed depuis un template prédéfinis avec personnalisations',
   parameters: z.object({
     channelId: z.string().describe('ID du canal'),
-    template: z.enum(['success', 'error', 'warning', 'info', 'announcement', 'rules', 'welcome', 'giveaway']).describe('Template'),
+    template: z
+      .enum(['success', 'error', 'warning', 'info', 'announcement', 'rules', 'welcome', 'giveaway'])
+      .describe('Template'),
     customTitle: z.string().optional().describe('Titre personnalisé'),
     customDescription: z.string().optional().describe('Description personnalisée'),
     customFields: z
@@ -630,7 +703,7 @@ server.addTool({
       .optional()
       .describe('Champs personnalisés à ajouter'),
     customColor: z.string().optional().describe('Couleur personnalisée (nom ou hex)'),
-    customImage: z.string().optional().describe('URL de l\'image'),
+    customImage: z.string().optional().describe("URL de l'image"),
     customThumbnail: z.string().optional().describe('URL de la miniature'),
     customFooter: z.string().optional().describe('Texte du footer personnalisé'),
   }),
@@ -646,11 +719,7 @@ server.addTool({
 
       // Charger les utilitaires
       await loadTools();
-      const {
-        createEmbedFromTemplate,
-        EMBED_TEMPLATES,
-        validateEmbed,
-      } = toolsEmbedBuilder;
+      const { createEmbedFromTemplate, EMBED_TEMPLATES, validateEmbed } = toolsEmbedBuilder;
 
       // Vérifier que le template existe
       if (!EMBED_TEMPLATES[args.template]) {
@@ -728,7 +797,7 @@ server.addTool({
   },
 });
 
-// 4. Envoyer Message Simple - SOLUTION FINALE
+// 4. Envoyer Message Simple - SOLUTION FINALE avec rate limiting
 server.addTool({
   name: 'envoyer_message',
   description: 'Envoie un message texte simple',
@@ -736,7 +805,7 @@ server.addTool({
     channelId: z.string().describe('ID du canal Discord'),
     content: z.string().describe('Contenu du message'),
   }),
-  execute: async args => {
+  execute: withRateLimit('envoyer_message', async args => {
     try {
       if (!botConfig.token || botConfig.token === 'YOUR_BOT_TOKEN') {
         return '❌ Token Discord non configuré';
@@ -753,13 +822,13 @@ server.addTool({
 
       const message = await channel.send(args.content);
       const result = `✅ Message envoyé | ID: ${message.id}`;
-      console.error('✅ [envoyer_message]', result);
+      Logger.info('✅ [envoyer_message]', result);
       return result;
     } catch (error: any) {
-      console.error('❌ [envoyer_message]', error.message);
+      Logger.error('❌ [envoyer_message]', error.message);
       return `❌ Erreur: ${error.message}`;
     }
-  },
+  }),
 });
 
 // 5. Créer Embed - Version améliorée
@@ -780,11 +849,11 @@ server.addTool({
       .describe("Couleur de l'embed"),
     url: z.string().optional().describe('URL lorsque le titre est cliquable'),
     thumbnail: z.string().optional().describe('URL de la miniature'),
-    image: z.string().optional().describe("URL de la grande image"),
+    image: z.string().optional().describe('URL de la grande image'),
     authorName: z.string().optional().describe("Nom de l'auteur"),
     authorUrl: z.string().optional().describe("URL de l'auteur"),
     authorIcon: z.string().optional().describe("URL de l'icône de l'auteur"),
-    footerText: z.string().optional().describe("Texte du footer"),
+    footerText: z.string().optional().describe('Texte du footer'),
     footerIcon: z.string().optional().describe("URL de l'icône du footer"),
     fields: z
       .array(
@@ -796,8 +865,8 @@ server.addTool({
       )
       .optional()
       .describe("Champs de l'embed"),
-    timestamp: z.boolean().optional().default(true).describe("Ajouter un timestamp"),
-    content: z.string().optional().describe("Message de texte supplémentaire"),
+    timestamp: z.boolean().optional().default(true).describe('Ajouter un timestamp'),
+    content: z.string().optional().describe('Message de texte supplémentaire'),
   }),
   execute: async args => {
     try {
@@ -811,10 +880,7 @@ server.addTool({
 
       // Charger les utilitaires
       await loadTools();
-      const {
-        CreateEmbedSchema,
-        validateEmbed,
-      } = toolsEmbedBuilder;
+      const { CreateEmbedSchema, validateEmbed } = toolsEmbedBuilder;
 
       // Valider les paramètres
       const validation = CreateEmbedSchema.safeParse({
@@ -843,16 +909,16 @@ server.addTool({
           } else {
             // Gérer les noms de couleurs Discord
             const colorMap: { [key: string]: number } = {
-              'RED': 0xe74c3c,
-              'GREEN': 0x2ecc71,
-              'BLUE': 0x3498db,
-              'YELLOW': 0xf1c40f,
-              'PURPLE': 0x9b59b6,
-              'ORANGE': 0xe67e22,
-              'AQUA': 0x1abc9c,
-              'WHITE': 0xffffff,
-              'BLACK': 0x000000,
-              'BLURPLE': 0x5865f2,
+              RED: 0xe74c3c,
+              GREEN: 0x2ecc71,
+              BLUE: 0x3498db,
+              YELLOW: 0xf1c40f,
+              PURPLE: 0x9b59b6,
+              ORANGE: 0xe67e22,
+              AQUA: 0x1abc9c,
+              WHITE: 0xffffff,
+              BLACK: 0x000000,
+              BLURPLE: 0x5865f2,
             };
             const upperColor = args.color.toUpperCase().replace(/ /g, '_');
             embed.setColor(colorMap[upperColor] || 0x000000);
@@ -1031,13 +1097,13 @@ server.addTool({
   },
 });
 
-// 8. Créer Sondage - Version améliorée
+// 8. Créer Sondage - Version ULTRA simple sans composants
 server.addTool({
   name: 'creer_sondage',
-  description: 'Crée un sondage interactif avec options avancées',
+  description: 'Crée un sondage simple avec embed et réactions (100% compatible Discord.js)',
   parameters: z.object({
     channelId: z.string().describe('ID du canal où créer le sondage'),
-    question: z.string().describe('Question du sondage'),
+    question: z.string().min(5).max(500).describe('Question du sondage (5-500 caractères)'),
     options: z.array(z.string()).min(2).max(10).describe('Options du sondage (2-10 options)'),
     duration: z
       .number()
@@ -1046,7 +1112,6 @@ server.addTool({
       .optional()
       .default(300)
       .describe('Durée en secondes (min: 5s, max: 7j, défaut: 5m)'),
-    allowMultiple: z.boolean().optional().default(false).describe('Autoriser plusieurs réponses'),
     anonymous: z.boolean().optional().default(false).describe('Sondage anonyme'),
   }),
   execute: async args => {
@@ -1059,57 +1124,55 @@ server.addTool({
         throw new Error('Canal invalide ou inaccessible');
       }
 
-      // Charger les utilitaires
-      await loadTools();
-      const {
-        createPollEmbed,
-        getPollButtons,
-        CreatePollSchema,
-      } = toolsPolls;
+      // Emojis pour les options
+      const emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
 
-      // Valider les paramètres
-      const validation = CreatePollSchema.safeParse(args);
-      if (!validation.success) {
-        return `❌ Paramètres invalides: ${validation.error.message}`;
-      }
+      // Créer l'embed simple
+      const embed = new EmbedBuilder()
+        .setTitle('📊 Sondage')
+        .setDescription(`**${args.question}**\n\n${args.options.map((opt, i) => `${emojis[i]} ${opt}`).join('\n')}`)
+        .setColor(0x5865f2)
+        .addFields(
+          { name: '⏱️ Durée', value: formatDuration(args.duration), inline: true },
+          { name: '👤 Mode', value: args.anonymous ? 'Anonyme' : 'Public', inline: true },
+          { name: '🔢 Votes', value: args.options.length + ' options', inline: true }
+        )
+        .setFooter({ text: 'Réagissez avec les emojis pour voter !' })
+        .setTimestamp();
 
-      // Créer l'embed du sondage
-      const embed = createPollEmbed(
-        args.question,
-        args.options,
-        args.duration,
-        args.anonymous,
-        args.allowMultiple
-      );
+      // Envoyer le message SANS aucun composant
+      const message = await channel.send({ embeds: [embed] });
 
-      // Créer les boutons
-      const pollId = `poll_${Date.now()}`;
-      const buttons = getPollButtons(pollId, args.options);
+      // Ajouter les réactions une par une
+      await message.react(emojis[0]);
+      if (args.options.length > 1) await message.react(emojis[1]);
+      if (args.options.length > 2) await message.react(emojis[2]);
+      if (args.options.length > 3) await message.react(emojis[3]);
+      if (args.options.length > 4) await message.react(emojis[4]);
 
-      // Diviser les boutons en lignes (max 5 par ligne)
-      const rows: any[] = [];
-      let currentRow = new ActionRowBuilder();
-
-      buttons.forEach((button, index) => {
-        if (index > 0 && index % 5 === 0) {
-          rows.push(currentRow as any);
-          currentRow = new ActionRowBuilder() as any;
-        }
-        (currentRow as any).addComponents(button);
-      });
-
-      rows.push(currentRow as any);
-
-      // Envoyer le message
-      const message = await channel.send({ embeds: [embed], components: rows });
-
-      return `✅ Sondage créé | ID: ${message.id} | Durée: ${args.duration}s | Mode: ${args.anonymous ? 'Anonyme' : 'Public'}`;
+      const endTime = new Date(Date.now() + args.duration * 1000);
+      return `✅ Sondage créé | ID: ${message.id} | ${args.options.length} options | Fin: <t:${Math.floor(endTime.getTime() / 1000)}:R>`;
     } catch (error: any) {
       console.error(`❌ [creer_sondage]`, error.message);
       return `❌ Erreur: ${error.message}`;
     }
   },
 });
+
+// Fonction utilitaire pour formater la durée
+function formatDuration(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+
+  if (hours > 0) {
+    return `${hours}h${minutes > 0 ? ` ${minutes}m` : ''}${secs > 0 ? ` ${secs}s` : ''}`;
+  } else if (minutes > 0) {
+    return `${minutes}m${secs > 0 ? ` ${secs}s` : ''}`;
+  } else {
+    return `${secs}s`;
+  }
+}
 
 // 9. Créer Boutons Personnalisés
 server.addTool({
@@ -1139,8 +1202,8 @@ server.addTool({
         throw new Error('Canal invalide ou inaccessible');
       }
 
-      const rows: any[] = [];
-      let currentRow = new ActionRowBuilder();
+      const rows: ActionRowBuilder<any>[] = [];
+      let currentRow = new ActionRowBuilder<any>();
 
       const styleMap = {
         Primary: ButtonStyle.Primary,
@@ -1151,8 +1214,8 @@ server.addTool({
 
       args.buttons.forEach((btn, index) => {
         if (index > 0 && index % 5 === 0) {
-          rows.push(currentRow as any);
-          currentRow = new ActionRowBuilder() as any;
+          rows.push(currentRow);
+          currentRow = new ActionRowBuilder<any>();
         }
 
         const button = new ButtonBuilder()
@@ -1162,14 +1225,14 @@ server.addTool({
 
         if (btn.emoji) button.setEmoji(btn.emoji);
 
-        (currentRow as any).addComponents(button);
+        currentRow.addComponents(button);
       });
 
-      rows.push(currentRow as any);
+      rows.push(currentRow);
 
       const message = await channel.send({
         content: args.content,
-        components: rows,
+        components: rows.map(row => row.toJSON()),
       });
 
       return `✅ Boutons créés | ID: ${message.id}`;
@@ -1219,15 +1282,15 @@ server.addTool({
           menuOption.setDescription(opt.description);
         }
 
-        (menu as any).addOptions(menuOption);
+        menu.addOptions(menuOption);
       });
 
-      const row = new ActionRowBuilder() as any;
+      const row = new ActionRowBuilder();
       row.addComponents(menu);
 
       const message = await channel.send({
         content: args.content,
-        components: [row],
+        components: [row.toJSON()],
       });
 
       return `✅ Menu créé | ID: ${message.id}`;
@@ -1311,7 +1374,9 @@ server.addTool({
   }),
   execute: async args => {
     try {
-      console.error(`🔍 [code_preview] Langage: ${args.language}, Taille: ${args.code.length} chars`);
+      console.error(
+        `🔍 [code_preview] Langage: ${args.language}, Taille: ${args.code.length} chars`
+      );
       const client = await ensureDiscordConnection();
       const channel = await client.channels.fetch(args.channelId);
 
@@ -1371,11 +1436,7 @@ server.addTool({
 
       // Charger les utilitaires
       await loadTools();
-      const {
-        createAttachmentFromFile,
-        createFileUploadEmbed,
-        checkFileSize,
-      } = toolsFileUpload;
+      const { createAttachmentFromFile, createFileUploadEmbed, checkFileSize } = toolsFileUpload;
 
       // Vérifier la taille du fichier
       const sizeCheck = await checkFileSize(args.filePath);
@@ -1421,7 +1482,7 @@ server.addTool({
 // 15. Lister Membres
 server.addTool({
   name: 'list_members',
-  description: 'Liste les membres et leurs rôles d\'un serveur',
+  description: "Liste les membres et leurs rôles d'un serveur",
   parameters: z.object({
     guildId: z.string().optional().describe('ID du serveur (défaut: premier serveur)'),
     limit: z.number().min(1).max(100).default(50).describe('Nombre maximum de membres'),
@@ -1457,7 +1518,7 @@ server.addTool({
   name: 'get_user_info',
   description: 'Obtenir des informations détaillées sur un utilisateur',
   parameters: z.object({
-    userId: z.string().describe('ID de l\'utilisateur'),
+    userId: z.string().describe("ID de l'utilisateur"),
     guildId: z.string().optional().describe('ID du serveur pour les informations de membre'),
   }),
   execute: async args => {
@@ -1492,7 +1553,7 @@ server.addTool({
   parameters: z.object({
     channelId: z.string().describe('ID du canal où créer le webhook'),
     name: z.string().describe('Nom du webhook'),
-    avatarUrl: z.string().optional().describe('URL de l\'avatar du webhook'),
+    avatarUrl: z.string().optional().describe("URL de l'avatar du webhook"),
   }),
   execute: async args => {
     try {
@@ -1520,7 +1581,7 @@ server.addTool({
 // 16. Lister Webhooks
 server.addTool({
   name: 'list_webhooks',
-  description: 'Liste tous les webhooks d\'un canal',
+  description: "Liste tous les webhooks d'un canal",
   parameters: z.object({
     channelId: z.string().describe('ID du canal'),
   }),
@@ -1555,8 +1616,8 @@ server.addTool({
     webhookId: z.string().describe('ID du webhook'),
     webhookToken: z.string().describe('Token du webhook'),
     content: z.string().optional().describe('Contenu du message'),
-    username: z.string().optional().describe('Nom d\'utilisateur personnalisé'),
-    avatarUrl: z.string().optional().describe('URL de l\'avatar personnalisé'),
+    username: z.string().optional().describe("Nom d'utilisateur personnalisé"),
+    avatarUrl: z.string().optional().describe("URL de l'avatar personnalisé"),
   }),
   execute: async args => {
     try {
@@ -1586,8 +1647,8 @@ server.addTool({
   parameters: z.object({
     channelId: z.string().describe('ID du canal où voter'),
     messageId: z.string().describe('ID du message du sondage'),
-    optionIndex: z.number().min(0).describe('Index de l\'option à voter'),
-    userId: z.string().optional().describe('ID de l\'utilisateur (défaut: bot)'),
+    optionIndex: z.number().min(0).describe("Index de l'option à voter"),
+    userId: z.string().optional().describe("ID de l'utilisateur (défaut: bot)"),
   }),
   execute: async args => {
     try {
@@ -1650,7 +1711,9 @@ server.addTool({
   }),
   execute: async args => {
     try {
-      console.error(`🔘 [appuyer_bouton] Message: ${args.messageId}, Button: ${args.buttonCustomId}`);
+      console.error(
+        `🔘 [appuyer_bouton] Message: ${args.messageId}, Button: ${args.buttonCustomId}`
+      );
       const client = await ensureDiscordConnection();
       const channel = await client.channels.fetch(args.channelId);
 
@@ -1707,7 +1770,9 @@ server.addTool({
   }),
   execute: async args => {
     try {
-      console.error(`📋 [selectionner_menu] Message: ${args.messageId}, Menu: ${args.menuCustomId}, Value: ${args.value}`);
+      console.error(
+        `📋 [selectionner_menu] Message: ${args.messageId}, Menu: ${args.menuCustomId}, Value: ${args.value}`
+      );
       const client = await ensureDiscordConnection();
       const channel = await client.channels.fetch(args.channelId);
 
@@ -1758,19 +1823,19 @@ server.addTool({
   },
 });
 
-// 21. Statut Bot
+// 21. Statut Bot avec rate limiting
 server.addTool({
   name: 'statut_bot',
   description: 'Statut actuel du bot',
   parameters: z.object({}),
-  execute: async () => {
+  execute: withRateLimit('statut_bot', async () => {
     try {
       const client = await ensureDiscordConnection();
       return `🤖 Status: Connecté\nUser: ${client.user!.tag}\nGuilds: ${client.guilds.cache.size}\nUptime: ${client.uptime}ms\nNode: ${process.version}`;
     } catch (error: any) {
       return `❌ Déconnecté | Erreur: ${error.message}`;
     }
-  },
+  }),
 });
 
 // ============================================================================
@@ -1780,13 +1845,27 @@ server.addTool({
 async function cleanup() {
   console.error('\n🧹 Nettoyage...');
   try {
+    // Nettoyer le timer de sauvegarde
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+      saveTimeout = null;
+    }
+
+    // Nettoyer les instances Discord
     if (botConfig.token) {
       await DiscordBridge.getInstance(botConfig.token).destroy();
     }
+
+    // Nettoyer le cache des outils
+    toolsCache.clear();
+
+    // Nettoyer la map de rate limiting
+    rateLimitMap.clear();
+
+    Logger.info('✅ Nettoyage terminé');
   } catch (e) {
-    console.error('Erreur nettoyage:', e);
+    Logger.error('Erreur nettoyage:', e);
   }
-  console.error('✅ Nettoyage terminé');
 }
 
 process.on('SIGINT', async () => {
@@ -1797,9 +1876,33 @@ process.on('SIGINT', async () => {
 
 process.on('SIGTERM', async () => {
   console.error('\nSignal SIGTERM reçu');
+  Logger.warn('\nSignal SIGTERM reçu');
   await cleanup();
   process.exit(0);
 });
+
+// Gestion des erreurs non capturées pour éviter les crashes
+process.on('uncaughtException', error => {
+  Logger.error('❌ Erreur non capturée:', error);
+  Logger.error('Stack trace:', error.stack);
+  // Ne pas quitter, laisser le serveur continuer
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  Logger.error('❌ Promesse rejetée non gérée:', reason);
+  Logger.error('Promise:', promise);
+  // Ne pas quitter, laisser le serveur continuer
+});
+
+// Limite de mémoire pour éviter les freezes
+const MEMORY_LIMIT = 512 * 1024 * 1024; // 512 MB
+if (process.memoryUsage().heapUsed > MEMORY_LIMIT) {
+  console.error('⚠️ Limite de mémoire atteinte:', process.memoryUsage());
+  // Forcer le garbage collection si disponible
+  if (global.gc) {
+    global.gc();
+  }
+}
 
 // ============================================================================
 // GESTIONNAIRE D'INTERACTIONS
@@ -1809,33 +1912,24 @@ process.on('SIGTERM', async () => {
 import { interactionHandler } from './utils/interactionHandler.js';
 
 // Écouter les interactions depuis le processus Discord
-process.stdin.setEncoding('utf8');
-process.stdin.on('data', data => {
-  const lines = data.toString().trim().split('\n');
-  lines.forEach(line => {
-    if (line.trim()) {
-      try {
-        const message = JSON.parse(line);
-        if (message.type === 'discord_to_mcp') {
-          handleDiscordMessage(message);
-        }
-      } catch (error) {
-        console.error('❌ Erreur de parsing du message Discord:', error);
-      }
-    }
-  });
-});
+// NOTE: Le hijacking de stdin est supprimé car il casse le transport MCP.
+// Si une communication avec un autre processus est nécessaire, 
+// utilisez un IPC plus robuste (Sockets, Named Pipes, etc).
 
 // Traiter les messages du processus Discord
 function handleDiscordMessage(message: any) {
   switch (message.id) {
     case 'poll_interaction':
-      console.error(`🎯 [Poll Interaction] ${message.data.action} par ${message.data.user.username}`);
+      console.error(
+        `🎯 [Poll Interaction] ${message.data.action} par ${message.data.user.username}`
+      );
       interactionHandler.handlePollInteraction(message.data);
       break;
 
     case 'custom_button_interaction':
-      console.error(`🔘 [Custom Button] ${message.data.customId} par ${message.data.user.username}`);
+      console.error(
+        `🔘 [Custom Button] ${message.data.customId} par ${message.data.user.username}`
+      );
       interactionHandler.handleCustomButton(message.data);
       break;
 
@@ -1850,12 +1944,16 @@ function handleDiscordMessage(message: any) {
       break;
 
     case 'guild_member_add':
-      console.error(`👋 [Member Add] ${message.data.member.username} sur ${message.data.guildName}`);
+      console.error(
+        `👋 [Member Add] ${message.data.member.username} sur ${message.data.guildName}`
+      );
       handleWelcomeMessage(message.data);
       break;
 
     case 'guild_member_remove':
-      console.error(`👋 [Member Remove] ${message.data.member.username} de ${message.data.guildName}`);
+      console.error(
+        `👋 [Member Remove] ${message.data.member.username} de ${message.data.guildName}`
+      );
       handleGoodbyeMessage(message.data);
       break;
 
@@ -1934,28 +2032,30 @@ async function logRoleAction(action: string, data: any) {
 // ============================================================================
 
 async function main() {
-  console.error('🚀 Démarrage Discord MCP v2.0...\n');
+  Logger.info('🚀 Démarrage Discord MCP v2.0...\n');
 
   try {
     // Démarrer le serveur MCP
     await server.start();
-    console.error('✅ Serveur MCP démarré\n');
+    Logger.info('✅ Serveur MCP démarré\n');
 
     // Initialiser la connexion Discord
     try {
       await ensureDiscordConnection();
-      console.error('✅ Connexion Discord établie\n');
+      Logger.info('✅ Connexion Discord établie\n');
     } catch (error) {
-      console.warn('⚠️ Discord non connecté (continuation possible):', (error as Error).message);
+      Logger.warn('⚠️ Discord non connecté (continuation possible):', (error as Error).message);
     }
 
-    console.error('📊 Status:');
-    console.error(`   • Nom: discord-mcp-server`);
-    console.error(`   • Version: 2.0.0`);
-    console.error(`   • Outils: 26 (messages, embeds, fichiers, sondages, webhooks, membres, interactions)`);
-    console.error(`   • Environment: ${botConfig.environment}`);
+    Logger.info('📊 Status:');
+    Logger.info(`   • Nom: discord-mcp-server`);
+    Logger.info(`   • Version: 2.0.0`);
+    Logger.info(
+      `   • Outils: 26 (messages, embeds, fichiers, sondages, webhooks, membres, interactions)`
+    );
+    Logger.info(`   • Environment: ${botConfig.environment}`);
   } catch (error) {
-    console.error('❌ Erreur fatal:', error);
+    Logger.error('❌ Erreur fatal:', error);
     await cleanup();
     process.exit(1);
   }

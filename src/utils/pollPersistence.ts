@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { PollResult } from '../tools/polls.js';
+import Logger from './logger.js';
 
 // Configuration
 const DATA_DIR = join(process.cwd(), 'data');
@@ -11,7 +12,7 @@ async function ensureDataDir(): Promise<void> {
   try {
     await fs.mkdir(DATA_DIR, { recursive: true });
   } catch (error) {
-    console.error('Erreur lors de la création du dossier data:', error);
+    Logger.error('Erreur lors de la création du dossier data:', error);
   }
 }
 
@@ -35,18 +36,18 @@ export async function loadPolls(): Promise<Map<string, PollResult>> {
       }
     });
 
-    console.log(`✅ ${pollsMap.size} sondages chargés depuis le fichier`);
+    Logger.info(`✅ ${pollsMap.size} sondages chargés depuis le fichier`);
     return pollsMap;
   } catch (error) {
     // Si le fichier n'existe pas, créer un fichier vide
     if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      console.log('📄 Aucun fichier de sondages existant, création du fichier...');
+      Logger.info('📄 Aucun fichier de sondages existant, création du fichier...');
       await fs.writeFile(POLLS_FILE, JSON.stringify([], null, 2), 'utf-8');
-      console.log('📄 Fichier de sondages créé, démarrage avec une Map vide');
+      Logger.info('📄 Fichier de sondages créé, démarrage avec une Map vide');
       return new Map<string, PollResult>();
     }
 
-    console.error('❌ Erreur lors du chargement des sondages:', error);
+    Logger.error('❌ Erreur lors du chargement des sondages:', error);
     return new Map<string, PollResult>();
   }
 }
@@ -66,9 +67,9 @@ export async function savePolls(polls: Map<string, PollResult>): Promise<void> {
     }));
 
     await fs.writeFile(POLLS_FILE, JSON.stringify(pollsToSave, null, 2), 'utf-8');
-    console.log(`💾 ${polls.size} sondages sauvegardés dans le fichier`);
+    Logger.info(`💾 ${polls.size} sondages sauvegardés dans le fichier`);
   } catch (error) {
-    console.error('❌ Erreur lors de la sauvegarde des sondages:', error);
+    Logger.error('❌ Erreur lors de la sauvegarde des sondages:', error);
     throw error;
   }
 }
@@ -131,7 +132,7 @@ export async function cleanExpiredPolls(polls: Map<string, PollResult>): Promise
 
   if (expiredCount > 0) {
     await savePolls(polls);
-    console.log(`🧹 ${expiredCount} sondages expirés marqués comme terminés`);
+    Logger.info(`🧹 ${expiredCount} sondages expirés marqués comme terminés`);
   }
 
   return expiredCount;

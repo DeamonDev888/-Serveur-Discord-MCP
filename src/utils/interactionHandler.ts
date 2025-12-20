@@ -1,7 +1,6 @@
-import { loadPolls, savePolls, getPoll } from './pollPersistence.js';
-import { loadButtons, saveButtons } from './buttonPersistence.js';
-import { EmbedBuilder } from 'discord.js';
-import { createResultsEmbed } from '../tools/polls.js';
+import { loadPolls, savePolls } from './pollPersistence.js';
+import { loadCustomButtons, saveCustomButtons } from './buttonPersistence.js';
+import Logger from './logger.js';
 
 /**
  * Gestionnaire principal des interactions Discord
@@ -17,8 +16,8 @@ export class InteractionHandler {
   private async initialize() {
     // Charger les données persistées
     this.polls = await loadPolls();
-    this.buttons = await loadButtons();
-    console.log('✅ Gestionnaire d\'interactions initialisé');
+    this.buttons = await loadCustomButtons();
+    Logger.info("✅ Gestionnaire d'interactions initialisé");
   }
 
   /**
@@ -27,18 +26,18 @@ export class InteractionHandler {
   async handlePollInteraction(data: any): Promise<void> {
     const { pollId, action, user, channelId, messageId } = data;
 
-    console.log(`🎯 Traitement interaction sondage: ${action} par ${user.username}`);
+    Logger.info(`🎯 Traitement interaction sondage: ${action} par ${user.username}`);
 
     // Récupérer le sondage
     let poll = this.polls.get(pollId) || this.polls.get(`poll_${pollId}`);
     if (!poll) {
-      console.log(`❌ Sondage non trouvé: ${pollId}`);
+      Logger.warn(`❌ Sondage non trouvé: ${pollId}`);
       return;
     }
 
     // Vérifier si le sondage est terminé
     if (poll.ended) {
-      console.log('❌ Sondage déjà terminé');
+      Logger.debug('❌ Sondage déjà terminé');
       return;
     }
 
@@ -46,7 +45,7 @@ export class InteractionHandler {
     if (new Date() > new Date(poll.endTime)) {
       poll.ended = true;
       await savePolls(this.polls);
-      console.log('⏰ Sondage expiré');
+      Logger.info('⏰ Sondage expiré');
       return;
     }
 
@@ -63,7 +62,7 @@ export class InteractionHandler {
         // C'est un vote (action = index de l'option)
         const optionIndex = parseInt(action);
         if (isNaN(optionIndex) || optionIndex < 0 || optionIndex >= poll.options.length) {
-          console.log(`❌ Index d'option invalide: ${action}`);
+          Logger.warn(`❌ Index d'option invalide: ${action}`);
           return;
         }
         await this.handleVote(poll, optionIndex, user, channelId, messageId);
@@ -77,8 +76,14 @@ export class InteractionHandler {
   /**
    * Gérer un vote
    */
-  private async handleVote(poll: any, optionIndex: number, user: any, channelId: string, messageId: string): Promise<void> {
-    console.log(`🗳️ Vote de ${user.username} pour l'option ${optionIndex}`);
+  private async handleVote(
+    poll: any,
+    optionIndex: number,
+    user: any,
+    channelId: string,
+    messageId: string
+  ): Promise<void> {
+    Logger.debug(`🗳️ Vote de ${user.username} pour l'option ${optionIndex}`);
 
     // TODO: Implémenter la vérification des votes multiples
     // Pour l'instant, on incrémente simplement le compteur
@@ -88,22 +93,34 @@ export class InteractionHandler {
 
     // Recalculer les pourcentages
     poll.options.forEach((option: any) => {
-      option.percentage = poll.totalVotes > 0
-        ? (option.votes / poll.totalVotes) * 100
-        : 0;
+      option.percentage = poll.totalVotes > 0 ? (option.votes / poll.totalVotes) * 100 : 0;
     });
 
-    console.log(`✅ Vote enregistré. Total: ${poll.totalVotes}`);
+    Logger.info(`✅ Vote enregistré. Total: ${poll.totalVotes}`);
 
-    // TODO: Mettre à jour le message Discord
-    // Cela nécessite d'envoyer une commande au processus Discord
+    // Envoyer confirmation à Discord
+    this.sendToDiscord({
+      action: 'update_poll_message',
+      channelId,
+      messageId,
+      poll: {
+        id: poll.id,
+        question: poll.question,
+        options: poll.options,
+        totalVotes: poll.totalVotes,
+        endTime: poll.endTime,
+        ended: poll.ended,
+        allowMultiple: poll.allowMultiple,
+        anonymous: poll.anonymous,
+      },
+    });
   }
 
   /**
    * Terminer un sondage
    */
   private async endPoll(poll: any, channelId: string, messageId: string): Promise<void> {
-    console.log('🏁 Terminaison du sondage');
+    Logger.info('🏁 Terminaison du sondage');
 
     poll.ended = true;
 
@@ -112,20 +129,48 @@ export class InteractionHandler {
       prev.votes > current.votes ? prev : current
     );
 
-    console.log(`🏆 Gagnant: ${winner.text} avec ${winner.votes} votes`);
+    Logger.info(`🏆 Gagnant: ${winner.text} avec ${winner.votes} votes`);
 
-    // TODO: Envoyer un message de fin dans Discord
+    // Envoyer message de fin à Discord
+    this.sendToDiscord({
+      action: 'end_poll',
+      channelId,
+      messageId,
+      poll: {
+        id: poll.id,
+        question: poll.question,
+        options: poll.options,
+        totalVotes: poll.totalVotes,
+        endTime: poll.endTime,
+        ended: poll.ended,
+        allowMultiple: poll.allowMultiple,
+        anonymous: poll.anonymous,
+      },
+      winner: winner.text,
+    });
   }
 
   /**
    * Afficher les résultats d'un sondage
    */
   private async showPollResults(poll: any, channelId: string): Promise<void> {
-    console.log('📊 Affichage des résultats');
+    Logger.info('📊 Affichage des résultats');
 
-    const resultsEmbed = createResultsEmbed(poll);
-
-    // TODO: Envoyer l'embed des résultats dans Discord
+    // Envoyer les résultats à Discord
+    this.sendToDiscord({
+      action: 'show_poll_results',
+      channelId,
+      poll: {
+        id: poll.id,
+        question: poll.question,
+        options: poll.options,
+        totalVotes: poll.totalVotes,
+        endTime: poll.endTime,
+        ended: poll.ended,
+        allowMultiple: poll.allowMultiple,
+        anonymous: poll.anonymous,
+      },
+    });
   }
 
   /**
@@ -134,12 +179,12 @@ export class InteractionHandler {
   async handleCustomButton(data: any): Promise<void> {
     const { customId, user, channelId, messageId } = data;
 
-    console.log(`🔘 Bouton personnalisé cliqué: ${customId} par ${user.username}`);
+    Logger.info(`🔘 Bouton personnalisé cliqué: ${customId} par ${user.username}`);
 
     // Récupérer la configuration du bouton
     const button = this.buttons.get(customId);
     if (!button) {
-      console.log(`❌ Bouton non trouvé: ${customId}`);
+      Logger.warn(`❌ Bouton non trouvé: ${customId}`);
       return;
     }
 
@@ -149,14 +194,14 @@ export class InteractionHandler {
     const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
 
     if (hoursDiff > 24) {
-      console.log('⏰ Bouton expiré (TTL 24h)');
+      Logger.info('⏰ Bouton expiré (TTL 24h)');
       this.buttons.delete(customId);
-      await saveButtons(this.buttons);
+      await saveCustomButtons(this.buttons);
       return;
     }
 
     // TODO: Exécuter l'action du bouton
-    console.log(`✅ Action à exécuter:`, button.action);
+    Logger.debug(`✅ Action à exécuter:`, button.action);
 
     // TODO: Envoyer une réponse à l'utilisateur
   }
@@ -167,8 +212,8 @@ export class InteractionHandler {
   async handleSelectMenu(data: any): Promise<void> {
     const { customId, values, user, channelId, messageId } = data;
 
-    console.log(`📋 Menu sélectionné: ${customId} par ${user.username}`);
-    console.log('Valeurs sélectionnées:', values);
+    Logger.info(`📋 Menu sélectionné: ${customId} par ${user.username}`);
+    Logger.debug('Valeurs sélectionnées:', values);
 
     // TODO: Traiter la sélection
   }
@@ -179,8 +224,8 @@ export class InteractionHandler {
   async handleModalSubmit(data: any): Promise<void> {
     const { customId, fields, user, channelId, messageId } = data;
 
-    console.log(`📝 Modal soumis: ${customId} par ${user.username}`);
-    console.log('Champs:', fields);
+    Logger.info(`📝 Modal soumis: ${customId} par ${user.username}`);
+    Logger.debug('Champs:', fields);
 
     // TODO: Traiter les données du modal
   }
@@ -222,6 +267,24 @@ export class InteractionHandler {
   deletePoll(pollId: string): void {
     this.polls.delete(pollId);
     this.polls.delete(`poll_${pollId}`);
+  }
+
+  /**
+   * Envoyer une commande au processus Discord
+   */
+  private sendToDiscord(data: any): void {
+    try {
+      const message = {
+        type: 'mcp_to_discord',
+        id: `cmd_${Date.now()}`,
+        data,
+        timestamp: Date.now(),
+      };
+      process.stdout.write(JSON.stringify(message) + '\n');
+      Logger.debug(`📤 Commande envoyée à Discord: ${data.action}`);
+    } catch (error) {
+      Logger.error('❌ Erreur envoi commande Discord:', error);
+    }
   }
 }
 
