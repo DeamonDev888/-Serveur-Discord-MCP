@@ -229,6 +229,386 @@ client.on('messageCreate', message => {
   );
 });
 
+// ===============================
+// EVENT LISTENERS - NOUVELLES FONCTIONNALITÉS
+// ===============================
+
+// Gestion des interactions (boutons, menus, modals)
+client.on('interactionCreate', async interaction => {
+  try {
+    if (interaction.isButton()) {
+      await handleButtonInteraction(interaction);
+    } else if (interaction.isStringSelectMenu()) {
+      await handleSelectMenuInteraction(interaction);
+    } else if (interaction.isModalSubmit()) {
+      await handleModalSubmit(interaction);
+    }
+  } catch (error) {
+    console.error('Erreur lors du traitement de l\'interaction:', error);
+
+    const replyable = interaction as any;
+    if (replyable.replied || replyable.deferred) {
+      await replyable.followUp({
+        content: '❌ Une erreur est survenue lors du traitement de votre action.',
+        ephemeral: true
+      });
+    } else {
+      await replyable.reply({
+        content: '❌ Une erreur est survenue lors du traitement de votre action.',
+        ephemeral: true
+      });
+    }
+  }
+});
+
+// Gestionnaire des clics de boutons
+async function handleButtonInteraction(interaction: any) {
+  const customId = interaction.customId;
+
+  // Sondages
+  if (customId.startsWith('poll_')) {
+    await handlePollButton(interaction);
+    return;
+  }
+
+  // Boutons personnalisés
+  if (customId.startsWith('custom_button_')) {
+    await handleCustomButton(interaction);
+    return;
+  }
+
+  // Giveaways
+  if (customId.startsWith('giveaway_')) {
+    await handleGiveawayButton(interaction);
+    return;
+  }
+
+  console.log(`Bouton inconnu cliqué: ${customId}`);
+}
+
+// Gestionnaire des sélections de menus
+async function handleSelectMenuInteraction(interaction: any) {
+  const customId = interaction.customId;
+  const values = interaction.values;
+
+  console.log(`Menu sélectionné: ${customId} avec valeurs:`, values);
+
+  // Envoyer au MCP pour traitement
+  process.stdout.write(
+    JSON.stringify({
+      type: 'discord_to_mcp',
+      id: 'select_menu',
+      data: {
+        customId,
+        values,
+        user: {
+          id: interaction.user.id,
+          username: interaction.user.username,
+        },
+        channelId: interaction.channelId,
+        messageId: interaction.message.id,
+      },
+    }) + '\n'
+  );
+}
+
+// Gestionnaire des soumissions de modals
+async function handleModalSubmit(interaction: any) {
+  const customId = interaction.customId;
+  const fields: any = {};
+
+  // Extraire tous les champs du modal
+  for (const component of interaction.components) {
+    if (component.type === 1) { // ActionRow
+      for (const field of component.components) {
+        if (field.type === 4) { // TextInput
+          fields[field.customId] = field.value;
+        }
+      }
+    }
+  }
+
+  console.log(`Modal soumis: ${customId}`, fields);
+
+  // Envoyer au MCP pour traitement
+  process.stdout.write(
+    JSON.stringify({
+      type: 'discord_to_mcp',
+      id: 'modal_submit',
+      data: {
+        customId,
+        fields,
+        user: {
+          id: interaction.user.id,
+          username: interaction.user.username,
+        },
+        channelId: interaction.channelId,
+        messageId: interaction.message.id,
+      },
+    }) + '\n'
+  );
+}
+
+// Gestionnaire spécifique pour les sondages
+async function handlePollButton(interaction: any) {
+  const customId = interaction.customId;
+  const parts = customId.split('_');
+  const pollId = parts[1];
+  const action = parts[2];
+
+  console.log(`Action sondage: ${action} pour le sondage ${pollId}`);
+
+  // Envoyer au MCP pour traitement
+  process.stdout.write(
+    JSON.stringify({
+      type: 'discord_to_mcp',
+      id: 'poll_interaction',
+      data: {
+        pollId,
+        action,
+        user: {
+          id: interaction.user.id,
+          username: interaction.user.username,
+        },
+        channelId: interaction.channelId,
+        messageId: interaction.message.id,
+      },
+    }) + '\n'
+  );
+}
+
+// Gestionnaire pour les boutons personnalisés
+async function handleCustomButton(interaction: any) {
+  const customId = interaction.customId;
+
+  console.log(`Bouton personnalisé cliqué: ${customId}`);
+
+  // Envoyer au MCP pour traitement
+  process.stdout.write(
+    JSON.stringify({
+      type: 'discord_to_mcp',
+      id: 'custom_button_interaction',
+      data: {
+        customId,
+        user: {
+          id: interaction.user.id,
+          username: interaction.user.username,
+        },
+        channelId: interaction.channelId,
+        messageId: interaction.message.id,
+      },
+    }) + '\n'
+  );
+}
+
+// Gestionnaire pour les giveaways
+async function handleGiveawayButton(interaction: any) {
+  const customId = interaction.customId;
+
+  console.log(`Action giveaway: ${customId}`);
+
+  // Envoyer au MCP pour traitement
+  process.stdout.write(
+    JSON.stringify({
+      type: 'discord_to_mcp',
+      id: 'giveaway_interaction',
+      data: {
+        customId,
+        user: {
+          id: interaction.user.id,
+          username: interaction.user.username,
+        },
+        channelId: interaction.channelId,
+        messageId: interaction.message.id,
+      },
+    }) + '\n'
+  );
+}
+
+// ===============================
+// EVENT LISTENERS POUR LA MODÉRATION
+// ===============================
+
+// Nouveau membre
+client.on('guildMemberAdd', async member => {
+  console.log(`Nouveau membre: ${member.user.username} sur ${member.guild.name}`);
+
+  // Envoyer au MCP
+  process.stdout.write(
+    JSON.stringify({
+      type: 'discord_to_mcp',
+      id: 'guild_member_add',
+      data: {
+        member: {
+          id: member.id,
+          username: member.user.username,
+          discriminator: member.user.discriminator,
+        },
+        guildId: member.guild.id,
+        guildName: member.guild.name,
+        joinedAt: member.joinedAt?.toISOString(),
+      },
+    }) + '\n'
+  );
+});
+
+// Membre parti
+client.on('guildMemberRemove', async member => {
+  console.log(`Membre parti: ${member.user.username} de ${member.guild.name}`);
+
+  // Envoyer au MCP
+  process.stdout.write(
+    JSON.stringify({
+      type: 'discord_to_mcp',
+      id: 'guild_member_remove',
+      data: {
+        member: {
+          id: member.id,
+          username: member.user.username,
+          discriminator: member.user.discriminator,
+        },
+        guildId: member.guild.id,
+        guildName: member.guild.name,
+      },
+    }) + '\n'
+  );
+});
+
+// Message supprimé
+client.on('messageDelete', async message => {
+  if (message.author?.bot) return;
+
+  console.log(`Message supprimé dans ${message.channelId}`);
+
+  // Envoyer au MCP
+  process.stdout.write(
+    JSON.stringify({
+      type: 'discord_to_mcp',
+      id: 'message_delete',
+      data: {
+        messageId: message.id,
+        channelId: message.channelId,
+        content: message.content,
+        author: {
+          id: message.author.id,
+          username: message.author.username,
+        },
+        createdAt: message.createdAt.toISOString(),
+      },
+    }) + '\n'
+  );
+});
+
+// Message modifié
+client.on('messageUpdate', async (oldMessage, newMessage) => {
+  if (newMessage.author?.bot) return;
+  if (oldMessage.content === newMessage.content) return;
+
+  console.log(`Message modifié dans ${newMessage.channelId}`);
+
+  // Envoyer au MCP
+  process.stdout.write(
+    JSON.stringify({
+      type: 'discord_to_mcp',
+      id: 'message_update',
+      data: {
+        messageId: newMessage.id,
+        channelId: newMessage.channelId,
+        oldContent: oldMessage.content,
+        newContent: newMessage.content,
+        author: {
+          id: newMessage.author.id,
+          username: newMessage.author.username,
+        },
+      },
+    }) + '\n'
+  );
+});
+
+// Canal créé
+client.on('channelCreate', async channel => {
+  const channelName = (channel as any).name || 'Unknown';
+  const guildName = (channel as any).guild?.name || 'Unknown';
+  console.log(`Canal créé: ${channelName} (${channel.type})`);
+
+  // Envoyer au MCP
+  process.stdout.write(
+    JSON.stringify({
+      type: 'discord_to_mcp',
+      id: 'channel_create',
+      data: {
+        channelId: channel.id,
+        channelName: channelName,
+        channelType: channel.type,
+        guildId: (channel as any).guild?.id,
+        guildName: guildName,
+      },
+    }) + '\n'
+  );
+});
+
+// Canal supprimé
+client.on('channelDelete', async channel => {
+  const channelName = (channel as any).name || 'Unknown';
+  const guildName = (channel as any).guild?.name || 'Unknown';
+  console.log(`Canal supprimé: ${channelName} (${channel.type})`);
+
+  // Envoyer au MCP
+  process.stdout.write(
+    JSON.stringify({
+      type: 'discord_to_mcp',
+      id: 'channel_delete',
+      data: {
+        channelId: channel.id,
+        channelName: channelName,
+        channelType: channel.type,
+        guildId: (channel as any).guild?.id,
+        guildName: guildName,
+      },
+    }) + '\n'
+  );
+});
+
+// Rôle créé
+client.on('roleCreate', async role => {
+  console.log(`Rôle créé: ${role.name}`);
+
+  // Envoyer au MCP
+  process.stdout.write(
+    JSON.stringify({
+      type: 'discord_to_mcp',
+      id: 'role_create',
+      data: {
+        roleId: role.id,
+        roleName: role.name,
+        guildId: role.guild.id,
+        guildName: role.guild.name,
+        color: role.color,
+        permissions: role.permissions.bitfield,
+      },
+    }) + '\n'
+  );
+});
+
+// Rôle supprimé
+client.on('roleDelete', async role => {
+  console.log(`Rôle supprimé: ${role.name}`);
+
+  // Envoyer au MCP
+  process.stdout.write(
+    JSON.stringify({
+      type: 'discord_to_mcp',
+      id: 'role_delete',
+      data: {
+        roleId: role.id,
+        roleName: role.name,
+        guildId: role.guild.id,
+        guildName: role.guild.name,
+      },
+    }) + '\n'
+  );
+});
+
 client.on('error', error => {
   console.error('Erreur client Discord:', error);
 });

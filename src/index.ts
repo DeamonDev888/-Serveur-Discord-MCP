@@ -204,6 +204,394 @@ server.addTool({
   },
 });
 
+// ============================================================================
+// OUTILS DE MODÉRATION
+// ============================================================================
+
+// Importer les outils de modération
+import {
+  initializeModeration,
+  kickMember,
+  banMember,
+  unbanMember,
+  muteMember,
+  unmuteMember,
+  warnMember,
+  getWarnings,
+  clearWarnings,
+  KickMemberSchema,
+  BanMemberSchema,
+  UnbanMemberSchema,
+  MuteMemberSchema,
+  UnmuteMemberSchema,
+  WarnMemberSchema,
+  GetWarningsSchema,
+  ClearWarningsSchema,
+} from './tools/moderation.js';
+
+// Initialiser la modération
+initializeModeration();
+
+// 1. Expulser un membre
+server.addTool({
+  name: 'kick_member',
+  description: 'Expulse un membre du serveur',
+  parameters: KickMemberSchema,
+  execute: async args => {
+    try {
+      console.error(`👢 [kick_member] User: ${args.userId}`);
+      const client = await ensureDiscordConnection();
+      const result = await kickMember(client, args);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [kick_member]`, error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 2. Bannir un membre
+server.addTool({
+  name: 'ban_member',
+  description: 'Bannit un membre du serveur',
+  parameters: BanMemberSchema,
+  execute: async args => {
+    try {
+      console.error(`🔨 [ban_member] User: ${args.userId}`);
+      const client = await ensureDiscordConnection();
+      const result = await banMember(client, args);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [ban_member]`, error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 3. Débannir un membre
+server.addTool({
+  name: 'unban_member',
+  description: 'Débannit un membre du serveur',
+  parameters: UnbanMemberSchema,
+  execute: async args => {
+    try {
+      console.error(`🔓 [unban_member] User: ${args.userId}`);
+      const client = await ensureDiscordConnection();
+      const result = await unbanMember(client, args);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [unban_member]`, error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 4. Mute un membre
+server.addTool({
+  name: 'mute_member',
+  description: 'Mute un membre temporairement',
+  parameters: MuteMemberSchema,
+  execute: async args => {
+    try {
+      console.error(`🤐 [mute_member] User: ${args.userId}, Duration: ${args.duration}s`);
+      const client = await ensureDiscordConnection();
+      const result = await muteMember(client, args);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [mute_member]`, error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 5. Démute un membre
+server.addTool({
+  name: 'unmute_member',
+  description: 'Démute un membre',
+  parameters: UnmuteMemberSchema,
+  execute: async args => {
+    try {
+      console.error(`🔊 [unmute_member] User: ${args.userId}`);
+      const client = await ensureDiscordConnection();
+      const result = await unmuteMember(client, args);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [unmute_member]`, error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 6. Avertir un membre
+server.addTool({
+  name: 'warn_member',
+  description: 'Avertit un membre',
+  parameters: WarnMemberSchema,
+  execute: async args => {
+    try {
+      console.error(`⚠️ [warn_member] User: ${args.userId}`);
+      const client = await ensureDiscordConnection();
+      const result = await warnMember(client, args);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [warn_member]`, error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 7. Voir les warns
+server.addTool({
+  name: 'get_warnings',
+  description: 'Affiche les avertissements d\'un membre',
+  parameters: GetWarningsSchema,
+  execute: async args => {
+    try {
+      console.error(`📋 [get_warnings] User: ${args.userId}`);
+      const client = await ensureDiscordConnection();
+      const result = await getWarnings(client, args);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [get_warnings]`, error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 8. Effacer les warns
+server.addTool({
+  name: 'clear_warnings',
+  description: 'Efface tous les avertissements d\'un membre',
+  parameters: ClearWarningsSchema,
+  execute: async args => {
+    try {
+      console.error(`🧹 [clear_warnings] User: ${args.userId}`);
+      const client = await ensureDiscordConnection();
+      const result = await clearWarnings(client, args);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [clear_warnings]`, error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// ============================================================================
+// OUTILS DE GESTION DES RÔLES
+// ============================================================================
+
+// Importer les outils de gestion des rôles
+import {
+  createRole,
+  deleteRole,
+  editRole,
+  addRoleToMember,
+  removeRoleFromMember,
+  getMemberRoles,
+  CreateRoleSchema,
+  DeleteRoleSchema,
+  EditRoleSchema,
+  AddRoleToMemberSchema,
+  RemoveRoleFromMemberSchema,
+  GetMemberRolesSchema,
+} from './tools/roleManager.js';
+
+// 1. Créer un rôle
+server.addTool({
+  name: 'create_role',
+  description: 'Crée un nouveau rôle',
+  parameters: CreateRoleSchema,
+  execute: async args => {
+    try {
+      console.error(`🎭 [create_role] Name: ${args.name}`);
+      const client = await ensureDiscordConnection();
+      const result = await createRole(client, args);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [create_role]`, error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 2. Supprimer un rôle
+server.addTool({
+  name: 'delete_role',
+  description: 'Supprime un rôle',
+  parameters: DeleteRoleSchema,
+  execute: async args => {
+    try {
+      console.error(`🗑️ [delete_role] Role: ${args.roleId}`);
+      const client = await ensureDiscordConnection();
+      const result = await deleteRole(client, args);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [delete_role]`, error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 3. Modifier un rôle
+server.addTool({
+  name: 'edit_role',
+  description: 'Modifie un rôle existant',
+  parameters: EditRoleSchema,
+  execute: async args => {
+    try {
+      console.error(`✏️ [edit_role] Role: ${args.roleId}`);
+      const client = await ensureDiscordConnection();
+      const result = await editRole(client, args);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [edit_role]`, error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 4. Donner un rôle à un membre
+server.addTool({
+  name: 'add_role_to_member',
+  description: 'Donne un rôle à un membre',
+  parameters: AddRoleToMemberSchema,
+  execute: async args => {
+    try {
+      console.error(`➕ [add_role_to_member] User: ${args.userId}, Role: ${args.roleId}`);
+      const client = await ensureDiscordConnection();
+      const result = await addRoleToMember(client, args);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [add_role_to_member]`, error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 5. Retirer un rôle d'un membre
+server.addTool({
+  name: 'remove_role_from_member',
+  description: 'Retire un rôle d\'un membre',
+  parameters: RemoveRoleFromMemberSchema,
+  execute: async args => {
+    try {
+      console.error(`➖ [remove_role_from_member] User: ${args.userId}, Role: ${args.roleId}`);
+      const client = await ensureDiscordConnection();
+      const result = await removeRoleFromMember(client, args);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [remove_role_from_member]`, error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 6. Voir les rôles d'un membre
+server.addTool({
+  name: 'get_member_roles',
+  description: 'Affiche les rôles d\'un membre',
+  parameters: GetMemberRolesSchema,
+  execute: async args => {
+    try {
+      console.error(`📋 [get_member_roles] User: ${args.userId}`);
+      const client = await ensureDiscordConnection();
+      const result = await getMemberRoles(client, args);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [get_member_roles]`, error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// ============================================================================
+// OUTILS DE GESTION DES CANAUX
+// ============================================================================
+
+// Importer les outils de gestion des canaux
+import {
+  createChannel,
+  deleteChannel,
+  editChannel,
+  moveMemberToChannel,
+  CreateChannelSchema,
+  DeleteChannelSchema,
+  EditChannelSchema,
+  MoveMemberToChannelSchema,
+} from './tools/channelAdmin.js';
+
+// 1. Créer un canal
+server.addTool({
+  name: 'create_channel',
+  description: 'Crée un nouveau canal',
+  parameters: CreateChannelSchema,
+  execute: async args => {
+    try {
+      console.error(`📝 [create_channel] Name: ${args.name}, Type: ${args.type}`);
+      const client = await ensureDiscordConnection();
+      const result = await createChannel(client, args);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [create_channel]`, error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 2. Supprimer un canal
+server.addTool({
+  name: 'delete_channel',
+  description: 'Supprime un canal',
+  parameters: DeleteChannelSchema,
+  execute: async args => {
+    try {
+      console.error(`🗑️ [delete_channel] Channel: ${args.channelId}`);
+      const client = await ensureDiscordConnection();
+      const result = await deleteChannel(client, args);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [delete_channel]`, error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 3. Modifier un canal
+server.addTool({
+  name: 'edit_channel',
+  description: 'Modifie un canal existant',
+  parameters: EditChannelSchema,
+  execute: async args => {
+    try {
+      console.error(`✏️ [edit_channel] Channel: ${args.channelId}`);
+      const client = await ensureDiscordConnection();
+      const result = await editChannel(client, args);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [edit_channel]`, error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 4. Déplacer un membre vers un canal vocal
+server.addTool({
+  name: 'move_member_to_channel',
+  description: 'Déplace un membre vers un canal vocal',
+  parameters: MoveMemberToChannelSchema,
+  execute: async args => {
+    try {
+      console.error(`🔄 [move_member_to_channel] User: ${args.userId}, Channel: ${args.channelId}`);
+      const client = await ensureDiscordConnection();
+      const result = await moveMemberToChannel(client, args);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [move_member_to_channel]`, error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
 // 2. Lister Templates
 server.addTool({
   name: 'lister_templates',
@@ -1412,6 +1800,134 @@ process.on('SIGTERM', async () => {
   await cleanup();
   process.exit(0);
 });
+
+// ============================================================================
+// GESTIONNAIRE D'INTERACTIONS
+// ============================================================================
+
+// Importer le gestionnaire d'interactions
+import { interactionHandler } from './utils/interactionHandler.js';
+
+// Écouter les interactions depuis le processus Discord
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', data => {
+  const lines = data.toString().trim().split('\n');
+  lines.forEach(line => {
+    if (line.trim()) {
+      try {
+        const message = JSON.parse(line);
+        if (message.type === 'discord_to_mcp') {
+          handleDiscordMessage(message);
+        }
+      } catch (error) {
+        console.error('❌ Erreur de parsing du message Discord:', error);
+      }
+    }
+  });
+});
+
+// Traiter les messages du processus Discord
+function handleDiscordMessage(message: any) {
+  switch (message.id) {
+    case 'poll_interaction':
+      console.error(`🎯 [Poll Interaction] ${message.data.action} par ${message.data.user.username}`);
+      interactionHandler.handlePollInteraction(message.data);
+      break;
+
+    case 'custom_button_interaction':
+      console.error(`🔘 [Custom Button] ${message.data.customId} par ${message.data.user.username}`);
+      interactionHandler.handleCustomButton(message.data);
+      break;
+
+    case 'select_menu':
+      console.error(`📋 [Select Menu] ${message.data.customId} par ${message.data.user.username}`);
+      interactionHandler.handleSelectMenu(message.data);
+      break;
+
+    case 'modal_submit':
+      console.error(`📝 [Modal Submit] ${message.data.customId} par ${message.data.user.username}`);
+      interactionHandler.handleModalSubmit(message.data);
+      break;
+
+    case 'guild_member_add':
+      console.error(`👋 [Member Add] ${message.data.member.username} sur ${message.data.guildName}`);
+      handleWelcomeMessage(message.data);
+      break;
+
+    case 'guild_member_remove':
+      console.error(`👋 [Member Remove] ${message.data.member.username} de ${message.data.guildName}`);
+      handleGoodbyeMessage(message.data);
+      break;
+
+    case 'message_delete':
+      console.error(`🗑️ [Message Delete] dans ${message.data.channelId}`);
+      logMessageAction('delete', message.data);
+      break;
+
+    case 'message_update':
+      console.error(`✏️ [Message Update] dans ${message.data.channelId}`);
+      logMessageAction('update', message.data);
+      break;
+
+    case 'channel_create':
+      console.error(`📝 [Channel Create] ${message.data.channelName}`);
+      logChannelAction('create', message.data);
+      break;
+
+    case 'channel_delete':
+      console.error(`🗑️ [Channel Delete] ${message.data.channelName}`);
+      logChannelAction('delete', message.data);
+      break;
+
+    case 'role_create':
+      console.error(`🎭 [Role Create] ${message.data.roleName}`);
+      logRoleAction('create', message.data);
+      break;
+
+    case 'role_delete':
+      console.error(`🗑️ [Role Delete] ${message.data.roleName}`);
+      logRoleAction('delete', message.data);
+      break;
+
+    default:
+      console.error(`ℹ️ [Discord Message] ${message.id}:`, message.data);
+  }
+}
+
+// Gérer les messages de bienvenue
+async function handleWelcomeMessage(data: any) {
+  // TODO: Implémenter la logique de bienvenue
+  // - Vérifier la config du serveur
+  // - Envoyer un message de bienvenue
+  // - Donner un rôle automatique
+  console.error(`✅ Logique de bienvenue à implémenter pour ${data.member.username}`);
+}
+
+// Gérer les messages d'au revoir
+async function handleGoodbyeMessage(data: any) {
+  // TODO: Implémenter la logique d'au revoir
+  // - Vérifier la config du serveur
+  // - Envoyer un message d'au revoir
+  console.error(`✅ Logique d'au revoir à implémenter pour ${data.member.username}`);
+}
+
+// Logger les actions sur les messages
+async function logMessageAction(action: string, data: any) {
+  // TODO: Implémenter le logging des messages
+  console.error(`✅ Logging ${action} pour message ${data.messageId}`);
+}
+
+// Logger les actions sur les canaux
+async function logChannelAction(action: string, data: any) {
+  // TODO: Implémenter le logging des canaux
+  console.error(`✅ Logging ${action} pour canal ${data.channelName}`);
+}
+
+// Logger les actions sur les rôles
+async function logRoleAction(action: string, data: any) {
+  // TODO: Implémenter le logging des rôles
+  console.error(`✅ Logging ${action} pour rôle ${data.roleName}`);
+}
 
 // ============================================================================
 // DÉMARRAGE
