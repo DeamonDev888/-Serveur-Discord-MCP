@@ -20,7 +20,7 @@ Discord MCP Server est un **pont** entre votre intelligence artificielle et Disc
 
 ### 🤖 Comment ça marche ?
 
-1. **Votre IA** (Claude, Gemini, ChatGPT, etc.) envoie une commande
+1. **Votre IA** (Claude, Gemini, Grok, etc.) envoie une commande
 2. **Discord MCP Server** traduit cette commande pour Discord
 3. **Votre bot** exécute l'action sur votre serveur
 
@@ -31,12 +31,12 @@ Discord MCP Server est un **pont** entre votre intelligence artificielle et Disc
 - ✅ **Antigravity**
 - ✅ **Gemini CLI**
 - ✅ **Cursor AI**
-- ✅ **Grok** (xAI)
 - ✅ Et tous les autres assistants supportant MCP !
 
 **En résumé :** Parlez à votre IA, et votre bot Discord exécute. C'est aussi simple que ça ! 🚀
 
-Avec **28 outils puissants**, vous pouvez faire absolument tout sur Discord :
+Avec **27 outils puissants**, vous pouvez faire absolument tout sur Discord :
+
 - Envoyer des messages
 - Créer des sondages interactifs
 - Gérer votre serveur
