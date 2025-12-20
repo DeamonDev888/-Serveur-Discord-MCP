@@ -38,7 +38,7 @@ Discord MCP Server est un **pont** entre votre intelligence artificielle et Disc
 Avec **27 outils puissants**, vous pouvez faire absolument tout sur Discord :
 
 - Envoyer des messages
-- Créer des sondages interactifs
+- Créer des sondages interactifs, menu et boutons
 - Gérer votre serveur
 - Et bien plus encore !
 
