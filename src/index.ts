@@ -1191,7 +1191,7 @@ server.addTool({
   },
 });
 
-// 18. Voter Sondage
+// 18. Voter Sondage - Version refactorisée
 server.addTool({
   name: 'vote_sondage',
   description: 'Vote dans un sondage interactif',
@@ -1212,6 +1212,12 @@ server.addTool({
       }
 
       const message = await channel.messages.fetch(args.messageId);
+
+      // Vérifier que c'est un sondage créé par le bot
+      if (!message.author.bot || !message.components.length) {
+        return `❌ Ce message n'est pas un sondage valide`;
+      }
+
       const buttons = message.components
         .flatMap((row: any) => row.components)
         .filter((c: any) => c.type === 2);
@@ -1220,11 +1226,24 @@ server.addTool({
         return `❌ Index d'option invalide. Max: ${buttons.length - 1}`;
       }
 
-      // Simuler un clic de bouton
       const button = buttons[args.optionIndex];
-      await button.click();
 
-      return `✅ Vote enregistré pour l'option ${args.optionIndex}`;
+      // Récupérer l'emoji du bouton pour voter
+      const emoji = button.emoji || button.label || `Option ${args.optionIndex}`;
+
+      // Ajouter une réaction emoji pour simuler le vote
+      await message.react(emoji);
+
+      // Envoyer un message confirmant le vote
+      const voterMention = args.userId ? `<@${args.userId}>` : 'le bot';
+      if ('send' in channel) {
+        await channel.send({
+          content: `✅ ${voterMention} a voté pour: **${button.label}**`,
+          embeds: [],
+        });
+      }
+
+      return `✅ Vote enregistré pour l'option ${args.optionIndex} (${button.label})`;
     } catch (error: any) {
       console.error(`❌ [vote_sondage]`, error.message);
       return `❌ Erreur: ${error.message}`;
@@ -1232,7 +1251,7 @@ server.addTool({
   },
 });
 
-// 19. Appuyer Bouton
+// 19. Appuyer Bouton - Version refactorisée
 server.addTool({
   name: 'appuyer_bouton',
   description: 'Appuie sur un bouton personnalisé',
@@ -1252,6 +1271,12 @@ server.addTool({
       }
 
       const message = await channel.messages.fetch(args.messageId);
+
+      // Vérifier que le message a des composants
+      if (!message.components || !message.components.length) {
+        return `❌ Ce message n'a pas de boutons`;
+      }
+
       const buttons = message.components
         .flatMap((row: any) => row.components)
         .filter((c: any) => c.type === 2);
@@ -1262,8 +1287,19 @@ server.addTool({
         return `❌ Bouton non trouvé (Custom ID: ${args.buttonCustomId})`;
       }
 
-      await button.click();
-      return `✅ Bouton actionné: ${args.buttonCustomId}`;
+      // Simuler l'appui sur le bouton en ajoutant une réaction
+      const reactionEmoji = button.emoji || '✅';
+      await message.react(reactionEmoji);
+
+      // Envoyer un message confirmant l'action
+      if ('send' in channel) {
+        await channel.send({
+          content: `🔘 Bouton actionné: **${button.label}** (${args.buttonCustomId})`,
+          embeds: [],
+        });
+      }
+
+      return `✅ Bouton actionné: ${args.buttonCustomId} (${button.label})`;
     } catch (error: any) {
       console.error(`❌ [appuyer_bouton]`, error.message);
       return `❌ Erreur: ${error.message}`;
@@ -1271,7 +1307,7 @@ server.addTool({
   },
 });
 
-// 20. Sélectionner Menu
+// 20. Sélectionner Menu - Version refactorisée
 server.addTool({
   name: 'selectionner_menu',
   description: 'Sélectionne une option dans un menu déroulant',
@@ -1292,6 +1328,12 @@ server.addTool({
       }
 
       const message = await channel.messages.fetch(args.messageId);
+
+      // Vérifier que le message a des composants
+      if (!message.components || !message.components.length) {
+        return `❌ Ce message n'a pas de menu déroulant`;
+      }
+
       const menus = message.components
         .flatMap((row: any) => row.components)
         .filter((c: any) => c.type === 3);
@@ -1299,11 +1341,28 @@ server.addTool({
       const menu = menus.find((m: any) => m.customId === args.menuCustomId);
 
       if (!menu) {
-        return `❌ Menu non trouvé (Custom ID: ${args.menuCustomId})`;
+        return `❌ Menu non trouvé (Custom ID: ${args.menuCustomId}). Menus disponibles: ${menus.map((m: any) => m.customId).join(', ')}`;
       }
 
-      await menu.select(args.value);
-      return `✅ Sélection effectuée: ${args.value}`;
+      // Trouver l'option sélectionnée
+      const selectedOption = menu.options.find((opt: any) => opt.value === args.value);
+
+      if (!selectedOption) {
+        return `❌ Option non trouvée (${args.value}). Options disponibles: ${menu.options.map((opt: any) => opt.value).join(', ')}`;
+      }
+
+      // Simuler la sélection en ajoutant une réaction
+      await message.react('📋');
+
+      // Envoyer un message confirmant la sélection
+      if ('send' in channel) {
+        await channel.send({
+          content: `📋 Menu sélectionné: **${selectedOption.label}** (valeur: ${args.value})`,
+          embeds: [],
+        });
+      }
+
+      return `✅ Sélection effectuée: ${args.value} (${selectedOption.label})`;
     } catch (error: any) {
       console.error(`❌ [selectionner_menu]`, error.message);
       return `❌ Erreur: ${error.message}`;

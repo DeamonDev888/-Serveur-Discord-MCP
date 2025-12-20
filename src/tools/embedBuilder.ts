@@ -100,6 +100,30 @@ export const CreateEmbedSchema = z.object({
     .describe('Champs (max 25)'),
   timestamp: z.boolean().optional().default(false).describe('Ajouter un timestamp'),
   content: z.string().optional().describe("Message de texte supplémentaire à envoyer avec l'embed"),
+  // New enhanced features
+  graph: z
+    .object({
+      type: z.enum(['bar', 'line', 'pie']),
+      data: z.array(z.object({ label: z.string(), value: z.number() })),
+    })
+    .optional()
+    .describe('Graphique à intégrer dans l\'embed'),
+  miniIcon: z.string().optional().describe('Mini icône (emoji ou URL)'),
+  imageText: z
+    .object({
+      text: z.string(),
+      color: z.string().optional(),
+      position: z.enum(['top', 'bottom', 'center']).optional(),
+    })
+    .optional()
+    .describe('Texte superposé sur l\'image'),
+  minigame: z
+    .object({
+      type: z.enum(['tic-tac-toe', 'hangman', 'quiz']),
+      data: z.any(),
+    })
+    .optional()
+    .describe('Mini-jeu interactif'),
 });
 
 // Schéma pour les templates d'embeds prédéfinis
@@ -206,6 +230,18 @@ export const EMBED_TEMPLATES: Record<
     footer: {
       text: 'Bonne chance à tous !',
     },
+    timestamp: true,
+  },
+  graph: {
+    title: '📊 Graphique',
+    color: DISCORD_COLORS.BLUE,
+    description: 'Affichage de données graphiques',
+    timestamp: true,
+  },
+  minigame: {
+    title: '🎮 Mini-Jeu',
+    color: DISCORD_COLORS.GOLD,
+    description: 'Jeu interactif',
     timestamp: true,
   },
 };

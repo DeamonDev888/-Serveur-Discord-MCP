@@ -307,3 +307,21 @@ Les contributions sont les bienvenues ! N'hésitez pas à :
 [![GitHub license](https://img.shields.io/github/license/yourusername/discord-mcp-server)](https://github.com/yourusername/discord-mcp-server)
 
 </div>
+
+---
+
+## 📸 Galerie
+
+Voici quelques exemples d'utilisation de Discord MCP Server :
+
+### 🔐 Crypto
+![Crypto](assets/crypto.png)
+
+### 🎭 Feux de rôle
+![Feux de rôle](assets/feux%20de%20role.png)
+
+### 💻 Aperçu du code
+![Code Preview](assets/cod%20preview.png)
+
+### 🍌 Nano Banana
+![Nano Banana](assets/nano%20banana.png)
