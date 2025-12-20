@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://readme-typing-svg.herokuapp.com?font=JetBrains+Mono&size=30&duration=3000&color=5865F2&center=true&vCenter=true&multiline=true&height=50&lines=%F0%9F%A4%96+Discord+MCP+Server;%E2%9C%A8+27+outils+pour+automatiser+Discord" alt="Discord MCP Server">
+  <img src="https://readme-typing-svg.herokuapp.com?font=JetBrains+Mono&size=30&duration=3000&color=5865F2&center=true&vCenter=true&multiline=true&height=50&lines=%F0%9F%A4%96+Discord+MCP+Server;%E2%9C%A8+28+outils+pour+automatiser+Discord" alt="Discord MCP Server">
 </p>
 
 <br>
