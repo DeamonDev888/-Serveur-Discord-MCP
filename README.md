@@ -250,7 +250,7 @@ Avec Discord MCP Server, vous pouvez :
 
 Pour exploiter pleinement les 26 outils de Discord MCP Server, utilisez le **prompt système dédié** :
 
-👉 **[Accéder au prompt système ici](https://hackmd.io/@1-f9TrSqR0iVfHGkGYO3zw/rk8_YHVQZl)**
+👉 **[Accéder au prompt ou skill système ici](https://hackmd.io/@1-f9TrSqR0iVfHGkGYO3zw/rk8_YHVQZl)**
 
 ### Qu'est-ce que c'est ?
 
@@ -283,7 +283,7 @@ L'IA utilisera automatiquement les outils :
 - [📘 Documentation Discord.js](https://discord.js.org/)
 - [🔌 Model Context Protocol](https://modelcontextprotocol.io/)
 - [📚 Guide Discord Developers](https://discord.com/developers/docs/intro)
-- [🤖 Prompt System pour Discord MCP](https://hackmd.io/@1-f9TrSqR0iVfHGkGYO3zw/rk8_YHVQZl) - _Prompt système optimisé pour exploiter tous les outils Discord MCP_
+- [🤖 Prompt System/Skill pour Discord MCP](https://hackmd.io/@1-f9TrSqR0iVfHGkGYO3zw/rk8_YHVQZl) - _Prompt système optimisé pour exploiter tous les outils Discord MCP_
 
 ---
 
