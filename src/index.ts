@@ -766,7 +766,7 @@ server.addTool({
         });
       }
       if (embedData.fields) {
-        embedData.fields.forEach(field => {
+        embedData.fields.forEach((field: { name: string; value: string; inline?: boolean }) => {
           embed.addFields({
             name: field.name,
             value: field.value,
