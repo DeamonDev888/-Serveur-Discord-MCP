@@ -51,92 +51,82 @@ Avec **26 outils puissants**, vous pouvez faire absolument tout sur Discord :
 <details>
 <summary>💬 Gestion des Messages (7 outils)</summary>
 
-| Outil               | Description                           | Cas d'usage                     |
-| ------------------- | ------------------------------------- | ------------------------------- |
-| **discord_status**  | Vérifie le statut de connexion du bot | Diagnostic et monitoring        |
-| **envoyer_message** | Envoie un message texte simple        | Notifications, annonces         |
-| **read_messages**   | Lit l'historique des messages         | Analyse de conversation         |
-| **edit_message**    | Modifie un message existant           | Corrections, mises à jour       |
-| **delete_message**  | Supprime un message                   | Modération, nettoyage           |
-| **add_reaction**    | Ajoute une réaction emoji             | Sondages rapides, confirmations |
-| **creer_sondage**   | Crée un sondage interactif            | Collecte d'opinions, votes      |
+| Outil               | Description                           |
+| ------------------- | ------------------------------------- |
+| **discord_status**  | Vérifie le statut de connexion du bot |
+| **envoyer_message** | Envoie un message texte simple        |
+| **read_messages**   | Lit l'historique des messages         |
+| **edit_message**    | Modifie un message existant           |
+| **delete_message**  | Supprime un message                   |
+| **add_reaction**    | Ajoute une réaction emoji             |
+| **creer_sondage**   | Crée un sondage interactif            |
 
 </details>
 
 <details>
 <summary>📎 Fichiers et Médias (1 outil)</summary>
 
-| Outil                | Description                          | Support                             |
-| -------------------- | ------------------------------------ | ----------------------------------- |
-| **uploader_fichier** | Upload un fichier local vers Discord | Images, vidéos, documents, spoilers |
-
-_Limites : 25MB (images), 100MB (vidéos sur serveurs boostés)_
+| Outil                | Description                          |
+| -------------------- | ------------------------------------ |
+| **uploader_fichier** | Upload un fichier local vers Discord |
 
 </details>
 
 <details>
 <summary>🎨 Embeds (3 outils)</summary>
 
-| Outil                    | Description                                | Templates                                                                           |
-| ------------------------ | ------------------------------------------ | ----------------------------------------------------------------------------------- |
-| **creer_embed**          | Crée un embed enrichi personnalisable      | Champs multiples, couleurs, images                                                  |
-| **creer_embed_template** | Crée un embed depuis un template prédéfini | 8 templates (success, error, warning, info, announcement, rules, welcome, giveaway) |
-| **lister_templates**     | Liste tous les templates disponibles       | -                                                                                   |
-
-_Fonctionnalités : Titre, description, couleur, URL, auteur, footer, champs, timestamp, images_
+| Outil                    | Description                                |
+| ------------------------ | ------------------------------------------ |
+| **creer_embed**          | Crée un embed enrichi personnalisable      |
+| **creer_embed_template** | Crée un embed depuis un template prédéfini |
+| **lister_templates**     | Liste tous les templates disponibles       |
 
 </details>
 
 <details>
 <summary>💻 Code (1 outil)</summary>
 
-| Outil            | Description                                | Langages                            |
-| ---------------- | ------------------------------------------ | ----------------------------------- |
-| **code_preview** | Affiche du code avec coloration syntaxique | JS, TS, Python, Bash, et 20+ autres |
-
-_Division automatique en plusieurs messages si le code est trop long_
+| Outil            | Description                                |
+| ---------------- | ------------------------------------------ |
+| **code_preview** | Affiche du code avec coloration syntaxique |
 
 </details>
 
 <details>
 <summary>🔗 Webhooks (3 outils)</summary>
 
-| Outil              | Description                   | Utilisation                              |
-| ------------------ | ----------------------------- | ---------------------------------------- |
-| **create_webhook** | Crée un webhook sur un canal  | Intégrations externes, automatisation    |
-| **list_webhooks**  | Liste les webhooks d'un canal | Gestion et monitoring                    |
-| **send_webhook**   | Envoie un message via webhook | Notifications programmées, bots externes |
-
-_Idéal pour les intégrations CI/CD, monitoring, et alertes automatiques_
+| Outil              | Description                   |
+| ------------------ | ----------------------------- |
+| **create_webhook** | Crée un webhook sur un canal  |
+| **list_webhooks**  | Liste les webhooks d'un canal |
+| **send_webhook**   | Envoie un message via webhook |
 
 </details>
 
 <details>
 <summary>🏢 Serveur et Membres (5 outils)</summary>
 
-| Outil               | Description                        | Données retournées                    |
-| ------------------- | ---------------------------------- | ------------------------------------- |
-| **get_server_info** | Informations détaillées du serveur | Nom, membres, canaux, rôles, features |
-| **get_channels**    | Liste tous les canaux              | Types, noms, IDs, catégories          |
-| **list_members**    | Liste les membres et leurs rôles   | Usernames, rôles, statuts             |
-| **get_user_info**   | Informations sur un utilisateur    | Profil, historique, permissions       |
-| **statut_bot**      | Statut actuel du bot               | Uptime, connexions, statistiques      |
+| Outil               | Description                        |
+| ------------------- | ---------------------------------- |
+| **get_server_info** | Informations détaillées du serveur |
+| **get_channels**    | Liste tous les canaux              |
+| **list_members**    | Liste les membres et leurs rôles   |
+| **get_user_info**   | Informations sur un utilisateur    |
+| **statut_bot**      | Statut actuel du bot               |
 
 </details>
 
 <details>
 <summary>🎮 Interactions (6 outils)</summary>
 
-| Outil                     | Description                    | Composants                          |
-| ------------------------- | ------------------------------ | ----------------------------------- |
-| **create_custom_buttons** | Crée des boutons personnalisés | 5 styles, emojis, actions           |
-| **create_custom_menu**    | Crée un menu déroulant         | 25 options max, descriptions        |
-| **creer_sondage**         | Crée un sondage interactif     | Boutons de vote, durée configurable |
-| **vote_sondage**          | Vote dans un sondage           | API de vote programmatique          |
-| **appuyer_bouton**        | Appuie sur un bouton           | Simulation d'interaction            |
-| **selectionner_menu**     | Sélectionne dans un menu       | Sélection programmatique            |
-
-_Interfaces riches pour UX améliorée : commandes contextuelles, formulaires, dashboards_
+| Outil                     | Description                    |
+| ------------------------- | ------------------------------ |
+| **create_custom_buttons** | Crée des boutons personnalisés |
+| **create_custom_menu**    | Crée un menu déroulant         |
+| **creer_sondage**         | Crée un sondage interactif     |
+| **vote_sondage**          | Vote dans un sondage           |
+| **appuyer_bouton**        | Appuie sur un bouton           |
+| **selectionner_menu**     | Sélectionne dans un menu       |
 
 </details>
 
