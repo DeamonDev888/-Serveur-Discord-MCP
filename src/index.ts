@@ -2620,7 +2620,9 @@ server.addTool({
   },
 });
 
-// Auto-déploiement du RPG au démarrage (optionnel)
+// Auto-déploiement du RPG au démarrage (optionnel) - DÉSACTIVÉ
+// Pour réactiver, supprimez les // devant les lignes suivantes
+/*
 setTimeout(async () => {
     try {
         const { deployRPG } = await import('./utils/rpgDeploy.js');
@@ -2630,6 +2632,7 @@ setTimeout(async () => {
         // Silencieux si déjà lancé ou erreur
     }
 }, 5000);
+*/
 
 
 // 33. Explorateur de Logs - Surprise !
