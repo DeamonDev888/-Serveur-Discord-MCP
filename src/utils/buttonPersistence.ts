@@ -16,6 +16,7 @@ export interface CustomButton {
     type: string;
     data: any;
   };
+  functionCode?: string;
   createdAt: Date;
 }
 

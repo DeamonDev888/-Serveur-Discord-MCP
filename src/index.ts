@@ -27,6 +27,10 @@ let toolsPolls: any = null;
 let toolsEmbedBuilder: any = null;
 const toolsCache = new Map<string, any>();
 
+// Import des types pour éviter les erreurs TypeScript
+import type { CustomButton } from './utils/buttonPersistence.js';
+import type { CustomMenu } from './utils/menuPersistence.js';
+
 // Fonction pour charger les utilitaires à la demande avec cache
 async function loadTools() {
   // Chargement avec cache pour éviter les imports répétés
@@ -1188,6 +1192,10 @@ server.addTool({
           style: z.enum(['Primary', 'Secondary', 'Success', 'Danger']),
           customId: z.string().optional(),
           emoji: z.string().optional(),
+          action: z.object({
+            type: z.string().describe('Type d\'action'),
+            data: z.any().optional().describe('Données supplémentaires pour l\'action'),
+          }).optional().describe('Action à exécuter quand le bouton est cliqué'),
         })
       )
       .min(1)
@@ -1202,8 +1210,13 @@ server.addTool({
         throw new Error('Canal invalide ou inaccessible');
       }
 
+      // Importer la persistance des boutons
+      const { loadCustomButtons, addCustomButton } = await import('./utils/buttonPersistence.js');
+
       const rows: ActionRowBuilder<any>[] = [];
       let currentRow = new ActionRowBuilder<any>();
+      const now = new Date();
+      const savedButtons: string[] = [];
 
       const styleMap = {
         Primary: ButtonStyle.Primary,
@@ -1212,18 +1225,42 @@ server.addTool({
         Danger: ButtonStyle.Danger,
       };
 
+      // Charger les boutons existants
+      const existingButtons = await loadCustomButtons();
+
       args.buttons.forEach((btn, index) => {
         if (index > 0 && index % 5 === 0) {
           rows.push(currentRow);
           currentRow = new ActionRowBuilder<any>();
         }
 
+        // Générer un customId unique si non fourni
+        const customId = btn.customId || `btn_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`;
+
         const button = new ButtonBuilder()
           .setLabel(btn.label)
-          .setCustomId(btn.customId || `btn_${Date.now()}_${index}`)
+          .setCustomId(customId)
           .setStyle(styleMap[btn.style as keyof typeof styleMap]);
 
         if (btn.emoji) button.setEmoji(btn.emoji);
+
+        // Sauvegarder le bouton dans le système de persistance
+        if (btn.action) {
+          const customButton: CustomButton = {
+            id: customId,
+            messageId: '', // Sera mis à jour après l'envoi
+            channelId: args.channelId,
+            label: btn.label,
+            action: {
+              type: btn.action.type || 'message',
+              data: btn.action.data || {}
+            },
+            createdAt: now,
+          };
+
+          addCustomButton(customButton, existingButtons);
+          savedButtons.push(customId);
+        }
 
         currentRow.addComponents(button);
       });
@@ -1235,8 +1272,25 @@ server.addTool({
         components: rows.map(row => row.toJSON()),
       });
 
-      return `✅ Boutons créés | ID: ${message.id}`;
+      // Mettre à jour les IDs de message pour les boutons persistés
+      if (savedButtons.length > 0) {
+        const { saveCustomButtons } = await import('./utils/buttonPersistence.js');
+
+        // Mettre à jour les boutons avec le messageId
+        for (const buttonId of savedButtons) {
+          const button = existingButtons.get(buttonId);
+          if (button) {
+            button.messageId = message.id;
+          }
+        }
+
+        await saveCustomButtons(existingButtons);
+        Logger.info(`💾 ${savedButtons.length} boutons persistés pour le message ${message.id}`);
+      }
+
+      return `✅ Boutons créés | ID: ${message.id} | ${savedButtons.length > 0 ? `${savedButtons.length} persistés` : 'sans persistance'}`;
     } catch (error: any) {
+      Logger.error('❌ [create_custom_buttons]', error.message);
       return `❌ Erreur: ${error.message}`;
     }
   },
@@ -1823,6 +1877,493 @@ server.addTool({
   },
 });
 
+// 22. Lister les boutons personnalisés actifs
+server.addTool({
+  name: 'lister_boutons_actifs',
+  description: 'Liste tous les boutons personnalisés actifs avec leur état',
+  parameters: z.object({
+    channelId: z.string().optional().describe('Filtrer par canal spécifique'),
+  }),
+  execute: async args => {
+    try {
+      const { loadCustomButtons } = await import('./utils/buttonPersistence.js');
+      const buttons = await loadCustomButtons();
+
+      let filteredButtons = Array.from(buttons.values());
+
+      // Filtrer par canal si spécifié
+      if (args.channelId) {
+        filteredButtons = filteredButtons.filter(btn => btn.channelId === args.channelId);
+      }
+
+      if (filteredButtons.length === 0) {
+        return `📋 Aucun bouton actif${args.channelId ? ` dans le canal ${args.channelId}` : ''}`;
+      }
+
+      const now = new Date();
+      const list = filteredButtons.map(button => {
+        const createdAt = new Date(button.createdAt);
+        const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+        const status = hoursDiff > 24 ? '⏰ Expiré' : '✅ Actif';
+        const age = Math.floor(hoursDiff);
+
+        return `
+• **${button.label}** (${status})
+  🆔 ID: ${button.id}
+  💬 Canal: ${button.channelId}
+  📨 Message: ${button.messageId || 'Non envoyé'}
+  ⏱️ Âge: ${age}h
+  🔧 Action: ${button.action.type}
+  📊 Données: ${JSON.stringify(button.action.data || {})}
+        `.trim();
+      }).join('\n\n');
+
+      return `📋 ${filteredButtons.length} bouton(s) trouvé(s):\n\n${list}`;
+    } catch (error: any) {
+      Logger.error('❌ [lister_boutons_actifs]', error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 23. Supprimer un bouton personnalisé
+server.addTool({
+  name: 'supprimer_bouton_perso',
+  description: 'Supprime un bouton personnalisé du système de persistance',
+  parameters: z.object({
+    buttonId: z.string().describe('ID du bouton à supprimer'),
+  }),
+  execute: async args => {
+    try {
+      const { loadCustomButtons, deleteCustomButton } = await import('./utils/buttonPersistence.js');
+      const buttons = await loadCustomButtons();
+
+      const button = buttons.get(args.buttonId);
+      if (!button) {
+        return `❌ Bouton non trouvé: ${args.buttonId}`;
+      }
+
+      await deleteCustomButton(args.buttonId, buttons);
+
+      return `✅ Bouton supprimé: ${button.label} (${args.buttonId})`;
+    } catch (error: any) {
+      Logger.error('❌ [supprimer_bouton_perso]', error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 24. Nettoyer les anciens boutons
+server.addTool({
+  name: 'nettoyer_anciens_boutons',
+  description: 'Supprime tous les boutons de plus de 24h',
+  parameters: z.object({}),
+  execute: async () => {
+    try {
+      const { loadCustomButtons, cleanOldButtons } = await import('./utils/buttonPersistence.js');
+      const buttons = await loadCustomButtons();
+
+      const deletedCount = await cleanOldButtons(buttons);
+
+      return `🧹 Nettoyage terminé. ${deletedCount} ancien(s) bouton(s) supprimé(s)`;
+    } catch (error: any) {
+      Logger.error('❌ [nettoyer_anciens_boutons]', error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 25. Enregistrer une fonction personnalisée pour un bouton
+server.addTool({
+  name: 'enregistrer_fonction_bouton',
+  description: 'Enregistre une fonction personnalisée qui sera exécutée quand un bouton est cliqué',
+  parameters: z.object({
+    buttonId: z.string().describe('ID du bouton (customId)'),
+    code: z.string().describe('Code JavaScript de la fonction (async)'),
+    description: z.string().optional().describe('Description de la fonction'),
+  }),
+  execute: async args => {
+    try {
+      // Créer une fonction à partir du code
+      const func = async (interaction: any, buttonData: any) => {
+        const { EmbedBuilder, ButtonStyle, ActionRowBuilder, ButtonBuilder } = require('discord.js');
+        eval(`(async () => { ${args.code} })()`);
+      };
+
+      // Importer le registre de fonctions
+      const { registerButtonFunction } = await import('./discord-bridge.js');
+
+      // Enregistrer la fonction
+      registerButtonFunction(args.buttonId, func);
+
+      Logger.info(`✅ Fonction enregistrée pour le bouton: ${args.buttonId}`);
+      return `✅ Fonction enregistrée avec succès pour le bouton ${args.buttonId}${args.description ? `\nDescription: ${args.description}` : ''}`;
+    } catch (error: any) {
+      Logger.error('❌ [enregistrer_fonction_bouton]', error.message);
+      return `❌ Erreur lors de l'enregistrement: ${error.message}`;
+    }
+  },
+});
+
+// 26. Créer un bouton avec fonction personnalisée
+server.addTool({
+  name: 'creer_bouton_avance',
+  description: 'Crée un bouton avec une fonction personnalisée complexe',
+  parameters: z.object({
+    channelId: z.string().describe('ID du canal'),
+    content: z.string().describe('Contenu du message'),
+    buttonLabel: z.string().describe('Texte du bouton'),
+    buttonStyle: z.enum(['Primary', 'Secondary', 'Success', 'Danger']).default('Primary'),
+    buttonId: z.string().optional().describe('ID du bouton (généré si non fourni)'),
+    functionCode: z.string().describe('Code JavaScript à exécuter lors du clic'),
+    ephemeral: z.boolean().optional().default(false).describe('Réponse éphémère'),
+  }),
+  execute: async args => {
+    try {
+      const client = await ensureDiscordConnection();
+      const channel = await client.channels.fetch(args.channelId);
+
+      if (!channel || !('send' in channel)) {
+        throw new Error('Canal invalide ou inaccessible');
+      }
+
+      // Générer un ID unique si non fourni
+      const buttonId = args.buttonId || `btn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Créer la fonction personnalisée
+      const func = async (interaction: any, buttonData: any) => {
+        const { EmbedBuilder, ButtonStyle, ActionRowBuilder, ButtonBuilder } = require('discord.js');
+        eval(`(async () => { ${args.functionCode} })()`);
+      };
+
+      // Importer le registre de fonctions
+      const { registerButtonFunction } = await import('./discord-bridge.js');
+
+      // Enregistrer la fonction
+      registerButtonFunction(buttonId, func);
+
+      // Créer le bouton
+      const styleMap = {
+        Primary: 1, // ButtonStyle.Primary
+        Secondary: 2, // ButtonStyle.Secondary
+        Success: 3, // ButtonStyle.Success
+        Danger: 4, // ButtonStyle.Danger
+      };
+
+      const button = new ButtonBuilder()
+        .setLabel(args.buttonLabel)
+        .setCustomId(buttonId)
+        .setStyle(styleMap[args.buttonStyle as keyof typeof styleMap]);
+
+      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
+
+      // Envoyer le message
+      const message = await channel.send({
+        content: args.content,
+        components: [row],
+      });
+
+      // Persister le bouton
+      try {
+        const { loadCustomButtons, addCustomButton } = await import('./utils/buttonPersistence.js');
+        const buttons = await loadCustomButtons();
+        await addCustomButton({
+            id: buttonId,
+            messageId: message.id,
+            channelId: args.channelId,
+            label: args.buttonLabel,
+            action: { type: 'custom', data: {} },
+            functionCode: args.functionCode,
+            createdAt: new Date()
+        }, buttons);
+        Logger.info(`💾 Bouton avancé persisté: ${buttonId}`);
+      } catch (err) {
+        Logger.error('❌ Erreur persistance bouton:', err);
+      }
+
+      Logger.info(`✅ Bouton avancé créé: ${buttonId} - Message: ${message.id}`);
+      return `✅ Bouton avancé créé | ID: ${message.id} | Bouton: ${buttonId}`;
+    } catch (error: any) {
+      Logger.error('❌ [creer_bouton_avance]', error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 27. Lister les fonctions de boutons enregistrées
+server.addTool({
+  name: 'lister_fonctions_boutons',
+  description: 'Liste toutes les fonctions personnalisées enregistrées',
+  parameters: z.object({}),
+  execute: async () => {
+    try {
+      const { listButtonFunctions } = await import('./discord-bridge.js');
+      const functions = listButtonFunctions();
+
+      if (functions.length === 0) {
+        return '📋 Aucune fonction personnalisée enregistrée';
+      }
+
+      return `📋 ${functions.length} fonction(s) personnalisée(s) enregistrées:\n\n${functions.map(f => `• ${f}`).join('\n')}`;
+    } catch (error: any) {
+      Logger.error('❌ [lister_fonctions_boutons]', error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 28. Créer un menu déroulant persistant
+server.addTool({
+  name: 'creer_menu_persistant',
+  description: 'Crée un menu déroulant persistant avec actions personnalisées',
+  parameters: z.object({
+    channelId: z.string().describe('ID du canal'),
+    content: z.string().describe('Contenu du message'),
+    placeholder: z.string().optional().describe('Texte placeholder du menu'),
+    minValues: z.number().min(0).max(25).optional().default(1).describe('Nombre minimum de sélections'),
+    maxValues: z.number().min(1).max(25).optional().default(1).describe('Nombre maximum de sélections'),
+    options: z.array(z.object({
+      label: z.string().min(1).max(100),
+      value: z.string().min(1).max(100),
+      description: z.string().max(100).optional(),
+      emoji: z.string().optional(),
+    })).min(1).max(25).describe('Options du menu'),
+    action: z.object({
+      type: z.enum(['message', 'embed', 'role', 'webhook', 'custom']),
+      data: z.any().optional().describe('Données pour l\'action'),
+    }).describe('Action à exécuter lors de la sélection'),
+    menuId: z.string().optional().describe('ID du menu (généré si non fourni)'),
+  }),
+  execute: async args => {
+    try {
+      const client = await ensureDiscordConnection();
+      const channel = await client.channels.fetch(args.channelId);
+
+      if (!channel || !('send' in channel)) {
+        throw new Error('Canal invalide ou inaccessible');
+      }
+
+      // Importer la persistance des menus
+      const { loadCustomMenus, addCustomMenu } = await import('./utils/menuPersistence.js');
+
+      const menuId = args.menuId || `menu_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const customId = `select_${menuId}`;
+
+      // Créer le menu déroulant
+      const menu = new StringSelectMenuBuilder()
+        .setCustomId(customId)
+        .setPlaceholder(args.placeholder || 'Sélectionnez une option...')
+        .setMinValues(args.minValues)
+        .setMaxValues(args.maxValues);
+
+      // Ajouter les options
+      args.options.forEach(opt => {
+        const option = new StringSelectMenuOptionBuilder()
+          .setLabel(opt.label)
+          .setValue(opt.value);
+
+        if (opt.description) option.setDescription(opt.description);
+        if (opt.emoji) option.setEmoji(opt.emoji);
+
+        menu.addOptions(option);
+      });
+
+      const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu);
+
+      // Envoyer le message
+      const message = await channel.send({
+        content: args.content,
+        components: [row],
+      });
+
+      // Sauvegarder le menu dans le système de persistance
+      const existingMenus = await loadCustomMenus();
+      const customMenu: CustomMenu = {
+        id: menuId,
+        messageId: message.id,
+        channelId: args.channelId,
+        customId,
+        placeholder: args.placeholder || 'Sélectionnez une option...',
+        minValues: args.minValues,
+        maxValues: args.maxValues,
+        options: args.options as any,
+        action: {
+          type: args.action.type,
+          data: args.action.data || {},
+        },
+        multipleSelections: args.maxValues > 1,
+        createdAt: new Date(),
+        creatorId: 'SYSTEM',
+        isActive: true,
+      };
+
+      await addCustomMenu(customMenu, existingMenus);
+
+      Logger.info(`✅ Menu persistant créé: ${menuId} - Message: ${message.id}`);
+      return `✅ Menu persistant créé | ID: ${message.id} | Menu: ${menuId} | Options: ${args.options.length}`;
+    } catch (error: any) {
+      Logger.error('❌ [creer_menu_persistant]', error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 29. Lister les menus persistants actifs
+server.addTool({
+  name: 'lister_menus_actifs',
+  description: 'Liste tous les menus déroulants persistants avec leur état',
+  parameters: z.object({
+    channelId: z.string().optional().describe('Filtrer par canal spécifique'),
+  }),
+  execute: async args => {
+    try {
+      const { loadCustomMenus } = await import('./utils/menuPersistence.js');
+      const menus = await loadCustomMenus();
+
+      let filteredMenus = Array.from(menus.values());
+
+      // Filtrer par canal si spécifié
+      if (args.channelId) {
+        filteredMenus = filteredMenus.filter(menu => menu.channelId === args.channelId);
+      }
+
+      if (filteredMenus.length === 0) {
+        return `📋 Aucun menu actif${args.channelId ? ` dans le canal ${args.channelId}` : ''}`;
+      }
+
+      const now = new Date();
+      const list = filteredMenus.map(menu => {
+        const createdAt = new Date(menu.createdAt);
+        const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+        const status = !menu.isActive ? '❌ Inactif' : hoursDiff > 24 ? '⏰ Expiré' : '✅ Actif';
+        const age = Math.floor(hoursDiff);
+
+        return `
+• **${menu.placeholder}** (${status})
+  🆔 ID: ${menu.id}
+  🎯 CustomId: ${menu.customId}
+  💬 Canal: ${menu.channelId}
+  📨 Message: ${menu.messageId || 'Non envoyé'}
+  ⏱️ Âge: ${age}h
+  🔧 Action: ${menu.action.type}
+  📊 Options: ${menu.options.length} (sélection${menu.maxValues > 1 ? 's' : ''}: ${menu.minValues}-${menu.maxValues})
+        `.trim();
+      }).join('\n\n');
+
+      return `📋 ${filteredMenus.length} menu(s) trouvé(s):\n\n${list}`;
+    } catch (error: any) {
+      Logger.error('❌ [lister_menus_actifs]', error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// 30. Créer un sondage avec boutons persistants
+server.addTool({
+  name: 'creer_sondage_boutons',
+  description: 'Crée un sondage interactif avec boutons qui persistent',
+  parameters: z.object({
+    channelId: z.string().describe('ID du canal'),
+    question: z.string().min(5).max(500).describe('Question du sondage'),
+    options: z.array(z.string()).min(2).max(5).describe('Options du sondage'),
+    duration: z.number().min(60).max(604800).optional().default(3600).describe('Durée en secondes (min: 1min, max: 7j)'),
+    allowMultiple: z.boolean().optional().default(false).describe('Autoriser plusieurs votes'),
+  }),
+  execute: async args => {
+    try {
+      const client = await ensureDiscordConnection();
+      const channel = await client.channels.fetch(args.channelId);
+
+      if (!channel || !('send' in channel)) {
+        throw new Error('Canal invalide ou inaccessible');
+      }
+
+      const pollId = `poll_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Créer l'embed du sondage
+      const embed = new EmbedBuilder()
+        .setTitle('📊 Sondage Interactif')
+        .setDescription(`**${args.question}**\n\n${args.options.map((opt, i) => `${i + 1}. ${opt}`).join('\n')}`)
+        .setColor(0x5865f2)
+        .addFields(
+          { name: '⏱️ Durée', value: `${Math.floor(args.duration / 60)} minutes`, inline: true },
+          { name: '🔢 Votes multiples', value: args.allowMultiple ? 'Oui' : 'Non', inline: true },
+          { name: '📊 Statut', value: 'En cours', inline: true }
+        )
+        .setFooter({ text: `ID: ${pollId}` })
+        .setTimestamp();
+
+      // Créer les boutons pour voter
+      const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+      let currentRow = new ActionRowBuilder<ButtonBuilder>();
+
+      args.options.forEach((option, index) => {
+        const button = new ButtonBuilder()
+          .setLabel(`${index + 1}. ${option}`)
+          .setCustomId(`vote_${pollId}_${index}`)
+          .setStyle(index % 2 === 0 ? ButtonStyle.Primary : ButtonStyle.Secondary);
+
+        currentRow.addComponents(button);
+
+        // Maximum 5 boutons par rangée
+        if (currentRow.components.length >= 5) {
+          rows.push(currentRow);
+          currentRow = new ActionRowBuilder<ButtonBuilder>();
+        }
+      });
+
+      if (currentRow.components.length > 0) {
+        rows.push(currentRow);
+      }
+
+      // Ajouter un bouton pour voir les résultats
+      const resultsRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setLabel('📊 Voir les résultats')
+          .setCustomId(`results_${pollId}`)
+          .setStyle(ButtonStyle.Success)
+      );
+
+      rows.push(resultsRow);
+
+      // Envoyer le sondage
+      const message = await channel.send({
+        embeds: [embed],
+        components: rows,
+      });
+
+      // Sauvegarder le sondage dans le système de persistance
+      const { loadPolls, addPoll } = await import('./utils/pollPersistence.js');
+      const existingPolls = await loadPolls();
+
+      const pollData = {
+        id: pollId,
+        messageId: message.id,
+        channelId: args.channelId,
+        question: args.question,
+        options: args.options.map(option => ({
+          text: option,
+          votes: 0,
+          percentage: 0,
+        })),
+        totalVotes: 0,
+        ended: false,
+        endTime: new Date(Date.now() + args.duration * 1000),
+        allowMultiple: args.allowMultiple,
+        anonymous: false,
+      };
+
+      await addPoll(pollData as any, existingPolls);
+
+      Logger.info(`✅ Sondage avec boutons créé: ${pollId} - Message: ${message.id}`);
+      return `✅ Sondage créé | ID: ${message.id} | Sondage: ${pollId} | Durée: ${Math.floor(args.duration / 60)}min`;
+    } catch (error: any) {
+      Logger.error('❌ [creer_sondage_boutons]', error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
 // 21. Statut Bot avec rate limiting
 server.addTool({
   name: 'statut_bot',
@@ -2062,3 +2603,78 @@ async function main() {
 }
 
 main();
+// 31. Déployer le RPG
+server.addTool({
+  name: 'deploy_rpg',
+  description: 'Déploie le mini-RPG persistant dans le canal spécifié',
+  parameters: z.object({}),
+  execute: async () => {
+    try {
+      const { deployRPG } = await import('./utils/rpgDeploy.js');
+      const result = await deployRPG(botConfig.token);
+      return result;
+    } catch (error: any) {
+      Logger.error('❌ [deploy_rpg]', error.message);
+      return `❌ Erreur: ${error.message}`;
+    }
+  },
+});
+
+// Auto-déploiement du RPG au démarrage (optionnel)
+setTimeout(async () => {
+    try {
+        const { deployRPG } = await import('./utils/rpgDeploy.js');
+        await deployRPG(botConfig.token);
+        Logger.info('🎮 [RPG] Auto-déploiement réussi lors du démarrage');
+    } catch (e) {
+        // Silencieux si déjà lancé ou erreur
+    }
+}, 5000);
+
+
+// 33. Explorateur de Logs - Surprise !
+server.addTool({
+  name: 'logs_explorer',
+  description: 'Explore les derniers logs du serveur',
+  parameters: z.object({
+    lines: z.number().min(1).max(100).default(20).describe('Nombre de lignes à afficher'),
+    level: z.enum(['INFO', 'WARN', 'ERROR', 'DEBUG']).optional().describe('Filtrer par niveau')
+  }),
+  execute: async (args) => {
+    try {
+      const logDir = path.join(process.cwd(), 'logs');
+      const logFiles = await fs.promises.readdir(logDir);
+      const latestLog = logFiles.filter(f => f.endsWith('.log')).sort().reverse()[0];
+      
+      if (!latestLog) return "❌ Aucun fichier de log trouvé.";
+      
+      const content = await fs.promises.readFile(path.join(logDir, latestLog), 'utf-8');
+      let linesArray = content.split('\n').filter(l => l.trim() !== '');
+      
+      if (args.level) {
+        linesArray = linesArray.filter(l => l.includes(`[${args.level}]`));
+      }
+      
+      const result = linesArray.slice(-args.lines).join('\n');
+      return `📋 **Derniers logs (${latestLog})**:\n\`\`\`\n${result || 'Aucune ligne correspondante.'}\n\`\`\``;
+    } catch (err: any) {
+      return `❌ Erreur lecture logs: ${err.message}`;
+    }
+  }
+});
+// 34. Nettoyer les anciens boutons - Surprise !
+server.addTool({
+  name: 'nettoyer_anciens_boutons',
+  description: 'Supprime tous les boutons de plus de 24h du système de persistance',
+  parameters: z.object({}),
+  execute: async () => {
+    try {
+      const { loadCustomButtons, cleanOldButtons } = await import('./utils/buttonPersistence.js');
+      const buttons = await loadCustomButtons();
+      const count = await cleanOldButtons(buttons);
+      return `🧹 ${count} boutons expirés ont été supprimés de la base de données.`;
+    } catch (err: any) {
+      return `❌ Erreur nettoyage: ${err.message}`;
+    }
+  }
+});
