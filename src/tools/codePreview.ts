@@ -51,6 +51,77 @@ export const SUPPORTED_LANGUAGES: { [key: string]: string } = {
   properties: 'properties',
 };
 
+// Fonction pour envelopper automatiquement le code dans des blocs markdown
+const formatCodeBlocks = (content: string): string => {
+  const lines = content.split('\n');
+  const formattedLines: string[] = [];
+  let inCodeBlock = false;
+  let codeBuffer: string[] = [];
+  let currentLang = 'bash';
+
+  const flushCodeBuffer = (lang: string) => {
+    if (codeBuffer.length > 0) {
+      formattedLines.push(`\`\`\`${lang}`);
+      formattedLines.push(...codeBuffer);
+      formattedLines.push('```');
+      formattedLines.push(''); // Ligne vide après le bloc
+      codeBuffer = [];
+    }
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Détecter une ligne de commande bash
+    // - Commandes shell : chmod, echo, cd, npm, node, bash, sh, etc.
+    // - Appels de fonctions : create_channel(...), edit_message(...)
+    // - Variables : SESSION_ID=, $(), etc.
+    const isCommandLine = /^(\s*)(chmod|echo|cd|npm|node|pnpm|yarn|bash|sh|\$\s*\(|SESSION[_A-Z]*|create_|edit_|delete_|get_|send_|add_|move_|vote_|appuyer_|selectionner_)/.test(line) ||
+                         /\w+\([^)]*\)/.test(line) || // Détecte les appels de fonction avec ()
+                         /^(\s*)([A-Z_]{2,})(\s*[:=])/.test(line); // Détecte les constantes comme "BASH:"
+
+    // Détecter une ligne de code JS/TS (import, const, let, class, async, etc.)
+    const isJSLine = /^(\s*)(import|export|const|let|var|function|class|async|await|interface|type)/.test(line);
+
+    // Si on n'est pas dans un bloc et qu'on trouve une commande ou du code
+    if (!inCodeBlock && (isCommandLine || isJSLine)) {
+      // Terminer le markdown précédent si nécessaire
+      if (formattedLines.length > 0 && formattedLines[formattedLines.length - 1] !== '') {
+        formattedLines.push('');
+      }
+
+      // Commencer un bloc de code
+      inCodeBlock = true;
+      currentLang = isJSLine ? 'javascript' : 'bash';
+      codeBuffer = [line];
+    }
+    // Si on est dans un bloc de code et qu'on trouve une ligne qui n'est pas du code
+    else if (inCodeBlock && !isCommandLine && !isJSLine && line.trim() !== '' && !/^#{1,6}\s+/.test(line)) {
+      // Fin du bloc de code (mais continuer si c'est un header markdown)
+      flushCodeBuffer(currentLang);
+      inCodeBlock = false;
+
+      // Ajouter la ligne actuelle au markdown
+      formattedLines.push(line);
+    }
+    // Si on est dans un bloc de code, ajouter à la buffer
+    else if (inCodeBlock) {
+      codeBuffer.push(line);
+    }
+    // Sinon, ajouter au markdown normal
+    else {
+      formattedLines.push(line);
+    }
+  }
+
+  // Flush le dernier bloc de code s'il existe
+  if (inCodeBlock) {
+    flushCodeBuffer(currentLang);
+  }
+
+  return formattedLines.join('\n');
+};
+
 // Créer un ou plusieurs messages avec code (division automatique si trop long)
 export const createCodePreviewMessages = (code: string, language: string): string[] => {
   // Normaliser le langage
@@ -59,78 +130,133 @@ export const createCodePreviewMessages = (code: string, language: string): strin
   const lineCount = code.split('\n').length;
   const displayLang = language.toUpperCase();
 
-  // En-tête et pied de message de base
+  // Vérifier si c'est un fichier markdown
+  const isMarkdown = normalizedLang === 'markdown' || normalizedLang === 'md';
+  const formattedContent = isMarkdown ? formatCodeBlocks(code) : code;
+
+  // En-tête pour le markdown
   const baseHeader = `📝 **Code Preview**
 Langage: ${displayLang}
 Lignes: ${lineCount}
 
-**Code (${displayLang})**
-\`\`\`${langTag}
 `;
-  const footer = `\n\`\`\``;
+  const separator = `
+
+---
+
+`;
 
   // Calculer la longueur disponible (max 2000 - marge de sécurité)
   const maxTotalLength = 1950;
-  const baseAvailableCodeLength = maxTotalLength - baseHeader.length - footer.length;
+
+  // Calculer la longueur totale avec le bloc de code (seulement pour les langages non-markdown)
+  let totalWithHeader: number;
+  if (!isMarkdown) {
+    const codeBlockStart = `\`\`\`${langTag}\n`;
+    const codeBlockEnd = `\n\`\`\``;
+    const totalCodeLength = codeBlockStart.length + formattedContent.length + codeBlockEnd.length;
+    totalWithHeader = baseHeader.length + totalCodeLength;
+  } else {
+    totalWithHeader = baseHeader.length + formattedContent.length;
+  }
 
   // DEBUG: Afficher les informations de calcul
   console.log('[CODE_PREVIEW] DEBUG - Longueur du code:', code.length);
+  console.log('[CODE_PREVIEW] DEBUG - Longueur après formatage:', formattedContent.length);
+  console.log('[CODE_PREVIEW] DEBUG - isMarkdown:', isMarkdown);
   console.log('[CODE_PREVIEW] DEBUG - maxTotalLength:', maxTotalLength);
   console.log('[CODE_PREVIEW] DEBUG - baseHeader.length:', baseHeader.length);
-  console.log('[CODE_PREVIEW] DEBUG - footer.length:', footer.length);
-  console.log('[CODE_PREVIEW] DEBUG - baseAvailableCodeLength:', baseAvailableCodeLength);
-  console.log(
-    '[CODE_PREVIEW] DEBUG - code.length <= baseAvailableCodeLength?',
-    code.length <= baseAvailableCodeLength
-  );
+  console.log('[CODE_PREVIEW] DEBUG - totalWithHeader:', totalWithHeader);
+  console.log('[CODE_PREVIEW] DEBUG - totalWithHeader <= maxTotalLength?', totalWithHeader <= maxTotalLength);
 
-  // Si le code est assez petit, envoyer un seul message
-  if (code.length <= baseAvailableCodeLength) {
-    return [`${baseHeader}${code}${footer}`];
+  // Si le contenu tient dans un seul message
+  if (totalWithHeader <= maxTotalLength) {
+    if (!isMarkdown) {
+      // Pour les langages non-markdown, envelopper dans un bloc de code
+      const codeBlockStart = `\`\`\`${langTag}\n`;
+      const codeBlockEnd = `\n\`\`\``;
+      return [`${baseHeader}${codeBlockStart}${formattedContent}${codeBlockEnd}`];
+    } else {
+      // Pour markdown, retourner sans bloc de code (markdown interprétable)
+      return [`${baseHeader}${formattedContent}`];
+    }
   }
 
-  // Diviser le code en plusieurs parties
+  // Diviser le code en plusieurs parties (par lignes complètes)
   const messages: string[] = [];
-  const totalLength = code.length;
-  let currentPosition = 0;
+  const lines = formattedContent.split('\n');
+  const totalLines = lines.length;
+  let currentLineIndex = 0;
   let partNumber = 1;
 
-  while (currentPosition < totalLength) {
+  while (currentLineIndex < totalLines) {
     // Construire l'en-tête avec le numéro de partie
-    const partHeader = `📝 **Code Preview**
+    const partHeader = partNumber === 1
+      ? `📝 **Code Preview**
 Langage: ${displayLang}
 Lignes: ${lineCount}
 
-**Partie ${partNumber}**
-**Code (${displayLang})**
-\`\`\`${langTag}
+`
+      : `📝 **Code Preview** (Suite ${partNumber})
+Langage: ${displayLang}
+Lignes: ${lineCount}
+
 `;
 
     // Calculer la longueur disponible pour cette partie
-    const availableLength = maxTotalLength - partHeader.length - footer.length;
+    const availableLength = maxTotalLength - partHeader.length;
 
-    // Extraire une partie du code
-    const remainingCode = code.substring(currentPosition);
-    const codeChunk = remainingCode.substring(0, availableLength);
+    // Construire un chunk de lignes qui respecte la limite de longueur
+    const chunkLines: string[] = [];
+    let chunkLength = 0;
+
+    while (currentLineIndex < totalLines) {
+      const line = lines[currentLineIndex];
+      // +1 pour le caractère '\n' qui sera ajouté entre les lignes
+      const lineLength = chunkLines.length > 0 ? line.length + 1 : line.length;
+
+      if (chunkLength + lineLength > availableLength) {
+        // Cette ligne ne rentrera pas, on s'arrête
+        break;
+      }
+
+      chunkLines.push(line);
+      chunkLength += lineLength;
+      currentLineIndex++;
+    }
+
+    // Si aucune ligne n'a été ajoutée (première ligne trop longue), on force au moins une ligne
+    if (chunkLines.length === 0 && currentLineIndex < totalLines) {
+      chunkLines.push(lines[currentLineIndex]);
+      currentLineIndex++;
+      Logger.warn('[CODE_PREVIEW] Une ligne dépasse la limite, elle sera coupée');
+    }
+
+    // Joindre les lignes du chunk
+    const codeChunk = chunkLines.join('\n');
 
     // Construire le message de la partie
-    const partMessage = `${partHeader}${codeChunk}${footer}`;
+    let partMessage = `${partHeader}${codeChunk}`;
+
+    // Ajouter un séparateur si ce n'est pas la dernière partie
+    if (currentLineIndex < totalLines) {
+      partMessage += separator;
+      partMessage += `*[Suite dans le message suivant...]*`;
+    }
+
     messages.push(partMessage);
 
-    // Mettre à jour la position pour la prochaine itération
-    // Important: utiliser la longueur réelle du chunk, pas availableLength
-    currentPosition += codeChunk.length;
     partNumber++;
 
     // Protection contre les boucles infinies
-    if (codeChunk.length === 0 && currentPosition < totalLength) {
-      Logger.error('[CODE_PREVIEW] Erreur: chunk vide détecté, arrêt de la division');
+    if (chunkLines.length === 0) {
+      Logger.error('[CODE_PREVIEW] Erreur: aucune ligne ajoutée, arrêt de la division');
       break;
     }
   }
 
   Logger.info(
-    `[CODE_PREVIEW] Division: ${messages.length} message(s) créé(s) pour ${totalLength} caractères`
+    `[CODE_PREVIEW] Division: ${messages.length} message(s) créé(s) pour ${code.length} caractères`
   );
   return messages;
 };
