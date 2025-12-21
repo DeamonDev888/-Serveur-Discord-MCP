@@ -76,7 +76,7 @@ export class DiscordBridge {
         reject(new Error('Timeout de connexion Discord (20s)'));
       }, 20000);
 
-      this.client!.once('ready', () => {
+      this.client!.once('clientReady', () => {
         clearTimeout(timeout);
         this.isConnected = true;
         Logger.info(`✅ [Bridge] Connecté: ${this.client!.user!.tag}`);
@@ -189,33 +189,38 @@ export class DiscordBridge {
 
     Logger.info(`🔘 [Bridge] Bouton cliqué: ${customId} par ${user.username}`);
 
-    // D'abord, vérifier le gestionnaire d'interactions existant
+    // Si c'est un bouton RPG, on court-circuite le gestionnaire classique pour plus de rapidité
+    if (customId.startsWith('rpg_')) {
+        const customFunction = buttonFunctions.get(customId);
+        if (customFunction) {
+            try {
+                await customFunction(interaction, { customId, user, channelId, messageId });
+            } catch (error: any) {
+                Logger.error(`❌ [Bridge] Erreur RPG ${customId}:`, error.message);
+            }
+            return; // Terminé pour le RPG
+        }
+    }
+
+    // Sinon, comportement classique : d'abord le gestionnaire d'interactions existant
     await interactionHandler.handleCustomButton({
       customId,
-      user: {
-        id: user.id,
-        username: user.username,
-      },
+      user: { id: user.id, username: user.username },
       channelId,
       messageId,
     });
 
-    // Ensuite, vérifier les fonctions personnalisées
+    // Puis les fonctions personnalisées génériques
     const customFunction = buttonFunctions.get(customId);
     if (customFunction) {
       try {
-        await customFunction(interaction, {
-          customId,
-          user,
-          channelId,
-          messageId,
-        });
+        await customFunction(interaction, { customId, user, channelId, messageId });
       } catch (error: any) {
         Logger.error(`❌ [Bridge] Erreur fonction bouton ${customId}:`, error.message);
       }
     }
 
-    // Répondre à l'interaction pour éviter le timeout
+    // Répondre à l'interaction pour éviter le timeout (si rien n'a été fait)
     if (!interaction.replied && !interaction.deferred) {
       await interaction.deferUpdate().catch(() => {});
     }

@@ -24,67 +24,36 @@ export interface LogEntry {
   data?: any;
 }
 
-// Assurer que le dossier data existe
-async function ensureDataDir(): Promise<void> {
-  try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-  } catch (error) {
-    Logger.error('Erreur lors de la création du dossier data:', error);
-  }
-}
+import { PersistenceManager } from './persistenceManager.js';
+
+const LOG_PERSISTENCE = new PersistenceManager<LogEntry[]>(LOGS_FILE, 5000); // 5s debounce for logs as they are frequent
 
 // Charger tous les logs depuis le fichier
 export async function loadLogs(): Promise<Map<string, LogEntry>> {
-  await ensureDataDir();
+  const logsArray = await LOG_PERSISTENCE.load([]);
+  
+  const logsMap = new Map<string, LogEntry>();
+  logsArray.forEach(log => {
+    log.timestamp = new Date(log.timestamp);
+    logsMap.set(log.id, log);
+  });
 
-  try {
-    const data = await fs.readFile(LOGS_FILE, 'utf-8');
-    const logsArray: LogEntry[] = JSON.parse(data);
-
-    // Convertir le tableau en Map
-    const logsMap = new Map<string, LogEntry>();
-    logsArray.forEach(log => {
-      // Convertir la date string en Date object
-      log.timestamp = new Date(log.timestamp);
-      logsMap.set(log.id, log);
-    });
-
-    Logger.info(`✅ ${logsMap.size} logs chargés depuis le fichier`);
-    return logsMap;
-  } catch (error) {
-    // Si le fichier n'existe pas, créer un fichier vide
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      Logger.info('📄 Aucun fichier de logs existant, création du fichier...');
-      await fs.writeFile(LOGS_FILE, JSON.stringify([], null, 2), 'utf-8');
-      Logger.info('📄 Fichier de logs créé, démarrage avec une Map vide');
-      return new Map<string, LogEntry>();
-    }
-
-    Logger.error('❌ Erreur lors du chargement des logs:', error);
-    return new Map<string, LogEntry>();
-  }
+  Logger.info(`✅ ${logsMap.size} logs chargés avec robustesse`);
+  return logsMap;
 }
 
 // Sauvegarder tous les logs dans le fichier
 export async function saveLogs(logs: Map<string, LogEntry>): Promise<void> {
-  await ensureDataDir();
+  const logsArray = Array.from(logs.values());
 
-  try {
-    // Convertir la Map en tableau
-    const logsArray = Array.from(logs.values());
+  // Convertir les dates en strings pour la sérialisation JSON
+  const logsToSave = logsArray.map(log => ({
+    ...log,
+    timestamp: (log.timestamp instanceof Date) ? log.timestamp.toISOString() : log.timestamp,
+  }));
 
-    // Convertir les dates en strings pour la sérialisation JSON
-    const logsToSave = logsArray.map(log => ({
-      ...log,
-      timestamp: log.timestamp.toISOString(),
-    }));
-
-    await fs.writeFile(LOGS_FILE, JSON.stringify(logsToSave, null, 2), 'utf-8');
-    Logger.info(`💾 ${logs.size} logs sauvegardés dans le fichier`);
-  } catch (error) {
-    Logger.error('❌ Erreur lors de la sauvegarde des logs:', error);
-    throw error;
-  }
+  // Pour les logs, on peut utiliser debounced pour ne pas ralentir le bot
+  LOG_PERSISTENCE.saveDebounced(logsToSave as any);
 }
 
 // Ajouter un nouveau log

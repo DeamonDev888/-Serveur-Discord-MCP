@@ -1,7 +1,6 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import Logger from './logger.js';
-
+import { PersistenceManager } from './persistenceManager.js';
 const DATA_DIR = join(process.cwd(), 'data');
 const RPG_FILE = join(DATA_DIR, 'rpg_state.json');
 
@@ -37,56 +36,48 @@ export interface RPGState {
   dungeon: DungeonState;
 }
 
-async function ensureDataDir(): Promise<void> {
-  try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-  } catch (error) {
-    Logger.error('[RPG_PERSISTENCE] Error creating data dir:', error);
-  }
-}
+const RPG_MANAGER = new PersistenceManager<RPGState>(RPG_FILE, 2000);
 
 export async function loadRPGState(): Promise<RPGState> {
-  await ensureDataDir();
-  try {
-    const data = await fs.readFile(RPG_FILE, 'utf-8');
-    const state = JSON.parse(data);
-    
-    // Restore dates
-    for (const userId in state.players) {
-      state.players[userId].lastAction = new Date(state.players[userId].lastAction);
+  const initialState: RPGState = {
+    players: {},
+    dungeon: {
+      floor: 1,
+      room: 1,
+      log: ['Bienvenue dans le Donjon de l\'Antigravité...'],
+      records: {
+        maxFloor: 1,
+        topPlayer: 'Aucun'
+      }
     }
-    
-    return state;
-  } catch (error) {
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      const initialState: RPGState = {
-        players: {},
-        dungeon: {
-          floor: 1,
-          room: 1,
-          log: ['Bienvenue dans le Donjon de l\'Antigravité...'],
-          records: {
-            maxFloor: 1,
-            topPlayer: 'Aucun'
-          }
-        }
-      };
-      await saveRPGState(initialState);
-      return initialState;
-    }
-    Logger.error('[RPG_PERSISTENCE] Error loading state:', error);
-    throw error;
+  };
+
+  const state = await RPG_MANAGER.load(initialState);
+  
+  // Restore dates
+  for (const userId in state.players) {
+    state.players[userId].lastAction = new Date(state.players[userId].lastAction);
   }
+
+  // Migration/Ensure records
+  if (!state.dungeon.records) {
+    state.dungeon.records = {
+      maxFloor: state.dungeon.floor || 1,
+      topPlayer: 'Ancien Aventurier'
+    };
+  }
+  
+  return state;
 }
 
 export async function saveRPGState(state: RPGState): Promise<void> {
-  await ensureDataDir();
-  try {
-    await fs.writeFile(RPG_FILE, JSON.stringify(state, null, 2), 'utf-8');
-  } catch (error) {
-    Logger.error('[RPG_PERSISTENCE] Error saving state:', error);
-    throw error;
-  }
+  // On utilise la sauvegarde immédiate pour les actions importantes (fin de combat, etc.)
+  // rpgManager décide d'utiliser saveDebounced ou saveImmediate via cette fonction si on veut
+  await RPG_MANAGER.saveImmediate(state);
+}
+
+export function saveRPGStateDebounced(state: RPGState): void {
+  RPG_MANAGER.saveDebounced(state);
 }
 
 export function getOrCreatePlayer(state: RPGState, userId: string, username: string): PlayerStats {

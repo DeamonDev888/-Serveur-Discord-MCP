@@ -20,70 +20,35 @@ export interface CustomButton {
   createdAt: Date;
 }
 
-// Assurer que le dossier data existe
-async function ensureDataDir(): Promise<void> {
-  try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-  } catch (error) {
-    Logger.error('Erreur lors de la création du dossier data:', error);
-  }
-}
+import { PersistenceManager } from './persistenceManager.js';
+
+const BUTTON_PERSISTENCE = new PersistenceManager<CustomButton[]>(BUTTONS_FILE, 1000);
 
 // Charger tous les boutons depuis le fichier
 export async function loadCustomButtons(): Promise<Map<string, CustomButton>> {
-  await ensureDataDir();
+  const buttonsArray = await BUTTON_PERSISTENCE.load([]);
+  
+  const buttonsMap = new Map<string, CustomButton>();
+  buttonsArray.forEach(button => {
+    button.createdAt = new Date(button.createdAt);
+    buttonsMap.set(button.id, button);
+  });
 
-  try {
-    const data = await fs.readFile(BUTTONS_FILE, 'utf-8');
-    const buttonsArray: any[] = JSON.parse(data);
-
-    // Convertir le tableau en Map
-    const buttonsMap = new Map<string, CustomButton>();
-    buttonsArray.forEach(button => {
-      // Convertir la date string en Date object
-      button.createdAt = new Date(button.createdAt);
-      buttonsMap.set(button.id, button);
-    });
-
-    Logger.info(`✅ ${buttonsMap.size} boutons personnalisés chargés depuis le fichier`);
-    return buttonsMap;
-  } catch (error) {
-    // Si le fichier n'existe pas, créer un fichier vide
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      Logger.info('📄 Aucun fichier de boutons existant, création du fichier...');
-      await fs.writeFile(BUTTONS_FILE, JSON.stringify([], null, 2), 'utf-8');
-      Logger.info('📄 Fichier de boutons créé, démarrage avec une Map vide');
-      return new Map<string, CustomButton>();
-    }
-
-    Logger.error('❌ Erreur lors du chargement des boutons:', error);
-    return new Map<string, CustomButton>();
-  }
+  Logger.info(`✅ ${buttonsMap.size} boutons personnalisés chargés avec robustesse`);
+  return buttonsMap;
 }
 
 // Sauvegarder tous les boutons dans le fichier
 export async function saveCustomButtons(buttons: Map<string, CustomButton>): Promise<void> {
-  await ensureDataDir();
+  const buttonsArray = Array.from(buttons.values());
+  
+  // Convertir les dates en strings pour la sérialisation JSON
+  const buttonsToSave = buttonsArray.map(button => ({
+    ...button,
+    createdAt: (button.createdAt instanceof Date) ? button.createdAt.toISOString() : button.createdAt,
+  }));
 
-  try {
-    // Convertir la Map en tableau
-    const buttonsArray = Array.from(buttons.values());
-    Logger.debug(`[BUTTON_PERSISTENCE] Tentative de sauvegarde de ${buttonsArray.length} boutons`);
-
-    // Convertir les dates en strings pour la sérialisation JSON
-    const buttonsToSave = buttonsArray.map(button => ({
-      ...button,
-      createdAt: button.createdAt.toISOString(),
-    }));
-
-    await fs.writeFile(BUTTONS_FILE, JSON.stringify(buttonsToSave, null, 2), 'utf-8');
-    Logger.info(
-      `[BUTTON_PERSISTENCE] ✅ ${buttons.size} boutons personnalisés sauvegardés dans le fichier`
-    );
-  } catch (error) {
-    Logger.error('[BUTTON_PERSISTENCE] ❌ Erreur lors de la sauvegarde des boutons:', error);
-    throw error;
-  }
+  await BUTTON_PERSISTENCE.saveImmediate(buttonsToSave as any);
 }
 
 // Ajouter un nouveau bouton
@@ -115,7 +80,7 @@ export function getCustomButton(
 // Nettoyer les anciens boutons (plus de 24h)
 export async function cleanOldButtons(buttons: Map<string, CustomButton>): Promise<number> {
   const now = new Date();
-  const maxAge = 24 * 60 * 60 * 1000; // 24 heures en ms
+  const maxAge = 24 * 60 * 60 * 1000;
   let deletedCount = 0;
 
   for (const [buttonId, button] of buttons.entries()) {

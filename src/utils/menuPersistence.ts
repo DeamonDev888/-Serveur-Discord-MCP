@@ -32,72 +32,38 @@ export interface CustomMenu {
   isActive: boolean;
 }
 
-// Assurer que le dossier data existe
-async function ensureDataDir(): Promise<void> {
-  try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-  } catch (error) {
-    Logger.error('Erreur lors de la création du dossier data:', error);
-  }
-}
+import { PersistenceManager } from './persistenceManager.js';
+
+const MENU_PERSISTENCE = new PersistenceManager<CustomMenu[]>(MENUS_FILE, 1000);
 
 // Charger tous les menus depuis le fichier
 export async function loadCustomMenus(): Promise<Map<string, CustomMenu>> {
-  await ensureDataDir();
-
-  try {
-    const data = await fs.readFile(MENUS_FILE, 'utf-8');
-    const menusArray: CustomMenu[] = JSON.parse(data);
-
-    // Convertir le tableau en Map
-    const menusMap = new Map<string, CustomMenu>();
-    menusArray.forEach(menu => {
-      // Convertir la date string en Date object
-      menu.createdAt = new Date(menu.createdAt);
-      menusMap.set(menu.id, menu);
-      // Stocker aussi avec messageId si disponible
-      if (menu.messageId) {
-        menusMap.set(menu.messageId, menu);
-      }
-    });
-
-    Logger.info(`✅ ${menusMap.size} menus personnalisés chargés depuis le fichier`);
-    return menusMap;
-  } catch (error) {
-    // Si le fichier n'existe pas, créer un fichier vide
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      Logger.info('📄 Aucun fichier de menus existant, création du fichier...');
-      await fs.writeFile(MENUS_FILE, JSON.stringify([], null, 2), 'utf-8');
-      Logger.info('📄 Fichier de menus créé, démarrage avec une Map vide');
-      return new Map<string, CustomMenu>();
+  const menusArray = await MENU_PERSISTENCE.load([]);
+  
+  const menusMap = new Map<string, CustomMenu>();
+  menusArray.forEach(menu => {
+    menu.createdAt = new Date(menu.createdAt);
+    menusMap.set(menu.id, menu);
+    if (menu.messageId) {
+      menusMap.set(menu.messageId, menu);
     }
+  });
 
-    Logger.error('❌ Erreur lors du chargement des menus:', error);
-    return new Map<string, CustomMenu>();
-  }
+  Logger.info(`✅ ${menusMap.size} menus personnalisés chargés avec robustesse`);
+  return menusMap;
 }
 
 // Sauvegarder tous les menus dans le fichier
 export async function saveCustomMenus(menus: Map<string, CustomMenu>): Promise<void> {
-  await ensureDataDir();
+  const menusArray = Array.from(menus.values());
 
-  try {
-    // Convertir la Map en tableau
-    const menusArray = Array.from(menus.values());
-    Logger.debug(`[MENU_PERSISTENCE] Tentative de sauvegarde de ${menusArray.length} menus`);
+  // Convertir les dates en strings pour la sérialisation JSON
+  const menusToSave = menusArray.map(menu => ({
+    ...menu,
+    createdAt: (menu.createdAt instanceof Date) ? menu.createdAt.toISOString() : menu.createdAt,
+  }));
 
-    // Convertir les dates en strings pour la sérialisation JSON
-    const menusToSave = menusArray.map(menu => ({
-      ...menu,
-      createdAt: menu.createdAt.toISOString(),
-    }));
-
-    await fs.writeFile(MENUS_FILE, JSON.stringify(menusToSave, null, 2), 'utf-8');
-    Logger.info(`[MENU_PERSISTENCE] ✅ ${menus.size} menus personnalisés sauvegardés dans le fichier`);
-  } catch (error) {
-    Logger.error('[MENU_PERSISTENCE] ❌ Erreur lors de la sauvegarde des menus:', error);
-    throw error;
-  }
+  await MENU_PERSISTENCE.saveImmediate(menusToSave as any);
 }
 
 // Ajouter un nouveau menu
@@ -155,7 +121,7 @@ export async function updateCustomMenu(
 // Nettoyer les anciens menus (plus de 24h)
 export async function cleanOldMenus(menus: Map<string, CustomMenu>): Promise<number> {
   const now = new Date();
-  const maxAge = 24 * 60 * 60 * 1000; // 24 heures en ms
+  const maxAge = 24 * 60 * 60 * 1000;
   let deletedCount = 0;
 
   for (const [menuId, menu] of menus.entries()) {
@@ -191,16 +157,14 @@ export async function saveMenuSelection(
 ): Promise<void> {
   const menu = menus.get(menuId);
   if (menu) {
-    // Ajouter les sélections à l'action.data si elles n'existent pas
     if (!menu.action.data) {
       menu.action.data = {};
     }
     if (!menu.action.data.selections) {
-      menu.action.data.selections = new Map<string, string[]>();
+      menu.action.data.selections = {};
     }
 
-    // Convertir en Map et sauvegarder
-    (menu.action.data.selections as Map<string, string[]>).set(userId, selectedValues);
+    menu.action.data.selections[userId] = selectedValues;
     await saveCustomMenus(menus);
   }
 }
@@ -209,10 +173,10 @@ export async function saveMenuSelection(
 export function getMenuSelections(
   menuId: string,
   menus: Map<string, CustomMenu>
-): Map<string, string[]> | undefined {
+): Record<string, string[]> | undefined {
   const menu = menus.get(menuId);
   if (menu && menu.action.data?.selections) {
-    return new Map(menu.action.data.selections);
+    return menu.action.data.selections;
   }
   return undefined;
 }

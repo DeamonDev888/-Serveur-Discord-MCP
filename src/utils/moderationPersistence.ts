@@ -55,56 +55,38 @@ export interface Mute {
 // MODÉRATION ACTIONS
 // ===============================
 
-// Assurer que le dossier data existe
-async function ensureDataDir(): Promise<void> {
-  try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-  } catch (error) {
-    Logger.error('Erreur lors de la création du dossier data:', error);
-  }
-}
+import { PersistenceManager } from './persistenceManager.js';
+
+const MODERATION_PERSISTENCE = new PersistenceManager<ModerationAction[]>(MODERATION_FILE, 2000);
+const WARNING_PERSISTENCE = new PersistenceManager<Warning[]>(WARNINGS_FILE, 1000);
+const MUTE_PERSISTENCE = new PersistenceManager<Mute[]>(MUTES_FILE, 1000);
+
+// ===============================
+// MODÉRATION ACTIONS
+// ===============================
 
 // Charger toutes les actions de modération
 export async function loadModerationActions(): Promise<Map<string, ModerationAction>> {
-  await ensureDataDir();
+  const actionsArray = await MODERATION_PERSISTENCE.load([]);
+  
+  const actionsMap = new Map<string, ModerationAction>();
+  actionsArray.forEach(action => {
+    action.timestamp = new Date(action.timestamp);
+    actionsMap.set(action.id, action);
+  });
 
-  try {
-    const data = await fs.readFile(MODERATION_FILE, 'utf-8');
-    const actionsArray: ModerationAction[] = JSON.parse(data);
-
-    const actionsMap = new Map<string, ModerationAction>();
-    actionsArray.forEach(action => {
-      action.timestamp = new Date(action.timestamp);
-      actionsMap.set(action.id, action);
-    });
-
-    Logger.info(`✅ ${actionsMap.size} actions de modération chargées`);
-    return actionsMap;
-  } catch (error) {
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      await fs.writeFile(MODERATION_FILE, JSON.stringify([], null, 2), 'utf-8');
-      return new Map<string, ModerationAction>();
-    }
-    Logger.error('❌ Erreur lors du chargement des actions de modération:', error);
-    return new Map<string, ModerationAction>();
-  }
+  Logger.info(`✅ ${actionsMap.size} actions de modération chargées avec robustesse`);
+  return actionsMap;
 }
 
 // Sauvegarder les actions de modération
 export async function saveModerationActions(actions: Map<string, ModerationAction>): Promise<void> {
-  await ensureDataDir();
+  const actionsArray = Array.from(actions.values()).map(action => ({
+    ...action,
+    timestamp: (action.timestamp instanceof Date) ? action.timestamp.toISOString() : action.timestamp,
+  }));
 
-  try {
-    const actionsArray = Array.from(actions.values()).map(action => ({
-      ...action,
-      timestamp: action.timestamp.toISOString(),
-    }));
-
-    await fs.writeFile(MODERATION_FILE, JSON.stringify(actionsArray, null, 2), 'utf-8');
-  } catch (error) {
-    Logger.error('❌ Erreur lors de la sauvegarde des actions:', error);
-    throw error;
-  }
+  await MODERATION_PERSISTENCE.saveImmediate(actionsArray as any);
 }
 
 // Ajouter une action de modération
@@ -122,47 +104,28 @@ export async function addModerationAction(
 
 // Charger tous les warns
 export async function loadWarnings(): Promise<Map<string, Warning>> {
-  await ensureDataDir();
+  const warningsArray = await WARNING_PERSISTENCE.load([]);
+  
+  const warningsMap = new Map<string, Warning>();
+  warningsArray.forEach(warning => {
+    warning.timestamp = new Date(warning.timestamp);
+    if (warning.expiresAt) warning.expiresAt = new Date(warning.expiresAt);
+    warningsMap.set(warning.id, warning);
+  });
 
-  try {
-    const data = await fs.readFile(WARNINGS_FILE, 'utf-8');
-    const warningsArray: Warning[] = JSON.parse(data);
-
-    const warningsMap = new Map<string, Warning>();
-    warningsArray.forEach(warning => {
-      warning.timestamp = new Date(warning.timestamp);
-      if (warning.expiresAt) warning.expiresAt = new Date(warning.expiresAt);
-      warningsMap.set(warning.id, warning);
-    });
-
-    Logger.info(`✅ ${warningsMap.size} warns chargés`);
-    return warningsMap;
-  } catch (error) {
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      await fs.writeFile(WARNINGS_FILE, JSON.stringify([], null, 2), 'utf-8');
-      return new Map<string, Warning>();
-    }
-    Logger.error('❌ Erreur lors du chargement des warns:', error);
-    return new Map<string, Warning>();
-  }
+  Logger.info(`✅ ${warningsMap.size} warns chargés avec robustesse`);
+  return warningsMap;
 }
 
 // Sauvegarder les warns
 export async function saveWarnings(warnings: Map<string, Warning>): Promise<void> {
-  await ensureDataDir();
+  const warningsArray = Array.from(warnings.values()).map(warning => ({
+    ...warning,
+    timestamp: (warning.timestamp instanceof Date) ? warning.timestamp.toISOString() : warning.timestamp,
+    expiresAt: (warning.expiresAt instanceof Date) ? warning.expiresAt.toISOString() : warning.expiresAt,
+  }));
 
-  try {
-    const warningsArray = Array.from(warnings.values()).map(warning => ({
-      ...warning,
-      timestamp: warning.timestamp.toISOString(),
-      expiresAt: warning.expiresAt?.toISOString(),
-    }));
-
-    await fs.writeFile(WARNINGS_FILE, JSON.stringify(warningsArray, null, 2), 'utf-8');
-  } catch (error) {
-    Logger.error('❌ Erreur lors de la sauvegarde des warns:', error);
-    throw error;
-  }
+  await WARNING_PERSISTENCE.saveImmediate(warningsArray as any);
 }
 
 // Ajouter un warn
@@ -191,47 +154,28 @@ export async function deleteWarning(
 
 // Charger tous les mutes
 export async function loadMutes(): Promise<Map<string, Mute>> {
-  await ensureDataDir();
+  const mutesArray = await MUTE_PERSISTENCE.load([]);
+  
+  const mutesMap = new Map<string, Mute>();
+  mutesArray.forEach(mute => {
+    mute.timestamp = new Date(mute.timestamp);
+    mute.expiresAt = new Date(mute.expiresAt);
+    mutesMap.set(mute.id, mute);
+  });
 
-  try {
-    const data = await fs.readFile(MUTES_FILE, 'utf-8');
-    const mutesArray: Mute[] = JSON.parse(data);
-
-    const mutesMap = new Map<string, Mute>();
-    mutesArray.forEach(mute => {
-      mute.timestamp = new Date(mute.timestamp);
-      mute.expiresAt = new Date(mute.expiresAt);
-      mutesMap.set(mute.id, mute);
-    });
-
-    Logger.info(`✅ ${mutesMap.size} mutes chargés`);
-    return mutesMap;
-  } catch (error) {
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      await fs.writeFile(MUTES_FILE, JSON.stringify([], null, 2), 'utf-8');
-      return new Map<string, Mute>();
-    }
-    Logger.error('❌ Erreur lors du chargement des mutes:', error);
-    return new Map<string, Mute>();
-  }
+  Logger.info(`✅ ${mutesMap.size} mutes chargés avec robustesse`);
+  return mutesMap;
 }
 
 // Sauvegarder les mutes
 export async function saveMutes(mutes: Map<string, Mute>): Promise<void> {
-  await ensureDataDir();
+  const mutesArray = Array.from(mutes.values()).map(mute => ({
+    ...mute,
+    timestamp: (mute.timestamp instanceof Date) ? mute.timestamp.toISOString() : mute.timestamp,
+    expiresAt: (mute.expiresAt instanceof Date) ? mute.expiresAt.toISOString() : mute.expiresAt,
+  }));
 
-  try {
-    const mutesArray = Array.from(mutes.values()).map(mute => ({
-      ...mute,
-      timestamp: mute.timestamp.toISOString(),
-      expiresAt: mute.expiresAt.toISOString(),
-    }));
-
-    await fs.writeFile(MUTES_FILE, JSON.stringify(mutesArray, null, 2), 'utf-8');
-  } catch (error) {
-    Logger.error('❌ Erreur lors de la sauvegarde des mutes:', error);
-    throw error;
-  }
+  await MUTE_PERSISTENCE.saveImmediate(mutesArray as any);
 }
 
 // Ajouter un mute

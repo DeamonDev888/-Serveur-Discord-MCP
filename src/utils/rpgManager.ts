@@ -1,4 +1,4 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
 import { loadRPGState, saveRPGState, getOrCreatePlayer, RPGState } from './rpgPersistence.js';
 import Logger from './logger.js';
 
@@ -113,7 +113,7 @@ export class RPGManager {
     try {
       if (action === 'rpg_explore') {
         if (state.dungeon.enemy) {
-            await interaction.reply({ content: "Un ennemi vous barre la route !", ephemeral: true });
+            await interaction.reply({ content: "Un ennemi vous barre la route !", flags: [MessageFlags.Ephemeral] });
             return false;
         }
         
@@ -133,7 +133,8 @@ export class RPGManager {
             }
         }
 
-        if (Math.random() > 0.5) {
+        const rand = Math.random();
+        if (rand > 0.6) {
           const enemies = ["Gobelin du Code", "Squelette Binaire", "Bug Maître", "Ombre Statique", "Liche de Glace"];
           const enemyName = enemies[Math.floor(Math.random() * enemies.length)];
           state.dungeon.enemy = {
@@ -143,15 +144,22 @@ export class RPGManager {
             level: state.dungeon.floor
           };
           state.dungeon.log.push(`⚠️ Un **${enemyName}** surgit des ténèbres !`);
-        } else {
-          const goldFound = Math.floor(Math.random() * 5) + 2;
+        } else if (rand > 0.4) {
+          const goldFound = Math.floor(Math.random() * 8) + 3;
           player.gold += goldFound;
-          state.dungeon.log.push(`🔦 Salle ${state.dungeon.room} : Vous trouvez **${goldFound} po** dans un vieux coffre.`);
+          state.dungeon.log.push(`💎 **Trésor !** Vous trouvez un coffret contenant **${goldFound} po**.`);
+        } else if (rand > 0.2) {
+          const trapDmg = Math.floor(Math.random() * 5) + 2;
+          player.hp -= trapDmg;
+          state.dungeon.log.push(`🕸️ **Piège !** Vous déclenchez une flèche empoisonnée (-${trapDmg} PV).`);
+          if (player.hp <= 0) player.hp = 1;
+        } else {
+          state.dungeon.log.push(`🔦 Salle ${state.dungeon.room} : Le couloir est étrangement calme...`);
         }
       } 
       else if (action === 'rpg_attack') {
         if (!state.dungeon.enemy) {
-            await interaction.reply({ content: "Rien à attaquer ici.", ephemeral: true });
+            await interaction.reply({ content: "Rien à attaquer ici.", flags: [MessageFlags.Ephemeral] });
             return false;
         }
         
@@ -200,12 +208,12 @@ export class RPGManager {
       }
       else if (action === 'rpg_skill') {
           if (!state.dungeon.enemy) {
-              await interaction.reply({ content: "Aucun ennemi à cibler.", ephemeral: true });
+              await interaction.reply({ content: "Aucun ennemi à cibler.", flags: [MessageFlags.Ephemeral] });
               return false;
           }
           
           if (player.hp < 5) {
-              await interaction.reply({ content: "Vous êtes trop fatigué pour utiliser une compétence !", ephemeral: true });
+              await interaction.reply({ content: "Vous êtes trop fatigué pour utiliser une compétence !", flags: [MessageFlags.Ephemeral] });
               return false;
           }
           
@@ -216,7 +224,7 @@ export class RPGManager {
       }
       else if (action === 'rpg_flee') {
           if (!state.dungeon.enemy) {
-              await interaction.reply({ content: "Rien à fuir...", ephemeral: true });
+              await interaction.reply({ content: "Rien à fuir...", flags: [MessageFlags.Ephemeral] });
               return false;
           }
           
@@ -231,7 +239,7 @@ export class RPGManager {
       }
       else if (action === 'rpg_rest') {
           if (state.dungeon.enemy) {
-              await interaction.reply({ content: "Impossible de se reposer au combat !", ephemeral: true });
+              await interaction.reply({ content: "Impossible de se reposer au combat !", flags: [MessageFlags.Ephemeral] });
               return false;
           }
           const heal = Math.floor(player.maxHp * 0.3);
@@ -251,7 +259,7 @@ export class RPGManager {
              { name: 'Fortune', value: `💰 ${player.gold} po`, inline: true },
              { name: 'Expérience', value: `✨ ${player.xp}/${player.level * 50}`, inline: true }
            );
-         await interaction.reply({ embeds: [statsEmbed], ephemeral: true });
+         await interaction.reply({ embeds: [statsEmbed], flags: [MessageFlags.Ephemeral] });
          return false;
       }
       else if (action === 'rpg_leaderboard') {
@@ -268,11 +276,10 @@ export class RPGManager {
                 : 'Personne n\'a encore osé s\'aventurer ici...')
             .setFooter({ text: `Record actuel: Étage ${state.dungeon.records.maxFloor} (${state.dungeon.records.topPlayer})` });
             
-          await interaction.reply({ embeds: [lbEmbed], ephemeral: true });
+          await interaction.reply({ embeds: [lbEmbed], flags: [MessageFlags.Ephemeral] });
           return false;
       }
 
-      await saveRPGState(state);
       return true;
 
     } catch (err) {

@@ -190,14 +190,7 @@ export class InteractionHandler {
     // Récupérer la configuration du bouton
     const button = this.buttons.get(customId);
     if (!button) {
-      Logger.warn(`❌ Bouton non trouvé: ${customId}`);
-      this.sendToDiscord({
-        action: 'button_error',
-        channelId,
-        messageId,
-        error: 'Bouton non trouvé dans la base de données',
-        customId,
-      });
+      // Ne plus logger de warning ou d'erreur ici car le bouton peut être géré par un autre système (ex: RPG)
       return;
     }
 

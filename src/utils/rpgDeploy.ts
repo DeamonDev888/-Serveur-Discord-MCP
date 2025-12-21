@@ -43,15 +43,31 @@ export async function deployRPG(token: string) {
             const manager = RPGManager.getInstance();
             const state = await manager.getGameState();
             
+            // On lance l'action
             const success = await manager.handleAction(interaction, state);
             
             if (success) {
                 const nextEmbed = manager.createMainEmbed(state);
                 const nextButtons = manager.createActionButtons(state);
+                
+                // On met à jour l'UI D'ABORD pour éviter le timeout Discord (3s)
                 await interaction.update({ embeds: [nextEmbed], components: nextButtons });
+                
+                // On sauvegarde ENSUITE en arrière-plan
+                manager.saveGameState().catch(err => Logger.error('💾 Error saving RPG state:', err));
+            } else {
+                // Si l'action n'a pas déclenché de réponse (ex: erreur ou condition non remplie)
+                // et qu'aucune réponse n'a été envoyée, on deferUpdate pour éviter le lag
+                if (!interaction.replied && !interaction.deferred) {
+                    await interaction.deferUpdate().catch(() => {});
+                }
             }
         } catch (e) {
-            Logger.error('RPG Error runtime:', e);
+            Logger.error('❌ RPG Error runtime:', e);
+            // Toujours essayer de répondre pour éviter l'erreur "Unknown Interaction"
+            if (!interaction.replied && !interaction.deferred) {
+                await interaction.deferUpdate().catch(() => {});
+            }
         }
     };
 
