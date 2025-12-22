@@ -1,5 +1,6 @@
 import { loadPolls, savePolls } from './pollPersistence.js';
 import { loadCustomButtons, saveCustomButtons } from './buttonPersistence.js';
+import { loadCustomMenus, saveCustomMenus, saveMenuSelection } from './menuPersistence.js';
 import Logger from './logger.js';
 
 /**
@@ -8,6 +9,7 @@ import Logger from './logger.js';
 export class InteractionHandler {
   private polls: Map<string, any> = new Map();
   private buttons: Map<string, any> = new Map();
+  private menus: Map<string, any> = new Map();
 
   constructor() {
     this.initialize();
@@ -17,7 +19,11 @@ export class InteractionHandler {
     // Charger les données persistées
     this.polls = await loadPolls();
     this.buttons = await loadCustomButtons();
+    this.menus = await loadCustomMenus();
     Logger.info("✅ Gestionnaire d'interactions initialisé");
+    Logger.info(`   • ${this.polls.size} sondages chargés`);
+    Logger.info(`   • ${this.buttons.size} boutons chargés`);
+    Logger.info(`   • ${this.menus.size} menus chargés`);
   }
 
   /**
@@ -184,7 +190,7 @@ export class InteractionHandler {
     // Récupérer la configuration du bouton
     const button = this.buttons.get(customId);
     if (!button) {
-      Logger.warn(`❌ Bouton non trouvé: ${customId}`);
+      // Ne plus logger de warning ou d'erreur ici car le bouton peut être géré par un autre système (ex: RPG)
       return;
     }
 
@@ -197,13 +203,159 @@ export class InteractionHandler {
       Logger.info('⏰ Bouton expiré (TTL 24h)');
       this.buttons.delete(customId);
       await saveCustomButtons(this.buttons);
+
+      this.sendToDiscord({
+        action: 'button_expired',
+        channelId,
+        messageId,
+        customId,
+        label: button.label,
+      });
       return;
     }
 
-    // TODO: Exécuter l'action du bouton
-    Logger.debug(`✅ Action à exécuter:`, button.action);
+    // Exécuter l'action du bouton
+    Logger.info(`✅ Exécution de l'action: ${button.action.type}`);
 
-    // TODO: Envoyer une réponse à l'utilisateur
+    try {
+      await this.executeButtonAction(button.action, {
+        button,
+        user,
+        channelId,
+        messageId,
+      });
+
+      // Envoyer une confirmation à Discord
+      this.sendToDiscord({
+        action: 'button_success',
+        channelId,
+        messageId,
+        customId,
+        label: button.label,
+        actionType: button.action.type,
+        user: {
+          id: user.id,
+          username: user.username,
+        },
+      });
+    } catch (error: any) {
+      Logger.error(`❌ Erreur lors de l'exécution du bouton: ${error.message}`);
+
+      this.sendToDiscord({
+        action: 'button_error',
+        channelId,
+        messageId,
+        error: error.message,
+        customId,
+        label: button.label,
+      });
+    }
+  }
+
+  /**
+   * Exécuter une action de bouton
+   */
+  private async executeButtonAction(action: any, context: any): Promise<void> {
+    const { button, user, channelId, messageId } = context;
+
+    switch (action.type) {
+      case 'message':
+        // Envoyer un message prédéfini
+        if (action.data?.message) {
+          this.sendToDiscord({
+            action: 'send_message',
+            channelId,
+            content: action.data.message.replace('{user}', user.username),
+          });
+        }
+        break;
+
+      case 'embed':
+        // Envoyer un embed
+        if (action.data?.embed) {
+          this.sendToDiscord({
+            action: 'send_embed',
+            channelId,
+            embed: {
+              ...action.data.embed,
+              // Remplacer les placeholders
+              title: action.data.embed.title?.replace('{user}', user.username),
+              description: action.data.embed.description?.replace('{user}', user.username),
+            },
+          });
+        }
+        break;
+
+      case 'role':
+        // Donner/retirer un rôle (nécessite des permissions admin)
+        if (action.data?.roleId) {
+          this.sendToDiscord({
+            action: 'toggle_role',
+            channelId,
+            userId: user.id,
+            roleId: action.data.roleId,
+            roleAction: action.data.action || 'add', // 'add', 'remove', 'toggle'
+          });
+        }
+        break;
+
+      case 'react':
+        // Ajouter une réaction au message
+        if (action.data?.emoji) {
+          this.sendToDiscord({
+            action: 'add_reaction',
+            channelId,
+            messageId,
+            emoji: action.data.emoji,
+          });
+        }
+        break;
+
+      case 'command':
+        // Exécuter une commande personnalisée
+        if (action.data?.command) {
+          Logger.info(`🔧 Commande personnalisée: ${action.data.command}`);
+          // TODO: Implémenter un système de commandes personnalisées
+        }
+        break;
+
+      case 'url':
+        // Ouvrir une URL (via embed ou message)
+        if (action.data?.url) {
+          this.sendToDiscord({
+            action: 'send_message',
+            channelId,
+            content: `🔗 ${action.data.text || 'Lien'}: ${action.data.url}`,
+          });
+        }
+        break;
+
+      case 'delete':
+        // Supprimer le message du bouton
+        this.sendToDiscord({
+          action: 'delete_message',
+          channelId,
+          messageId,
+        });
+        break;
+
+      case 'edit':
+        // Modifier le message du bouton
+        if (action.data?.newContent || action.data?.newEmbed) {
+          this.sendToDiscord({
+            action: 'edit_message',
+            channelId,
+            messageId,
+            newContent: action.data.newContent,
+            newEmbed: action.data.newEmbed,
+          });
+        }
+        break;
+
+      default:
+        Logger.warn(`⚠️ Type d'action de bouton inconnu: ${action.type}`);
+        throw new Error(`Type d'action non supporté: ${action.type}`);
+    }
   }
 
   /**
@@ -215,7 +367,189 @@ export class InteractionHandler {
     Logger.info(`📋 Menu sélectionné: ${customId} par ${user.username}`);
     Logger.debug('Valeurs sélectionnées:', values);
 
-    // TODO: Traiter la sélection
+    // Récupérer la configuration du menu
+    const menu = this.menus.get(customId) || this.getMenuByCustomId(customId);
+    if (!menu) {
+      Logger.warn(`❌ Menu non trouvé: ${customId}`);
+      this.sendToDiscord({
+        action: 'menu_error',
+        channelId,
+        messageId,
+        error: 'Menu non trouvé dans la base de données',
+        customId,
+      });
+      return;
+    }
+
+    // Vérifier si le menu est actif
+    if (!menu.isActive) {
+      Logger.info('⚠️ Menu désactivé');
+      return;
+    }
+
+    // Sauvegarder la sélection
+    await saveMenuSelection(menu.id, user.id, values, this.menus);
+
+    Logger.info(`✅ Sélection sauvegardée pour ${user.username}: ${values.join(', ')}`);
+
+    // Exécuter l'action du menu
+    try {
+      await this.executeMenuAction(menu.action, {
+        menu,
+        user,
+        values,
+        channelId,
+        messageId,
+      });
+
+      // Envoyer une confirmation à Discord
+      this.sendToDiscord({
+        action: 'menu_success',
+        channelId,
+        messageId,
+        customId,
+        values,
+        actionType: menu.action.type,
+        user: {
+          id: user.id,
+          username: user.username,
+        },
+      });
+    } catch (error: any) {
+      Logger.error(`❌ Erreur lors de l'exécution du menu: ${error.message}`);
+
+      this.sendToDiscord({
+        action: 'menu_error',
+        channelId,
+        messageId,
+        error: error.message,
+        customId,
+      });
+    }
+  }
+
+  /**
+   * Obtenir un menu par customId
+   */
+  private getMenuByCustomId(customId: string): any {
+    for (const menu of this.menus.values()) {
+      if (menu.customId === customId) {
+        return menu;
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Exécuter une action de menu
+   */
+  private async executeMenuAction(action: any, context: any): Promise<void> {
+    const { menu, user, values, channelId } = context;
+
+    switch (action.type) {
+      case 'message':
+        // Envoyer un message basé sur les sélections
+        if (action.data?.template) {
+          let content = action.data.template;
+          values.forEach((value: string, index: number) => {
+            content = content.replace(`{selection${index + 1}}`, value);
+          });
+          content = content.replace('{user}', user.username);
+          content = content.replace('{all}', values.join(', '));
+
+          this.sendToDiscord({
+            action: 'send_message',
+            channelId,
+            content,
+          });
+        }
+        break;
+
+      case 'embed':
+        // Envoyer un embed basé sur les sélections
+        if (action.data?.embed) {
+          const embed = {
+            ...action.data.embed,
+            // Remplacer les placeholders
+            title: action.data.embed.title?.replace('{user}', user.username),
+            description: action.data.embed.description?.replace('{user}', user.username),
+          };
+
+          values.forEach((value: string, index: number) => {
+            if (embed.title) embed.title = embed.title.replace(`{selection${index + 1}}`, value);
+            if (embed.description) embed.description = embed.description.replace(`{selection${index + 1}}`, value);
+          });
+          if (embed.description) embed.description = embed.description.replace('{all}', values.join(', '));
+
+          this.sendToDiscord({
+            action: 'send_embed',
+            channelId,
+            embed,
+          });
+        }
+        break;
+
+      case 'role':
+        // Donner/retirer des rôles basés sur les sélections
+        if (action.data?.roleMapping) {
+          const rolesToAdd: string[] = [];
+          const rolesToRemove: string[] = [];
+
+          values.forEach((value: string) => {
+            const mapping = action.data.roleMapping[value];
+            if (mapping) {
+              if (mapping.action === 'add') {
+                rolesToAdd.push(mapping.roleId);
+              } else if (mapping.action === 'remove') {
+                rolesToRemove.push(mapping.roleId);
+              }
+            }
+          });
+
+          if (rolesToAdd.length > 0 || rolesToRemove.length > 0) {
+            this.sendToDiscord({
+              action: 'manage_roles',
+              channelId,
+              userId: user.id,
+              rolesToAdd,
+              rolesToRemove,
+            });
+          }
+        }
+        break;
+
+      case 'webhook':
+        // Envoyer les données vers un webhook
+        if (action.data?.webhookUrl) {
+          this.sendToDiscord({
+            action: 'send_webhook_data',
+            channelId,
+            webhookUrl: action.data.webhookUrl,
+            data: {
+              user: {
+                id: user.id,
+                username: user.username,
+              },
+              menuId: menu.id,
+              selections: values,
+              timestamp: new Date().toISOString(),
+            },
+          });
+        }
+        break;
+
+      case 'custom':
+        // Exécuter une commande personnalisée
+        if (action.data?.command) {
+          Logger.info(`🔧 Commande personnalisée de menu: ${action.data.command}`);
+          // TODO: Implémenter un système de commandes personnalisées
+        }
+        break;
+
+      default:
+        Logger.warn(`⚠️ Type d'action de menu inconnu: ${action.type}`);
+        throw new Error(`Type d'action non supporté: ${action.type}`);
+    }
   }
 
   /**
