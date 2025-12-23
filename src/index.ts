@@ -1335,95 +1335,95 @@ const CRYPTO_LOGOS: Record<string, { name: string; symbol: string; logo: string 
 // SYSTÈME DE LOGOS ENTREPRISES & INDICES 📈
 // ============================================================================
 
-// Base de données des logos d'entreprises (utilise logo.clearbit.com)
+// Base de données des logos d'entreprises (utilise wsrv.nl + SimpleIcons - gratuit, open-source)
 const COMPANY_LOGOS: Record<string, { name: string; symbol: string; logo: string; sector: string }> = {
   // === TOP 30 S&P 500 ===
-  AAPL: { name: 'Apple', symbol: 'AAPL', logo: 'https://logo.clearbit.com/apple.com', sector: 'Technology' },
-  MSFT: { name: 'Microsoft', symbol: 'MSFT', logo: 'https://logo.clearbit.com/microsoft.com', sector: 'Technology' },
-  GOOGL: { name: 'Alphabet (Google)', symbol: 'GOOGL', logo: 'https://logo.clearbit.com/google.com', sector: 'Technology' },
-  AMZN: { name: 'Amazon', symbol: 'AMZN', logo: 'https://logo.clearbit.com/amazon.com', sector: 'Consumer' },
-  NVDA: { name: 'NVIDIA', symbol: 'NVDA', logo: 'https://logo.clearbit.com/nvidia.com', sector: 'Technology' },
-  META: { name: 'Meta (Facebook)', symbol: 'META', logo: 'https://logo.clearbit.com/meta.com', sector: 'Technology' },
-  TSLA: { name: 'Tesla', symbol: 'TSLA', logo: 'https://logo.clearbit.com/tesla.com', sector: 'Automotive' },
+  AAPL: { name: 'Apple', symbol: 'AAPL', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/apple&output=png', sector: 'Technology' },
+  MSFT: { name: 'Microsoft', symbol: 'MSFT', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/microsoft&output=png', sector: 'Technology' },
+  GOOGL: { name: 'Alphabet (Google)', symbol: 'GOOGL', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/google&output=png', sector: 'Technology' },
+  AMZN: { name: 'Amazon', symbol: 'AMZN', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/amazon&output=png', sector: 'Consumer' },
+  NVDA: { name: 'NVIDIA', symbol: 'NVDA', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/nvidia&output=png', sector: 'Technology' },
+  META: { name: 'Meta (Facebook)', symbol: 'META', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/meta&output=png', sector: 'Technology' },
+  TSLA: { name: 'Tesla', symbol: 'TSLA', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/tesla&output=png', sector: 'Automotive' },
   BRK: { name: 'Berkshire Hathaway', symbol: 'BRK', logo: 'https://logo.clearbit.com/berkshirehathaway.com', sector: 'Finance' },
-  JPM: { name: 'JPMorgan Chase', symbol: 'JPM', logo: 'https://logo.clearbit.com/jpmorganchase.com', sector: 'Finance' },
-  V: { name: 'Visa', symbol: 'V', logo: 'https://logo.clearbit.com/visa.com', sector: 'Finance' },
+  JPM: { name: 'JPMorgan Chase', symbol: 'JPM', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/jpmorgan&output=png', sector: 'Finance' },
+  V: { name: 'Visa', symbol: 'V', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/visa&output=png', sector: 'Finance' },
   JNJ: { name: 'Johnson & Johnson', symbol: 'JNJ', logo: 'https://logo.clearbit.com/jnj.com', sector: 'Healthcare' },
-  WMT: { name: 'Walmart', symbol: 'WMT', logo: 'https://logo.clearbit.com/walmart.com', sector: 'Retail' },
-  MA: { name: 'Mastercard', symbol: 'MA', logo: 'https://logo.clearbit.com/mastercard.com', sector: 'Finance' },
+  WMT: { name: 'Walmart', symbol: 'WMT', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/walmart&output=png', sector: 'Retail' },
+  MA: { name: 'Mastercard', symbol: 'MA', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/mastercard&output=png', sector: 'Finance' },
   PG: { name: 'Procter & Gamble', symbol: 'PG', logo: 'https://logo.clearbit.com/pg.com', sector: 'Consumer' },
-  XOM: { name: 'Exxon Mobil', symbol: 'XOM', logo: 'https://logo.clearbit.com/exxonmobil.com', sector: 'Energy' },
+  XOM: { name: 'Exxon Mobil', symbol: 'XOM', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/exxonmobil&output=png', sector: 'Energy' },
   HD: { name: 'Home Depot', symbol: 'HD', logo: 'https://logo.clearbit.com/homedepot.com', sector: 'Retail' },
-  CVX: { name: 'Chevron', symbol: 'CVX', logo: 'https://logo.clearbit.com/chevron.com', sector: 'Energy' },
+  CVX: { name: 'Chevron', symbol: 'CVX', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/chevron&output=png', sector: 'Energy' },
   MRK: { name: 'Merck', symbol: 'MRK', logo: 'https://logo.clearbit.com/merck.com', sector: 'Healthcare' },
   ABBV: { name: 'AbbVie', symbol: 'ABBV', logo: 'https://logo.clearbit.com/abbvie.com', sector: 'Healthcare' },
-  PEP: { name: 'PepsiCo', symbol: 'PEP', logo: 'https://logo.clearbit.com/pepsico.com', sector: 'Consumer' },
-  KO: { name: 'Coca-Cola', symbol: 'KO', logo: 'https://logo.clearbit.com/coca-cola.com', sector: 'Consumer' },
-  COST: { name: 'Costco', symbol: 'COST', logo: 'https://logo.clearbit.com/costco.com', sector: 'Retail' },
-  AVGO: { name: 'Broadcom', symbol: 'AVGO', logo: 'https://logo.clearbit.com/broadcom.com', sector: 'Technology' },
+  PEP: { name: 'PepsiCo', symbol: 'PEP', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/pepsi&output=png', sector: 'Consumer' },
+  KO: { name: 'Coca-Cola', symbol: 'KO', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/cocacola&output=png', sector: 'Consumer' },
+  COST: { name: 'Costco', symbol: 'COST', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/costco&output=png', sector: 'Retail' },
+  AVGO: { name: 'Broadcom', symbol: 'AVGO', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/broadcom&output=png', sector: 'Technology' },
   TMO: { name: 'Thermo Fisher', symbol: 'TMO', logo: 'https://logo.clearbit.com/thermofisher.com', sector: 'Healthcare' },
-  MCD: { name: 'McDonald\'s', symbol: 'MCD', logo: 'https://logo.clearbit.com/mcdonalds.com', sector: 'Consumer' },
-  CSCO: { name: 'Cisco', symbol: 'CSCO', logo: 'https://logo.clearbit.com/cisco.com', sector: 'Technology' },
-  ACN: { name: 'Accenture', symbol: 'ACN', logo: 'https://logo.clearbit.com/accenture.com', sector: 'Technology' },
+  MCD: { name: 'McDonald\'s', symbol: 'MCD', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/mcdonalds&output=png', sector: 'Consumer' },
+  CSCO: { name: 'Cisco', symbol: 'CSCO', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/cisco&output=png', sector: 'Technology' },
+  ACN: { name: 'Accenture', symbol: 'ACN', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/accenture&output=png', sector: 'Technology' },
   ABT: { name: 'Abbott Labs', symbol: 'ABT', logo: 'https://logo.clearbit.com/abbott.com', sector: 'Healthcare' },
   DHR: { name: 'Danaher', symbol: 'DHR', logo: 'https://logo.clearbit.com/danaher.com', sector: 'Healthcare' },
   LIN: { name: 'Linde', symbol: 'LIN', logo: 'https://logo.clearbit.com/linde.com', sector: 'Materials' },
 
   // === TECH GIANTS ===
-  INTC: { name: 'Intel', symbol: 'INTC', logo: 'https://logo.clearbit.com/intel.com', sector: 'Technology' },
-  AMD: { name: 'AMD', symbol: 'AMD', logo: 'https://logo.clearbit.com/amd.com', sector: 'Technology' },
-  IBM: { name: 'IBM', symbol: 'IBM', logo: 'https://logo.clearbit.com/ibm.com', sector: 'Technology' },
-  ORCL: { name: 'Oracle', symbol: 'ORCL', logo: 'https://logo.clearbit.com/oracle.com', sector: 'Technology' },
-  CRM: { name: 'Salesforce', symbol: 'CRM', logo: 'https://logo.clearbit.com/salesforce.com', sector: 'Technology' },
-  ADBE: { name: 'Adobe', symbol: 'ADBE', logo: 'https://logo.clearbit.com/adobe.com', sector: 'Technology' },
-  NFLX: { name: 'Netflix', symbol: 'NFLX', logo: 'https://logo.clearbit.com/netflix.com', sector: 'Entertainment' },
-  PYPL: { name: 'PayPal', symbol: 'PYPL', logo: 'https://logo.clearbit.com/paypal.com', sector: 'Finance' },
-  SQ: { name: 'Block (Square)', symbol: 'SQ', logo: 'https://logo.clearbit.com/block.xyz', sector: 'Finance' },
-  SHOP: { name: 'Shopify', symbol: 'SHOP', logo: 'https://logo.clearbit.com/shopify.com', sector: 'Technology' },
-  UBER: { name: 'Uber', symbol: 'UBER', logo: 'https://logo.clearbit.com/uber.com', sector: 'Technology' },
-  LYFT: { name: 'Lyft', symbol: 'LYFT', logo: 'https://logo.clearbit.com/lyft.com', sector: 'Technology' },
-  ABNB: { name: 'Airbnb', symbol: 'ABNB', logo: 'https://logo.clearbit.com/airbnb.com', sector: 'Technology' },
-  SNAP: { name: 'Snap', symbol: 'SNAP', logo: 'https://logo.clearbit.com/snap.com', sector: 'Technology' },
-  TWTR: { name: 'X (Twitter)', symbol: 'TWTR', logo: 'https://logo.clearbit.com/x.com', sector: 'Technology' },
-  SPOT: { name: 'Spotify', symbol: 'SPOT', logo: 'https://logo.clearbit.com/spotify.com', sector: 'Entertainment' },
-  ZOOM: { name: 'Zoom', symbol: 'ZM', logo: 'https://logo.clearbit.com/zoom.us', sector: 'Technology' },
-  PLTR: { name: 'Palantir', symbol: 'PLTR', logo: 'https://logo.clearbit.com/palantir.com', sector: 'Technology' },
+  INTC: { name: 'Intel', symbol: 'INTC', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/intel&output=png', sector: 'Technology' },
+  AMD: { name: 'AMD', symbol: 'AMD', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/amd&output=png', sector: 'Technology' },
+  IBM: { name: 'IBM', symbol: 'IBM', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/ibm&output=png', sector: 'Technology' },
+  ORCL: { name: 'Oracle', symbol: 'ORCL', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/oracle&output=png', sector: 'Technology' },
+  CRM: { name: 'Salesforce', symbol: 'CRM', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/salesforce&output=png', sector: 'Technology' },
+  ADBE: { name: 'Adobe', symbol: 'ADBE', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/adobe&output=png', sector: 'Technology' },
+  NFLX: { name: 'Netflix', symbol: 'NFLX', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/netflix&output=png', sector: 'Entertainment' },
+  PYPL: { name: 'PayPal', symbol: 'PYPL', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/paypal&output=png', sector: 'Finance' },
+  SQ: { name: 'Block (Square)', symbol: 'SQ', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/block&output=png', sector: 'Finance' },
+  SHOP: { name: 'Shopify', symbol: 'SHOP', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/shopify&output=png', sector: 'Technology' },
+  UBER: { name: 'Uber', symbol: 'UBER', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/uber&output=png', sector: 'Technology' },
+  LYFT: { name: 'Lyft', symbol: 'LYFT', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/lyft&output=png', sector: 'Technology' },
+  ABNB: { name: 'Airbnb', symbol: 'ABNB', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/airbnb&output=png', sector: 'Technology' },
+  SNAP: { name: 'Snap', symbol: 'SNAP', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/snapchat&output=png', sector: 'Technology' },
+  TWTR: { name: 'X (Twitter)', symbol: 'TWTR', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/x&output=png', sector: 'Technology' },
+  SPOT: { name: 'Spotify', symbol: 'SPOT', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/spotify&output=png', sector: 'Entertainment' },
+  ZOOM: { name: 'Zoom', symbol: 'ZM', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/zoom&output=png', sector: 'Technology' },
+  PLTR: { name: 'Palantir', symbol: 'PLTR', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/palantir&output=png', sector: 'Technology' },
 
   // === BANQUES & FINANCE ===
-  BAC: { name: 'Bank of America', symbol: 'BAC', logo: 'https://logo.clearbit.com/bankofamerica.com', sector: 'Finance' },
-  WFC: { name: 'Wells Fargo', symbol: 'WFC', logo: 'https://logo.clearbit.com/wellsfargo.com', sector: 'Finance' },
-  C: { name: 'Citigroup', symbol: 'C', logo: 'https://logo.clearbit.com/citigroup.com', sector: 'Finance' },
-  GS: { name: 'Goldman Sachs', symbol: 'GS', logo: 'https://logo.clearbit.com/goldmansachs.com', sector: 'Finance' },
-  MS: { name: 'Morgan Stanley', symbol: 'MS', logo: 'https://logo.clearbit.com/morganstanley.com', sector: 'Finance' },
-  AXP: { name: 'American Express', symbol: 'AXP', logo: 'https://logo.clearbit.com/americanexpress.com', sector: 'Finance' },
+  BAC: { name: 'Bank of America', symbol: 'BAC', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/bankofamerica&output=png', sector: 'Finance' },
+  WFC: { name: 'Wells Fargo', symbol: 'WFC', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/wellsfargo&output=png', sector: 'Finance' },
+  C: { name: 'Citigroup', symbol: 'C', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/citi&output=png', sector: 'Finance' },
+  GS: { name: 'Goldman Sachs', symbol: 'GS', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/goldmansachs&output=png', sector: 'Finance' },
+  MS: { name: 'Morgan Stanley', symbol: 'MS', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/morganstanley&output=png', sector: 'Finance' },
+  AXP: { name: 'American Express', symbol: 'AXP', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/americanexpress&output=png', sector: 'Finance' },
   BLK: { name: 'BlackRock', symbol: 'BLK', logo: 'https://logo.clearbit.com/blackrock.com', sector: 'Finance' },
-  SCHW: { name: 'Charles Schwab', symbol: 'SCHW', logo: 'https://logo.clearbit.com/schwab.com', sector: 'Finance' },
+  SCHW: { name: 'Charles Schwab', symbol: 'SCHW', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/charlesschwab&output=png', sector: 'Finance' },
 
   // === AUTOMOBILE ===
-  GM: { name: 'General Motors', symbol: 'GM', logo: 'https://logo.clearbit.com/gm.com', sector: 'Automotive' },
-  F: { name: 'Ford', symbol: 'F', logo: 'https://logo.clearbit.com/ford.com', sector: 'Automotive' },
-  TM: { name: 'Toyota', symbol: 'TM', logo: 'https://logo.clearbit.com/toyota.com', sector: 'Automotive' },
-  HMC: { name: 'Honda', symbol: 'HMC', logo: 'https://logo.clearbit.com/honda.com', sector: 'Automotive' },
-  RIVN: { name: 'Rivian', symbol: 'RIVN', logo: 'https://logo.clearbit.com/rivian.com', sector: 'Automotive' },
+  GM: { name: 'General Motors', symbol: 'GM', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/generalmotors&output=png', sector: 'Automotive' },
+  F: { name: 'Ford', symbol: 'F', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/ford&output=png', sector: 'Automotive' },
+  TM: { name: 'Toyota', symbol: 'TM', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/toyota&output=png', sector: 'Automotive' },
+  HMC: { name: 'Honda', symbol: 'HMC', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/honda&output=png', sector: 'Automotive' },
+  RIVN: { name: 'Rivian', symbol: 'RIVN', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/rivian&output=png', sector: 'Automotive' },
   LCID: { name: 'Lucid', symbol: 'LCID', logo: 'https://logo.clearbit.com/lucidmotors.com', sector: 'Automotive' },
   NIO: { name: 'NIO', symbol: 'NIO', logo: 'https://logo.clearbit.com/nio.com', sector: 'Automotive' },
 
   // === PHARMA & HEALTHCARE ===
-  PFE: { name: 'Pfizer', symbol: 'PFE', logo: 'https://logo.clearbit.com/pfizer.com', sector: 'Healthcare' },
-  UNH: { name: 'UnitedHealth', symbol: 'UNH', logo: 'https://logo.clearbit.com/unitedhealthgroup.com', sector: 'Healthcare' },
+  PFE: { name: 'Pfizer', symbol: 'PFE', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/pfizer&output=png', sector: 'Healthcare' },
+  UNH: { name: 'UnitedHealth', symbol: 'UNH', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/unitedhealthgroup&output=png', sector: 'Healthcare' },
   LLY: { name: 'Eli Lilly', symbol: 'LLY', logo: 'https://logo.clearbit.com/lilly.com', sector: 'Healthcare' },
   BMY: { name: 'Bristol-Myers', symbol: 'BMY', logo: 'https://logo.clearbit.com/bms.com', sector: 'Healthcare' },
-  GILD: { name: 'Gilead', symbol: 'GILD', logo: 'https://logo.clearbit.com/gilead.com', sector: 'Healthcare' },
-  MRNA: { name: 'Moderna', symbol: 'MRNA', logo: 'https://logo.clearbit.com/modernatx.com', sector: 'Healthcare' },
+  GILD: { name: 'Gilead', symbol: 'GILD', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/gilead&output=png', sector: 'Healthcare' },
+  MRNA: { name: 'Moderna', symbol: 'MRNA', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/moderna&output=png', sector: 'Healthcare' },
   BNTX: { name: 'BioNTech', symbol: 'BNTX', logo: 'https://logo.clearbit.com/biontech.de', sector: 'Healthcare' },
 
   // === RETAIL & CONSUMER ===
-  NKE: { name: 'Nike', symbol: 'NKE', logo: 'https://logo.clearbit.com/nike.com', sector: 'Consumer' },
-  SBUX: { name: 'Starbucks', symbol: 'SBUX', logo: 'https://logo.clearbit.com/starbucks.com', sector: 'Consumer' },
-  DIS: { name: 'Disney', symbol: 'DIS', logo: 'https://logo.clearbit.com/disney.com', sector: 'Entertainment' },
-  TGT: { name: 'Target', symbol: 'TGT', logo: 'https://logo.clearbit.com/target.com', sector: 'Retail' },
-  LOW: { name: 'Lowe\'s', symbol: 'LOW', logo: 'https://logo.clearbit.com/lowes.com', sector: 'Retail' },
-  EBAY: { name: 'eBay', symbol: 'EBAY', logo: 'https://logo.clearbit.com/ebay.com', sector: 'Retail' },
+  NKE: { name: 'Nike', symbol: 'NKE', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/nike&output=png', sector: 'Consumer' },
+  SBUX: { name: 'Starbucks', symbol: 'SBUX', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/starbucks&output=png', sector: 'Consumer' },
+  DIS: { name: 'Disney', symbol: 'DIS', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/disney&output=png', sector: 'Entertainment' },
+  TGT: { name: 'Target', symbol: 'TGT', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/target&output=png', sector: 'Retail' },
+  LOW: { name: 'Lowe\'s', symbol: 'LOW', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/lowes&output=png', sector: 'Retail' },
+  EBAY: { name: 'eBay', symbol: 'EBAY', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/ebay&output=png', sector: 'Retail' },
 
   // === ENERGY ===
   COP: { name: 'ConocoPhillips', symbol: 'COP', logo: 'https://logo.clearbit.com/conocophillips.com', sector: 'Energy' },
@@ -1431,95 +1431,95 @@ const COMPANY_LOGOS: Record<string, { name: string; symbol: string; logo: string
   OXY: { name: 'Occidental', symbol: 'OXY', logo: 'https://logo.clearbit.com/oxy.com', sector: 'Energy' },
 
   // === AEROSPACE & DEFENSE ===
-  BA: { name: 'Boeing', symbol: 'BA', logo: 'https://logo.clearbit.com/boeing.com', sector: 'Aerospace' },
-  LMT: { name: 'Lockheed Martin', symbol: 'LMT', logo: 'https://logo.clearbit.com/lockheedmartin.com', sector: 'Aerospace' },
+  BA: { name: 'Boeing', symbol: 'BA', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/boeing&output=png', sector: 'Aerospace' },
+  LMT: { name: 'Lockheed Martin', symbol: 'LMT', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/lockheedmartin&output=png', sector: 'Aerospace' },
   RTX: { name: 'RTX (Raytheon)', symbol: 'RTX', logo: 'https://logo.clearbit.com/rtx.com', sector: 'Aerospace' },
-  NOC: { name: 'Northrop Grumman', symbol: 'NOC', logo: 'https://logo.clearbit.com/northropgrumman.com', sector: 'Aerospace' },
+  NOC: { name: 'Northrop Grumman', symbol: 'NOC', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/northropgrumman&output=png', sector: 'Aerospace' },
   GD: { name: 'General Dynamics', symbol: 'GD', logo: 'https://logo.clearbit.com/gd.com', sector: 'Aerospace' },
 
   // === TELECOM ===
-  T: { name: 'AT&T', symbol: 'T', logo: 'https://logo.clearbit.com/att.com', sector: 'Telecom' },
-  VZ: { name: 'Verizon', symbol: 'VZ', logo: 'https://logo.clearbit.com/verizon.com', sector: 'Telecom' },
-  TMUS: { name: 'T-Mobile', symbol: 'TMUS', logo: 'https://logo.clearbit.com/t-mobile.com', sector: 'Telecom' },
+  T: { name: 'AT&T', symbol: 'T', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/att&output=png', sector: 'Telecom' },
+  VZ: { name: 'Verizon', symbol: 'VZ', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/verizon&output=png', sector: 'Telecom' },
+  TMUS: { name: 'T-Mobile', symbol: 'TMUS', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/tmobile&output=png', sector: 'Telecom' },
 };
 
 // Base de données des logos divers (services, réseaux sociaux, etc.)
 const MISC_LOGOS: Record<string, { name: string; category: string; logo: string }> = {
   // === RÉSEAUX SOCIAUX ===
-  DISCORD: { name: 'Discord', category: 'Social', logo: 'https://logo.clearbit.com/discord.com' },
-  TWITTER: { name: 'X (Twitter)', category: 'Social', logo: 'https://logo.clearbit.com/x.com' },
-  FACEBOOK: { name: 'Facebook', category: 'Social', logo: 'https://logo.clearbit.com/facebook.com' },
-  INSTAGRAM: { name: 'Instagram', category: 'Social', logo: 'https://logo.clearbit.com/instagram.com' },
-  LINKEDIN: { name: 'LinkedIn', category: 'Social', logo: 'https://logo.clearbit.com/linkedin.com' },
-  TIKTOK: { name: 'TikTok', category: 'Social', logo: 'https://logo.clearbit.com/tiktok.com' },
-  REDDIT: { name: 'Reddit', category: 'Social', logo: 'https://logo.clearbit.com/reddit.com' },
-  YOUTUBE: { name: 'YouTube', category: 'Social', logo: 'https://logo.clearbit.com/youtube.com' },
-  TWITCH: { name: 'Twitch', category: 'Social', logo: 'https://logo.clearbit.com/twitch.tv' },
-  TELEGRAM: { name: 'Telegram', category: 'Social', logo: 'https://logo.clearbit.com/telegram.org' },
-  WHATSAPP: { name: 'WhatsApp', category: 'Social', logo: 'https://logo.clearbit.com/whatsapp.com' },
-  SIGNAL: { name: 'Signal', category: 'Social', logo: 'https://logo.clearbit.com/signal.org' },
+  DISCORD: { name: 'Discord', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/discord&output=png' },
+  TWITTER: { name: 'X (Twitter)', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/x&output=png' },
+  FACEBOOK: { name: 'Facebook', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/facebook&output=png' },
+  INSTAGRAM: { name: 'Instagram', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/instagram&output=png' },
+  LINKEDIN: { name: 'LinkedIn', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/linkedin&output=png' },
+  TIKTOK: { name: 'TikTok', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/tiktok&output=png' },
+  REDDIT: { name: 'Reddit', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/reddit&output=png' },
+  YOUTUBE: { name: 'YouTube', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/youtube&output=png' },
+  TWITCH: { name: 'Twitch', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/twitch&output=png' },
+  TELEGRAM: { name: 'Telegram', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/telegram&output=png' },
+  WHATSAPP: { name: 'WhatsApp', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/whatsapp&output=png' },
+  SIGNAL: { name: 'Signal', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/signal&output=png' },
 
   // === SERVICES CLOUD ===
   AWS: { name: 'Amazon AWS', category: 'Cloud', logo: 'https://logo.clearbit.com/aws.amazon.com' },
   AZURE: { name: 'Microsoft Azure', category: 'Cloud', logo: 'https://logo.clearbit.com/azure.microsoft.com' },
   GCP: { name: 'Google Cloud', category: 'Cloud', logo: 'https://logo.clearbit.com/cloud.google.com' },
-  CLOUDFLARE: { name: 'Cloudflare', category: 'Cloud', logo: 'https://logo.clearbit.com/cloudflare.com' },
-  DIGITALOCEAN: { name: 'DigitalOcean', category: 'Cloud', logo: 'https://logo.clearbit.com/digitalocean.com' },
-  HEROKU: { name: 'Heroku', category: 'Cloud', logo: 'https://logo.clearbit.com/heroku.com' },
-  VERCEL: { name: 'Vercel', category: 'Cloud', logo: 'https://logo.clearbit.com/vercel.com' },
-  NETLIFY: { name: 'Netlify', category: 'Cloud', logo: 'https://logo.clearbit.com/netlify.com' },
+  CLOUDFLARE: { name: 'Cloudflare', category: 'Cloud', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/cloudflare&output=png' },
+  DIGITALOCEAN: { name: 'DigitalOcean', category: 'Cloud', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/digitalocean&output=png' },
+  HEROKU: { name: 'Heroku', category: 'Cloud', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/heroku&output=png' },
+  VERCEL: { name: 'Vercel', category: 'Cloud', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/vercel&output=png' },
+  NETLIFY: { name: 'Netlify', category: 'Cloud', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/netlify&output=png' },
 
   // === EXCHANGES CRYPTO ===
-  BINANCE: { name: 'Binance', category: 'Exchange', logo: 'https://logo.clearbit.com/binance.com' },
-  COINBASE: { name: 'Coinbase', category: 'Exchange', logo: 'https://logo.clearbit.com/coinbase.com' },
-  KRAKEN: { name: 'Kraken', category: 'Exchange', logo: 'https://logo.clearbit.com/kraken.com' },
+  BINANCE: { name: 'Binance', category: 'Exchange', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/binance&output=png' },
+  COINBASE: { name: 'Coinbase', category: 'Exchange', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/coinbase&output=png' },
+  KRAKEN: { name: 'Kraken', category: 'Exchange', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/kraken&output=png' },
   FTX: { name: 'FTX', category: 'Exchange', logo: 'https://logo.clearbit.com/ftx.com' },
-  KUCOIN: { name: 'KuCoin', category: 'Exchange', logo: 'https://logo.clearbit.com/kucoin.com' },
-  BYBIT: { name: 'Bybit', category: 'Exchange', logo: 'https://logo.clearbit.com/bybit.com' },
-  OKX: { name: 'OKX', category: 'Exchange', logo: 'https://logo.clearbit.com/okx.com' },
-  BITFINEX: { name: 'Bitfinex', category: 'Exchange', logo: 'https://logo.clearbit.com/bitfinex.com' },
+  KUCOIN: { name: 'KuCoin', category: 'Exchange', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/kucoin&output=png' },
+  BYBIT: { name: 'Bybit', category: 'Exchange', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/bybit&output=png' },
+  OKX: { name: 'OKX', category: 'Exchange', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/okx&output=png' },
+  BITFINEX: { name: 'Bitfinex', category: 'Exchange', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/bitfinex&output=png' },
 
   // === BROKERS ===
-  ROBINHOOD: { name: 'Robinhood', category: 'Broker', logo: 'https://logo.clearbit.com/robinhood.com' },
-  ETRADE: { name: 'E*TRADE', category: 'Broker', logo: 'https://logo.clearbit.com/etrade.com' },
-  FIDELITY: { name: 'Fidelity', category: 'Broker', logo: 'https://logo.clearbit.com/fidelity.com' },
-  TD: { name: 'TD Ameritrade', category: 'Broker', logo: 'https://logo.clearbit.com/tdameritrade.com' },
-  INTERACTIVE: { name: 'Interactive Brokers', category: 'Broker', logo: 'https://logo.clearbit.com/interactivebrokers.com' },
-  TRADINGVIEW: { name: 'TradingView', category: 'Broker', logo: 'https://logo.clearbit.com/tradingview.com' },
+  ROBINHOOD: { name: 'Robinhood', category: 'Broker', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/robinhood&output=png' },
+  ETRADE: { name: 'E*TRADE', category: 'Broker', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/etrade&output=png' },
+  FIDELITY: { name: 'Fidelity', category: 'Broker', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/fidelity&output=png' },
+  TD: { name: 'TD Ameritrade', category: 'Broker', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/tdameritrade&output=png' },
+  INTERACTIVE: { name: 'Interactive Brokers', category: 'Broker', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/interactivebrokers&output=png' },
+  TRADINGVIEW: { name: 'TradingView', category: 'Broker', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/tradingview&output=png' },
 
   // === INDICES ===
-  SPX: { name: 'S&P 500', category: 'Index', logo: 'https://logo.clearbit.com/spglobal.com' },
-  DJI: { name: 'Dow Jones', category: 'Index', logo: 'https://logo.clearbit.com/dowjones.com' },
-  NASDAQ: { name: 'NASDAQ', category: 'Index', logo: 'https://logo.clearbit.com/nasdaq.com' },
-  NYSE: { name: 'NYSE', category: 'Index', logo: 'https://logo.clearbit.com/nyse.com' },
-  CME: { name: 'CME Group', category: 'Index', logo: 'https://logo.clearbit.com/cmegroup.com' },
+  SPX: { name: 'S&P 500', category: 'Index', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/spglobal&output=png' },
+  DJI: { name: 'Dow Jones', category: 'Index', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/dowjones&output=png' },
+  NASDAQ: { name: 'NASDAQ', category: 'Index', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/nasdaq&output=png' },
+  NYSE: { name: 'NYSE', category: 'Index', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/nyse&output=png' },
+  CME: { name: 'CME Group', category: 'Index', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/cmegroup&output=png' },
 
   // === BANQUES MONDIALES ===
-  HSBC: { name: 'HSBC', category: 'Bank', logo: 'https://logo.clearbit.com/hsbc.com' },
-  BARCLAYS: { name: 'Barclays', category: 'Bank', logo: 'https://logo.clearbit.com/barclays.com' },
-  UBS: { name: 'UBS', category: 'Bank', logo: 'https://logo.clearbit.com/ubs.com' },
+  HSBC: { name: 'HSBC', category: 'Bank', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/hsbc&output=png' },
+  BARCLAYS: { name: 'Barclays', category: 'Bank', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/barclays&output=png' },
+  UBS: { name: 'UBS', category: 'Bank', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/ubs&output=png' },
   CS: { name: 'Credit Suisse', category: 'Bank', logo: 'https://logo.clearbit.com/credit-suisse.com' },
-  DB: { name: 'Deutsche Bank', category: 'Bank', logo: 'https://logo.clearbit.com/db.com' },
-  BNP: { name: 'BNP Paribas', category: 'Bank', logo: 'https://logo.clearbit.com/bnpparibas.com' },
-  SANTANDER: { name: 'Santander', category: 'Bank', logo: 'https://logo.clearbit.com/santander.com' },
+  DB: { name: 'Deutsche Bank', category: 'Bank', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/deutschebank&output=png' },
+  BNP: { name: 'BNP Paribas', category: 'Bank', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/bnpparibas&output=png' },
+  SANTANDER: { name: 'Santander', category: 'Bank', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/santander&output=png' },
 
   // === PAIEMENTS ===
-  STRIPE: { name: 'Stripe', category: 'Payment', logo: 'https://logo.clearbit.com/stripe.com' },
-  WISE: { name: 'Wise', category: 'Payment', logo: 'https://logo.clearbit.com/wise.com' },
-  REVOLUT: { name: 'Revolut', category: 'Payment', logo: 'https://logo.clearbit.com/revolut.com' },
-  N26: { name: 'N26', category: 'Payment', logo: 'https://logo.clearbit.com/n26.com' },
-  VENMO: { name: 'Venmo', category: 'Payment', logo: 'https://logo.clearbit.com/venmo.com' },
-  CASHAPP: { name: 'Cash App', category: 'Payment', logo: 'https://logo.clearbit.com/cash.app' },
+  STRIPE: { name: 'Stripe', category: 'Payment', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/stripe&output=png' },
+  WISE: { name: 'Wise', category: 'Payment', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/wise&output=png' },
+  REVOLUT: { name: 'Revolut', category: 'Payment', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/revolut&output=png' },
+  N26: { name: 'N26', category: 'Payment', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/n26&output=png' },
+  VENMO: { name: 'Venmo', category: 'Payment', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/venmo&output=png' },
+  CASHAPP: { name: 'Cash App', category: 'Payment', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/cashapp&output=png' },
 
   // === NEWS & MEDIAS ===
-  BLOOMBERG: { name: 'Bloomberg', category: 'News', logo: 'https://logo.clearbit.com/bloomberg.com' },
-  REUTERS: { name: 'Reuters', category: 'News', logo: 'https://logo.clearbit.com/reuters.com' },
-  CNBC: { name: 'CNBC', category: 'News', logo: 'https://logo.clearbit.com/cnbc.com' },
-  WSJ: { name: 'Wall Street Journal', category: 'News', logo: 'https://logo.clearbit.com/wsj.com' },
-  FT: { name: 'Financial Times', category: 'News', logo: 'https://logo.clearbit.com/ft.com' },
-  YAHOO: { name: 'Yahoo Finance', category: 'News', logo: 'https://logo.clearbit.com/finance.yahoo.com' },
-  COINDESK: { name: 'CoinDesk', category: 'News', logo: 'https://logo.clearbit.com/coindesk.com' },
-  COINTELEGRAPH: { name: 'Cointelegraph', category: 'News', logo: 'https://logo.clearbit.com/cointelegraph.com' },
+  BLOOMBERG: { name: 'Bloomberg', category: 'News', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/bloomberg&output=png' },
+  REUTERS: { name: 'Reuters', category: 'News', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/reuters&output=png' },
+  CNBC: { name: 'CNBC', category: 'News', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/cnbc&output=png' },
+  WSJ: { name: 'Wall Street Journal', category: 'News', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/wsj&output=png' },
+  FT: { name: 'Financial Times', category: 'News', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/financialtimes&output=png' },
+  YAHOO: { name: 'Yahoo Finance', category: 'News', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/yahoo&output=png' },
+  COINDESK: { name: 'CoinDesk', category: 'News', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/coindesk&output=png' },
+  COINTELEGRAPH: { name: 'Cointelegraph', category: 'News', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/cointelegraph&output=png' },
 };
 
 // Fonction universelle pour obtenir un logo
@@ -2542,10 +2542,10 @@ server.addTool({
   },
 });
 
-// 🪙 Outil pour lister les logos crypto disponibles
+// 🎨 Outil pour afficher un thème emoji de cryptomonnaies
 server.addTool({
-  name: 'list_crypto_logos',
-  description: 'Lister tous les logos crypto disponibles (cryptologos.cc)',
+  name: 'emoji_theme_crypto',
+  description: '🎨 Afficher un THEME EMOJI des cryptomonnaies (collection décorative avec emojis). Utilise SEULEMENT pour l\'affichage décoratif. Pour afficher une miniature de logo dans un embed, utilise get_thumbnail.',
   parameters: z.object({
     category: z.enum(['all', 'top20', 'defi', 'meme', 'stablecoins', 'exchanges']).optional().default('all').describe('Catégorie de cryptos'),
     search: z.string().optional().describe('Rechercher par symbole ou nom'),
@@ -2587,10 +2587,10 @@ server.addTool({
   },
 });
 
-// 📈 Outil pour lister les logos d'entreprises (S&P 500, etc.)
+// 🎨 Outil pour afficher un thème emoji d'entreprises
 server.addTool({
-  name: 'list_company_logos',
-  description: 'Lister les logos d\'entreprises (S&P 500, Tech, Finance, etc.)',
+  name: 'emoji_theme_companies',
+  description: '🎨 Afficher un THEME EMOJI des entreprises (collection décorative avec emojis). Utilise SEULEMENT pour l\'affichage décoratif. Pour afficher une miniature de logo dans un embed, utilise get_thumbnail.',
   parameters: z.object({
     sector: z.enum(['all', 'technology', 'finance', 'healthcare', 'consumer', 'energy', 'automotive', 'aerospace', 'telecom', 'retail', 'entertainment']).optional().default('all').describe('Secteur d\'activité'),
     search: z.string().optional().describe('Rechercher par symbole ou nom'),
@@ -2637,10 +2637,10 @@ server.addTool({
   },
 });
 
-// 🌐 Outil pour lister les logos divers (réseaux sociaux, services, etc.)
+// 🎨 Outil pour afficher un thème emoji de services
 server.addTool({
-  name: 'list_misc_logos',
-  description: 'Lister les logos divers (réseaux sociaux, cloud, brokers, news, etc.)',
+  name: 'emoji_theme_services',
+  description: '🎨 Afficher un THEME EMOJI des services (réseaux sociaux, cloud, brokers, etc.). Utilise SEULEMENT pour l\'affichage décoratif. Pour afficher une miniature de logo dans un embed, utilise get_thumbnail.',
   parameters: z.object({
     category: z.enum(['all', 'social', 'cloud', 'exchange', 'broker', 'index', 'bank', 'payment', 'news']).optional().default('all').describe('Catégorie'),
     search: z.string().optional().describe('Rechercher par nom'),
@@ -2685,55 +2685,26 @@ server.addTool({
   },
 });
 
-// 🔍 Outil universel pour obtenir un logo (recherche dans toutes les bases)
+// 🔍 Outil universel pour obtenir une miniature (thumbnail) pour embed Discord
 server.addTool({
-  name: 'get_logo',
-  description: 'Obtenir un logo universel (crypto, entreprise, service, etc.)',
+  name: 'get_thumbnail',
+  description: '🖼️ Récupérer l\'URL de la MINIATURE (thumbnail) pour un embed Discord. Utilise quand tu mentionnes une entreprise/cryptomonnaie pour afficher son logo en haut à droite de l\'embed. Retourne uniquement l\'URL de l\'image.',
   parameters: z.object({
-    symbol: z.string().describe('Symbole ou nom (BTC, AAPL, DISCORD, etc.)'),
-    size: z.number().optional().default(128).describe('Taille du logo (pour Clearbit)'),
+    symbol: z.string().describe('Symbole ou nom (BTC, ETH, AAPL, Apple, DISCORD, etc.)'),
   }),
   execute: async (args) => {
     try {
       const result = getUniversalLogo(args.symbol);
 
       if (result) {
-        return `✅ **${result.name}**\n\n🏷️ Type: ${result.type}\n📸 Logo: ${result.logo}\n\n💡 Utilise ce lien dans 'thumbnail' ou 'image' de creer_embed`;
+        // Retourne uniquement l'URL pour l'embed
+        return result.logo;
       }
 
-      // Si pas trouvé, essayer de générer un lien Clearbit
-      const domain = args.symbol.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com';
-      const clearbitUrl = buildClearbitLogoUrl(domain, args.size);
-
-      return `⚠️ '${args.symbol}' non trouvé dans la base.\n\n🔄 **Essaye ce lien Clearbit:**\n${clearbitUrl}\n\n💡 Tu peux aussi utiliser n'importe quel domaine:\n\`https://logo.clearbit.com/DOMAINE.com\``;
+      // Si pas trouvé, retourne une chaîne vide
+      return '';
     } catch (error: any) {
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 🪙 Outil pour obtenir un logo crypto spécifique
-server.addTool({
-  name: 'get_crypto_logo',
-  description: 'Obtenir le logo d\'une crypto spécifique',
-  parameters: z.object({
-    symbol: z.string().describe('Symbole de la crypto (BTC, ETH, SOL, etc.)'),
-    format: z.enum(['png', 'svg']).optional().default('png').describe('Format de l\'image'),
-  }),
-  execute: async (args) => {
-    try {
-      const cryptoInfo = getCryptoInfo(args.symbol);
-      if (!cryptoInfo) {
-        return `❌ Crypto '${args.symbol}' non trouvée dans la base.\n💡 Utilise 'list_crypto_logos' pour voir les cryptos disponibles.`;
-      }
-
-      const logoUrl = args.format === 'svg'
-        ? cryptoInfo.logo.replace('.png', '.svg')
-        : cryptoInfo.logo;
-
-      return `🪙 **${cryptoInfo.symbol.toUpperCase()} - ${cryptoInfo.name}**\n\n📸 Logo (${args.format.toUpperCase()}): ${logoUrl}\n\n💡 Utilise ce lien dans 'thumbnail' ou 'image' de creer_embed`;
-    } catch (error: any) {
-      return `❌ Erreur: ${error.message}`;
+      return '';
     }
   },
 });
@@ -4636,3 +4607,4 @@ server.addTool({
     }
   }
 });
+
