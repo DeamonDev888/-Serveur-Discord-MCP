@@ -132,7 +132,9 @@ export const createCodePreviewMessages = (code: string, language: string): strin
 
   // Vérifier si c'est un fichier markdown
   const isMarkdown = normalizedLang === 'markdown' || normalizedLang === 'md';
-  const formattedContent = isMarkdown ? formatCodeBlocks(code) : code;
+  // Pour markdown: utiliser tel quel (Discord interprétera le markdown naturellement)
+  // Pour autres langages: utiliser le code tel quel aussi (formatCodeBlocks n'est pas nécessaire)
+  const formattedContent = code;
 
   // En-tête pour le markdown
   const baseHeader = `📝 **Code Preview**
@@ -149,16 +151,12 @@ Lignes: ${lineCount}
   // Calculer la longueur disponible (max 2000 - marge de sécurité)
   const maxTotalLength = 1950;
 
-  // Calculer la longueur totale avec le bloc de code (seulement pour les langages non-markdown)
-  let totalWithHeader: number;
-  if (!isMarkdown) {
-    const codeBlockStart = `\`\`\`${langTag}\n`;
-    const codeBlockEnd = `\n\`\`\``;
-    const totalCodeLength = codeBlockStart.length + formattedContent.length + codeBlockEnd.length;
-    totalWithHeader = baseHeader.length + totalCodeLength;
-  } else {
-    totalWithHeader = baseHeader.length + formattedContent.length;
-  }
+  // Pour markdown: pas de blocs externes (formatCodeBlocks ajoute déjà ses propres balises)
+  // Pour autres langages: envelopper dans un bloc de code
+  const codeBlockStart = isMarkdown ? '' : `\`\`\`${langTag}\n`;
+  const codeBlockEnd = isMarkdown ? '' : `\n\`\`\``;
+  const totalCodeLength = codeBlockStart.length + formattedContent.length + codeBlockEnd.length;
+  const totalWithHeader = baseHeader.length + totalCodeLength;
 
   // DEBUG: Afficher les informations de calcul
   console.log('[CODE_PREVIEW] DEBUG - Longueur du code:', code.length);
@@ -166,20 +164,14 @@ Lignes: ${lineCount}
   console.log('[CODE_PREVIEW] DEBUG - isMarkdown:', isMarkdown);
   console.log('[CODE_PREVIEW] DEBUG - maxTotalLength:', maxTotalLength);
   console.log('[CODE_PREVIEW] DEBUG - baseHeader.length:', baseHeader.length);
+  console.log('[CODE_PREVIEW] DEBUG - codeBlockStart:', codeBlockStart);
+  console.log('[CODE_PREVIEW] DEBUG - codeBlockEnd:', codeBlockEnd);
   console.log('[CODE_PREVIEW] DEBUG - totalWithHeader:', totalWithHeader);
   console.log('[CODE_PREVIEW] DEBUG - totalWithHeader <= maxTotalLength?', totalWithHeader <= maxTotalLength);
 
   // Si le contenu tient dans un seul message
   if (totalWithHeader <= maxTotalLength) {
-    if (!isMarkdown) {
-      // Pour les langages non-markdown, envelopper dans un bloc de code
-      const codeBlockStart = `\`\`\`${langTag}\n`;
-      const codeBlockEnd = `\n\`\`\``;
-      return [`${baseHeader}${codeBlockStart}${formattedContent}${codeBlockEnd}`];
-    } else {
-      // Pour markdown, retourner sans bloc de code (markdown interprétable)
-      return [`${baseHeader}${formattedContent}`];
-    }
+    return [`${baseHeader}${codeBlockStart}${formattedContent}${codeBlockEnd}`];
   }
 
   // Diviser le code en plusieurs parties (par lignes complètes)
@@ -203,8 +195,11 @@ Lignes: ${lineCount}
 
 `;
 
-    // Calculer la longueur disponible pour cette partie
-    const availableLength = maxTotalLength - partHeader.length;
+    // Calculer la longueur disponible pour cette partie (en comptant les balises de code)
+    // Pour markdown: pas de blocs externes
+    const partCodeBlockStart = isMarkdown ? '' : `\`\`\`${langTag}\n`;
+    const partCodeBlockEnd = isMarkdown ? '' : `\n\`\`\``;
+    const availableLength = maxTotalLength - partHeader.length - partCodeBlockStart.length - partCodeBlockEnd.length;
 
     // Construire un chunk de lignes qui respecte la limite de longueur
     const chunkLines: string[] = [];
@@ -235,8 +230,8 @@ Lignes: ${lineCount}
     // Joindre les lignes du chunk
     const codeChunk = chunkLines.join('\n');
 
-    // Construire le message de la partie
-    let partMessage = `${partHeader}${codeChunk}`;
+    // Construire le message de la partie avec bloc de code markdown (sauf pour markdown)
+    let partMessage = `${partHeader}${partCodeBlockStart}${codeChunk}${partCodeBlockEnd}`;
 
     // Ajouter un séparateur si ce n'est pas la dernière partie
     if (currentLineIndex < totalLines) {
