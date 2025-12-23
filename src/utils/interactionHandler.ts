@@ -181,8 +181,9 @@ export class InteractionHandler {
 
   /**
    * Traiter un clic sur un bouton personnalisé
+   * @returns true si le bouton a été géré, false sinon
    */
-  async handleCustomButton(data: any): Promise<void> {
+  async handleCustomButton(data: any): Promise<boolean> {
     const { customId, user, channelId, messageId } = data;
 
     Logger.info(`🔘 Bouton personnalisé cliqué: ${customId} par ${user.username}`);
@@ -191,7 +192,7 @@ export class InteractionHandler {
     const button = this.buttons.get(customId);
     if (!button) {
       // Ne plus logger de warning ou d'erreur ici car le bouton peut être géré par un autre système (ex: RPG)
-      return;
+      return false;
     }
 
     // Vérifier si le bouton a expiré
@@ -211,7 +212,7 @@ export class InteractionHandler {
         customId,
         label: button.label,
       });
-      return;
+      return true;
     }
 
     // Exécuter l'action du bouton
@@ -238,6 +239,7 @@ export class InteractionHandler {
           username: user.username,
         },
       });
+      return true;
     } catch (error: any) {
       Logger.error(`❌ Erreur lors de l'exécution du bouton: ${error.message}`);
 
@@ -249,6 +251,7 @@ export class InteractionHandler {
         customId,
         label: button.label,
       });
+      return true;
     }
   }
 
@@ -360,8 +363,9 @@ export class InteractionHandler {
 
   /**
    * Traiter une sélection de menu
+   * @returns true si le menu a été géré, false sinon
    */
-  async handleSelectMenu(data: any): Promise<void> {
+  async handleSelectMenu(data: any): Promise<boolean> {
     const { customId, values, user, channelId, messageId } = data;
 
     Logger.info(`📋 Menu sélectionné: ${customId} par ${user.username}`);
@@ -378,13 +382,13 @@ export class InteractionHandler {
         error: 'Menu non trouvé dans la base de données',
         customId,
       });
-      return;
+      return false;
     }
 
     // Vérifier si le menu est actif
     if (!menu.isActive) {
       Logger.info('⚠️ Menu désactivé');
-      return;
+      return false;
     }
 
     // Sauvegarder la sélection
@@ -415,6 +419,7 @@ export class InteractionHandler {
           username: user.username,
         },
       });
+      return true;
     } catch (error: any) {
       Logger.error(`❌ Erreur lors de l'exécution du menu: ${error.message}`);
 
@@ -425,6 +430,7 @@ export class InteractionHandler {
         error: error.message,
         customId,
       });
+      return true;
     }
   }
 

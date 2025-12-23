@@ -2,6 +2,24 @@ import { Client, GatewayIntentBits, InteractionType, ButtonStyle, EmbedBuilder, 
 import Logger from './utils/logger.js';
 import { interactionHandler } from './utils/interactionHandler.js';
 
+// ============================================================================
+// MODE AUTO-HANDLER - Répond automatiquement aux boutons/menus sans handler
+// ============================================================================
+
+// Activer/désactiver le mode auto-handler (répond automatiquement aux interactions orphelines)
+export let AUTO_HANDLER_ENABLED = true;
+
+// Messages de réponse automatique
+const AUTO_RESPONSES = {
+  button: (customId: string, username: string) =>
+    `✅ **Bouton cliqué !**\n\n🔘 ID: \`${customId}\`\n👤 Par: **${username}**\n\n> Pour ajouter une action personnalisée, utilisez \`enregistrer_fonction_bouton\``,
+
+  menu: (customId: string, username: string, values: string[]) =>
+    `✅ **Menu sélectionné !**\n\n📋 ID: \`${customId}\`\n👤 Par: **${username}**\n🎯 Choix: ${values.map(v => `\`${v}\``).join(', ')}\n\n> Pour ajouter une action personnalisée, utilisez \`enregistrer_fonction_bouton\``,
+};
+
+// ============================================================================
+
 // Types d'actions personnalisées pour les boutons
 export type ButtonAction = {
   type: 'message' | 'embed' | 'role' | 'react' | 'command' | 'url' | 'delete' | 'edit' | 'modal' | 'custom';
@@ -186,6 +204,7 @@ export class DiscordBridge {
     const user = interaction.user;
     const channelId = interaction.channelId;
     const messageId = interaction.message.id;
+    let wasHandled = false;
 
     Logger.info(`🔘 [Bridge] Bouton cliqué: ${customId} par ${user.username}`);
 
@@ -195,6 +214,7 @@ export class DiscordBridge {
         if (customFunction) {
             try {
                 await customFunction(interaction, { customId, user, channelId, messageId });
+                wasHandled = true;
             } catch (error: any) {
                 Logger.error(`❌ [Bridge] Erreur RPG ${customId}:`, error.message);
             }
@@ -203,25 +223,44 @@ export class DiscordBridge {
     }
 
     // Sinon, comportement classique : d'abord le gestionnaire d'interactions existant
-    await interactionHandler.handleCustomButton({
+    const wasHandledByHandler = await interactionHandler.handleCustomButton({
       customId,
       user: { id: user.id, username: user.username },
       channelId,
       messageId,
     });
 
+    if (wasHandledByHandler) {
+      wasHandled = true;
+    }
+
     // Puis les fonctions personnalisées génériques
     const customFunction = buttonFunctions.get(customId);
     if (customFunction) {
       try {
         await customFunction(interaction, { customId, user, channelId, messageId });
+        wasHandled = true;
       } catch (error: any) {
         Logger.error(`❌ [Bridge] Erreur fonction bouton ${customId}:`, error.message);
       }
     }
 
+    // AUTO-HANDLER: Répondre automatiquement si aucun handler n'a répondu
+    if (AUTO_HANDLER_ENABLED && !wasHandled && !interaction.replied && !interaction.deferred) {
+      try {
+        await interaction.reply({
+          content: AUTO_RESPONSES.button(customId, user.username),
+          ephemeral: true
+        });
+        Logger.info(`🤖 [Auto-Handler] Réponse automatique envoyée pour le bouton: ${customId}`);
+        wasHandled = true;
+      } catch (error: any) {
+        Logger.error(`❌ [Auto-Handler] Erreur réponse automatique:`, error.message);
+      }
+    }
+
     // Répondre à l'interaction pour éviter le timeout (si rien n'a été fait)
-    if (!interaction.replied && !interaction.deferred) {
+    if (!wasHandled && !interaction.replied && !interaction.deferred) {
       await interaction.deferUpdate().catch(() => {});
     }
   }
@@ -233,10 +272,11 @@ export class DiscordBridge {
     const customId = interaction.customId;
     const values = interaction.values;
     const user = interaction.user;
+    let wasHandled = false;
 
     Logger.info(`📋 [Bridge] Menu sélectionné: ${customId} par ${user.username}`);
 
-    await interactionHandler.handleSelectMenu({
+    const wasHandledByHandler = await interactionHandler.handleSelectMenu({
       customId,
       values,
       user: {
@@ -247,7 +287,26 @@ export class DiscordBridge {
       messageId: interaction.message.id,
     });
 
-    if (!interaction.replied && !interaction.deferred) {
+    if (wasHandledByHandler) {
+      wasHandled = true;
+    }
+
+    // AUTO-HANDLER: Répondre automatiquement si aucun handler n'a répondu
+    if (AUTO_HANDLER_ENABLED && !wasHandled && !interaction.replied && !interaction.deferred) {
+      try {
+        await interaction.reply({
+          content: AUTO_RESPONSES.menu(customId, user.username, values),
+          ephemeral: true
+        });
+        Logger.info(`🤖 [Auto-Handler] Réponse automatique envoyée pour le menu: ${customId}`);
+        wasHandled = true;
+      } catch (error: any) {
+        Logger.error(`❌ [Auto-Handler] Erreur réponse automatique:`, error.message);
+      }
+    }
+
+    // Répondre à l'interaction pour éviter le timeout (si rien n'a été fait)
+    if (!wasHandled && !interaction.replied && !interaction.deferred) {
       await interaction.deferUpdate().catch(() => {});
     }
   }

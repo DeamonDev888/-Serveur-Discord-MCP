@@ -77,10 +77,10 @@ Avec **26 outils puissants**, vous pouvez faire absolument tout sur Discord :
 <details>
 <summary>🎨 Embeds (3 outils)</summary>
 
-| Outil                    | Description                                |
-| ------------------------ | ------------------------------------------ |
-| **creer_embed**          | Crée un embed enrichi personnalisable      |
-| **lister_templates**     | Liste tous les templates disponibles       |
+| Outil                | Description                           |
+| -------------------- | ------------------------------------- |
+| **creer_embed**      | Crée un embed enrichi personnalisable |
+| **lister_templates** | Liste tous les templates disponibles  |
 
 </details>
 
@@ -145,8 +145,9 @@ Avec **26 outils puissants**, vous pouvez faire absolument tout sur Discord :
 
 ```bash
 # Cloner le projet
-git clone <url-repo>
-cd serveur_discord
+
+git clone https://github.com/DeamonDev888/-Serveur-Discord-MCP.git
+cd -Serveur-Discord-MCP
 
 # Installer les dépendances
 npm install
