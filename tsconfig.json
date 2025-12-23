@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022"],
-    "module": "ES2020",
+    "module": "ES2022",
     "moduleResolution": "node",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -31,7 +31,8 @@
     "strictPropertyInitialization": true,
     "exactOptionalPropertyTypes": false,
     "alwaysStrict": true,
-    "useUnknownInCatchVariables": true
+    "useUnknownInCatchVariables": true,
+    "downlevelIteration": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],

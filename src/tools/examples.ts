@@ -53,11 +53,11 @@ export const exampleEditMessage = {
 };
 
 // ============================================================================
-// 2. EMBEDS ENRICHIS
+// 2. EMBEDS ULTRA-AMÉLIORÉS 🚀
 // ============================================================================
 
 /**
- * Exemple 2.1: Embed simple avec couleur et champs
+ * Exemple 2.1: Embed simple avec couleur et champs (VERSION AMÉLIORÉE)
  */
 export const exampleEmbedSimple = {
   tool: 'mcp__discord-server__creer_embed',
@@ -65,58 +65,638 @@ export const exampleEmbedSimple = {
     channelId: 'VOTRE_CHANNEL_ID',
     title: '🚀 Nouvelle Fonctionnalité !',
     description: 'Nous venons de déployer une nouvelle fonctionnalité amazing.',
-    color: 'success',
+    color: 'GREEN',
     fields: [
       { name: '✅ Statut', value: 'Déployé', inline: true },
-      { name: '📅 Date', value: new Date().toISOString(), inline: true },
+      { name: '📅 Date', value: '{date} à {time}', inline: true },
     ],
     timestamp: true,
   },
 };
 
 /**
- * Exemple 2.2: Embed complexe avec auteur, image et footer
+ * Exemple 2.2: 🎯 RÊVE EXAUCÉ - Rapport Trading avec tableaux auto-stylés
  */
-export const exampleEmbedComplex = {
+export const exampleDreamTradingReport = {
   tool: 'mcp__discord-server__creer_embed',
   params: {
     channelId: 'VOTRE_CHANNEL_ID',
-    title: '📊 Rapport de Performance',
-    description: 'Voici le rapport détaillé de cette semaine.',
-    color: '#3498DB',
-    url: 'https://example.com',
-    author: {
-      name: 'Claude Code',
-      icon_url: 'https://i.imgur.com/avatar.png',
-      url: 'https://claude.ai',
-    },
-    thumbnail: {
-      url: 'https://i.imgur.com/thumbnail.png',
-    },
-    image: {
-      url: 'https://i.imgur.com/full-image.png',
-    },
+    title: '📊 Rapport Trading - ETHUSD',
+    description: `Mise à jour: {timestamp}
+
+**Performance du jour**`,
+    color: '#00FF00',
+    authorName: '🤖 Bot Trading',
+    authorIcon: 'https://i.imgur.com/trading-icon.png',
+    footerText: 'Données en temps réel',
+
+    // 🎯 TABLEAUX AUTOMATIQUES
     fields: [
       {
-        name: '📈 Métrique 1',
-        value: 'Valeur: 85%',
-        inline: true,
+        name: '📈 Prix Actuel',
+        value: `| Symbole | Prix    | Variation |
+| ETHUSD  | $3,245  | +2.34%   |
+| BTCUSD  | $42,150 | -1.12%   |
+| Total   | $45,395 | +1.22%   |`,
+        inline: false,
       },
       {
-        name: '📉 Métrique 2',
-        value: 'Valeur: 1200',
-        inline: true,
-      },
-      {
-        name: '💡 Analyse',
-        value: 'Les résultats montrent une amélioration significative.',
+        name: '📊 Positions Ouvertes',
+        value: `| Position | P&L     | Risk   |
+| Long    | +$125   | 2.5%   |
+| Short   | -$45    | 1.2%   |
+| Hedge   | +$30    | 0.8%   |`,
         inline: false,
       },
     ],
-    footer: {
-      text: 'Rapport généré automatiquement',
-      icon_url: 'https://i.imgur.com/footer-icon.png',
+
+    // 🎯 VARIABLES DYNAMIQUES
+    variables: {
+      symbol: 'ETHUSD',
+      price: '$3,245',
+      change: '+2.34%',
     },
+
+    // 🎯 PAGINATION (pour contenus longs)
+    pagination: {
+      enabled: true,
+      maxLength: 800,
+      showPageNumber: true,
+    },
+
+    // 🎯 BOUTONS INTERACTIFS
+    buttons: [
+      {
+        label: '🔄 Actualiser',
+        style: 'Primary',
+        emoji: '🔄',
+        action: 'refresh',
+      },
+      {
+        label: '📈 Détails',
+        style: 'Success',
+        emoji: '📊',
+        action: 'link',
+        value: 'https://trading.example.com/details',
+      },
+    ],
+
+    // 🎯 BARRES DE PROGRESSION
+    progressBars: [
+      {
+        fieldIndex: 0,
+        label: 'Objectif Journalier',
+        value: 78,
+        max: 100,
+        length: 15,
+      },
+      {
+        fieldIndex: 0,
+        label: 'Risk Management',
+        value: 65,
+        max: 100,
+        length: 15,
+      },
+    ],
+
+    // 🎯 VALIDATION STRICTE
+    strictValidation: true,
+    autoTable: true,
+  },
+};
+
+/**
+ * Exemple 2.3: ✨ Embed avec Templates Sauvegardables
+ */
+export const exampleEmbedWithTemplate = {
+  tool: 'mcp__discord-server__creer_embed',
+  params: {
+    channelId: 'VOTRE_CHANNEL_ID',
+    title: '📋 Rapport Hebdomadaire',
+    description: 'Analyse de la semaine {weekday} {date}',
+
+    // Utiliser un template existant
+    templateName: 'weekly-report',
+
+    // Ou sauvegarder comme nouveau template
+    saveAsTemplate: 'my-favorite-design',
+
+    // Variables personnalisées
+    variables: {
+      weekNumber: '52',
+      year: '{year}',
+      revenue: '$125,430',
+      growth: '+12.5%',
+    },
+
+    // Auto-update toutes les 5 minutes
+    autoUpdate: {
+      enabled: true,
+      interval: 300,
+      source: 'api://weekly-stats',
+    },
+
+    // Boutons pour interaction
+    buttons: [
+      {
+        label: '📥 Télécharger PDF',
+        style: 'Primary',
+        emoji: '📄',
+        action: 'link',
+        value: 'https://reports.example.com/weekly.pdf',
+      },
+      {
+        label: '📧 Envoyer par Email',
+        style: 'Secondary',
+        emoji: '✉️',
+        action: 'custom',
+      },
+    ],
+
+    timestamp: true,
+  },
+};
+
+/**
+ * Exemple 2.4: 🎮 Embed avec Progress Bars et Spoilers
+ */
+export const exampleEmbedWithProgress = {
+  tool: 'mcp__discord-server__creer_embed',
+  params: {
+    channelId: 'VOTRE_CHANNEL_ID',
+    title: '🎮 Progression Quête Épique',
+    description: `Quête: {spoiler: Le Secret des Dragons Anciens}
+Progression mise à jour: {timestamp}`,
+
+    color: 'PURPLE',
+    fields: [
+      {
+        name: '👤 Niveau du Joueur',
+        value: 'Niveau 24 / 50',
+        inline: true,
+      },
+      {
+        name: '⚔️ XP Actuel',
+        value: '8,450 / 12,000 XP',
+        inline: true,
+      },
+    ],
+
+    // Barres de progression automatiques
+    progressBars: [
+      {
+        fieldIndex: 0,
+        label: '🎯 Quête Principale',
+        value: 65,
+        max: 100,
+        length: 20,
+      },
+      {
+        fieldIndex: 1,
+        label: '📚 Compétences',
+        value: 42,
+        max: 60,
+        length: 20,
+      },
+      {
+        fieldIndex: 1,
+        label: '🏆 Succès',
+        value: 18,
+        max: 25,
+        length: 20,
+      },
+    ],
+
+    timestamp: true,
+  },
+};
+
+/**
+ * Exemple 2.5: 📊 Embed avec Variables Dynamiques Complètes
+ */
+export const exampleEmbedWithVariables = {
+  tool: 'mcp__discord-server__creer_embed',
+  params: {
+    channelId: 'VOTRE_CHANNEL_ID',
+    title: '📈 Dashboard Automatique - {symbol}',
+    description: `
+**Rapport généré le {timestamp}**
+
+Bienvenue {username} ! Aujourd'hui nous sommes {weekday}, {date}.
+
+{spoiler: Les données confidentielles sont masquées par défaut}
+    `,
+
+    color: 'BLUE',
+    fields: [
+      {
+        name: '📅 Informations Temporelles',
+        value: `• Année: {year}
+• Mois: {month}
+• Jour: {day}
+• Heure: {time}`,
+        inline: true,
+      },
+      {
+        name: '💰 Données Personnalisées',
+        value: `• Prix: {price}
+• Variation: {change}
+• Volume: {volume}
+• Market Cap: {marketCap}`,
+        inline: true,
+      },
+    ],
+
+    // Variables personnalisées (seront remplies par l'API ou l'utilisateur)
+    variables: {
+      username: 'TraderPro',
+      symbol: 'BTCUSD',
+      price: '$42,150',
+      change: '+2.34%',
+      volume: '1.2M',
+      marketCap: '$825B',
+    },
+
+    timestamp: true,
+  },
+};
+
+/**
+ * Exemple 2.6: 🎨 Embed v2 avec GRADIENTS
+ */
+export const exampleEmbedV2WithGradient = {
+  tool: 'mcp__discord-server__creer_embed_v2',
+  params: {
+    channelId: 'VOTRE_CHANNEL_ID',
+    title: '🌈 Rapport avec Dégradé',
+    description: 'Ce rapport utilise un magnifique dégradé de couleurs !',
+
+    // ✨ NOUVEAU: Gradients
+    gradient: {
+      start: '#FF6B6B',
+      end: '#4ECDC4',
+    },
+
+    color: '#FF6B6B', // Couleur de base (début du gradient)
+
+    fields: [
+      {
+        name: '🎨 Type de Gradient',
+        value: 'Sunset → Ocean',
+        inline: true,
+      },
+      {
+        name: '🌈 Couleur Début',
+        value: '#FF6B6B (Rouge corail)',
+        inline: true,
+      },
+      {
+        name: '🌊 Couleur Fin',
+        value: '#4ECDC4 (Turquoise)',
+        inline: true,
+      },
+    ],
+
+    footerText: 'Gradient généré automatiquement',
+
+    timestamp: true,
+  },
+};
+
+/**
+ * Exemple 2.7: 🎭 Embed v2 avec THÈMES
+ */
+export const exampleEmbedV2WithTheme = {
+  tool: 'mcp__discord-server__creer_embed_v2',
+  params: {
+    channelId: 'VOTRE_CHANNEL_ID',
+    title: '🤖 Dashboard Gaming',
+    description: 'Interface gaming avec thème automatique',
+
+    // ✨ NOUVEAU: Thème Gaming
+    theme: 'gaming',
+
+    fields: [
+      {
+        name: '🎮 Statut Serveur',
+        value: 'En ligne',
+        inline: true,
+      },
+      {
+        name: '👥 Joueurs Connectés',
+        value: '1,234',
+        inline: true,
+      },
+      {
+        name: '🏆 Matchs Actifs',
+        value: '42',
+        inline: true,
+      },
+    ],
+
+    timestamp: true,
+  },
+};
+
+/**
+ * Exemple 2.8: 📊 Embed v2 avec AUTO-UPDATE
+ */
+export const exampleEmbedV2WithAutoUpdate = {
+  tool: 'mcp__discord-server__creer_embed_v2',
+  params: {
+    channelId: 'VOTRE_CHANNEL_ID',
+    title: '💹 Prix Crypto en Temps Réel',
+    description: 'Mise à jour automatique toutes les 30 secondes',
+
+    color: '#F7931A',
+
+    fields: [
+      {
+        name: '₿ Bitcoin (BTC)',
+        value: 'Prix: $42,150\n24h: +2.34%',
+        inline: true,
+      },
+      {
+        name: 'Ξ Ethereum (ETH)',
+        value: 'Prix: $3,245\n24h: -1.12%',
+        inline: true,
+      },
+      {
+        name: '📈 Market Cap',
+        value: '$1.65T',
+        inline: true,
+      },
+    ],
+
+    // ✨ NOUVEAU: Auto-update RÉEL
+    autoUpdate: {
+      enabled: true,
+      interval: 30,
+      source: 'api://crypto-prices',
+    },
+
+    // ✨ NOUVEAU: Analytics
+    enableAnalytics: true,
+
+    buttons: [
+      {
+        label: '🔄 Actualiser',
+        style: 'Primary',
+        emoji: '🔄',
+        action: 'refresh',
+      },
+      {
+        label: '📊 Graphique',
+        style: 'Success',
+        emoji: '📈',
+        action: 'link',
+        value: 'https://charts.example.com/btc',
+      },
+    ],
+
+    timestamp: true,
+  },
+};
+
+/**
+ * Exemple 2.9: 🌃 Embed v2 Thème CYBERPUNK
+ */
+export const exampleEmbedV2Cyberpunk = {
+  tool: 'mcp__discord-server__creer_embed_v2',
+  params: {
+    channelId: 'VOTRE_CHANNEL_ID',
+    title: '⚡ Système Cyberpunk 2077',
+    description: `Connexion au réseau: {timestamp}
+Statut: {spoiler: EN LIGNE}`,
+
+    // ✨ NOUVEAU: Thème Cyberpunk
+    theme: 'cyberpunk',
+
+    gradient: {
+      start: '#FF00FF',
+      end: '#00FFFF',
+    },
+
+    fields: [
+      {
+        name: '🔮 Accès Réseau',
+        value: '| Niveau | Statut     |\n| Admin  | Autorisé   |\n| User   | Autorisé   |',
+        inline: false,
+      },
+      {
+        name: '⚡ Power',
+        value: '████████░░ 85%',
+        inline: true,
+      },
+      {
+        name: '🛡️ Shield',
+        value: '██████░░░░ 60%',
+        inline: true,
+      },
+    ],
+
+    variables: {
+      userLevel: 'Admin',
+      location: 'Night City',
+    },
+
+    timestamp: true,
+  },
+};
+
+/**
+ * Exemple 2.10: 🏢 Embed v2 Thème CORPORATE
+ */
+export const exampleEmbedV2Corporate = {
+  tool: 'mcp__discord-server__creer_embed_v2',
+  params: {
+    channelId: 'VOTRE_CHANNEL_ID',
+    title: '💼 Rapport Financier Q4',
+    description: 'Présentation des résultats trimestriels',
+
+    // ✨ NOUVEAU: Thème Corporate
+    theme: 'corporate',
+
+    fields: [
+      {
+        name: '📊 Chiffre d\'Affaires',
+        value: '$12.5M (+15%)',
+        inline: true,
+      },
+      {
+        name: '💰 Bénéfice Net',
+        value: '$2.1M (+22%)',
+        inline: true,
+      },
+      {
+        name: '📈 Croissance',
+        value: '+18%',
+        inline: true,
+      },
+      {
+        name: '👥 Effectif',
+        value: '245 employés',
+        inline: true,
+      },
+    ],
+
+    progressBars: [
+      {
+        fieldIndex: 0,
+        label: 'Objectif CA',
+        value: 87,
+        max: 100,
+        length: 20,
+      },
+      {
+        fieldIndex: 1,
+        label: 'Satisfaction Client',
+        value: 92,
+        max: 100,
+        length: 20,
+      },
+    ],
+
+    timestamp: true,
+  },
+};
+
+/**
+ * Exemple 2.11: 🌊 Embed v2 Thème OCEAN
+ */
+export const exampleEmbedV2Ocean = {
+  tool: 'mcp__discord-server__creer_embed_v2',
+  params: {
+    channelId: 'VOTRE_CHANNEL_ID',
+    title: '🌊 Données Océanographiques',
+    description: `Station: Pacific Buoy #42
+Mesure: {timestamp ✨ NOUV}`,
+
+    //EAU: Thème Ocean
+    theme: 'ocean',
+
+    gradient: {
+      start: '#00CED1',
+      end: '#4169E1',
+    },
+
+    fields: [
+      {
+        name: '🌡️ Température Eau',
+        value: '18.5°C',
+        inline: true,
+      },
+      {
+        name: '🌊 Hauteur Vague',
+        value: '2.3m',
+        inline: true,
+      },
+      {
+        name: '💨 Vent',
+        value: '25 km/h NE',
+        inline: true,
+      },
+      {
+        name: '🐋 Activité Faune',
+        value: 'Haute',
+        inline: true,
+      },
+    ],
+
+    timestamp: true,
+  },
+};
+
+/**
+ * Exemple 2.12: 🌅 Embed v2 Thème SUNSET
+ */
+export const exampleEmbedV2Sunset = {
+  tool: 'mcp__discord-server__creer_embed_v2',
+  params: {
+    channelId: 'VOTRE_CHANNEL_ID',
+    title: '🌅 Coucher de Soleil Report',
+    description: 'Photos et données du coucher de soleil',
+
+    // ✨ NOUVEAU: Thème Sunset
+    theme: 'sunset',
+
+    gradient: {
+      start: '#FF6B6B',
+      end: '#FFA07A',
+    },
+
+    fields: [
+      {
+        name: '📸 Photos Prises',
+        value: '| Heure     | Qualité |\n| 18:45    | ★★★★★ |\n| 19:15    | ★★★★☆ |',
+        inline: false,
+      },
+      {
+        name: '🎨 Couleurs Dominantes',
+        value: 'Rouge: 65%\nOrange: 25%\nJaune: 10%',
+        inline: true,
+      },
+      {
+        name: '⏰ Durée',
+        value: '23 minutes',
+        inline: true,
+      },
+    ],
+
+    variables: {
+      location: 'Plage de Malibu',
+      photographer: 'SunsetHunter',
+    },
+
+    timestamp: true,
+  },
+};
+
+/**
+ * Exemple 2.13: 📊 Analytics en Action
+ */
+export const exampleEmbedV2WithFullAnalytics = {
+  tool: 'mcp__discord-server__creer_embed_v2',
+  params: {
+    channelId: 'VOTRE_CHANNEL_ID',
+    title: '📊 Dashboard Analytics',
+    description: 'Cet embed track toutes les interactions !',
+
+    theme: 'minimal',
+
+    fields: [
+      {
+        name: '📈 Métriques en Temps Réel',
+        value: 'Les statistiques sont mises à jour automatiquement',
+        inline: false,
+      },
+    ],
+
+    // Analytics activées
+    enableAnalytics: true,
+
+    buttons: [
+      {
+        label: '📊 Voir Stats',
+        style: 'Primary',
+        emoji: '📊',
+        action: 'custom',
+      },
+      {
+        label: '📥 Exporter',
+        style: 'Success',
+        emoji: '📥',
+        action: 'link',
+        value: 'https://analytics.example.com/export',
+      },
+      {
+        label: '⚙️ Config',
+        style: 'Secondary',
+        emoji: '⚙️',
+        action: 'custom',
+      },
+    ],
+
     timestamp: true,
   },
 };
@@ -432,69 +1012,6 @@ export const exampleUserInfo = {
     guildId: 'ID_SERVEUR',
     includeActivity: true,
     includePermissions: true,
-  },
-};
-
-// ============================================================================
-// 8. TEMPLATES D'EMBEDS
-// ============================================================================
-
-/**
- * Exemple 8.1: Template d'annonce
- */
-export const exampleTemplateAnnouncement = {
-  tool: 'mcp__discord-server__creer_embed_template',
-  params: {
-    channelId: 'VOTRE_CHANNEL_ID',
-    template: 'announcement',
-    customizations: {
-      title: '📢 Nouvelle Mise à Jour !',
-      description: 'Version 2.0 déployée avec de nouvelles fonctionnalités',
-      color: '#00FF00',
-    },
-  },
-};
-
-/**
- * Exemple 8.2: Template de bienvenue personnalisé
- */
-export const exampleTemplateWelcome = {
-  tool: 'mcp__discord-server__creer_embed_template',
-  params: {
-    channelId: 'VOTRE_CHANNEL_ID',
-    template: 'welcome',
-    customizations: {
-      description: 'Bienvenue **{{username}}** sur notre serveur ! 🎉',
-      fields: [
-        {
-          name: '📚 Ressources',
-          value:
-            '[Documentation](https://docs.example.com)\n[Support](https://support.example.com)',
-          inline: false,
-        },
-      ],
-    },
-  },
-};
-
-/**
- * Exemple 8.3: Template d'erreur avec instructions
- */
-export const exampleTemplateError = {
-  tool: 'mcp__discord-server__creer_embed_template',
-  params: {
-    channelId: 'VOTRE_CHANNEL_ID',
-    template: 'error',
-    customizations: {
-      description: 'Une erreur est survenue lors du traitement de votre requête.',
-      fields: [
-        {
-          name: '🔧 Solution',
-          value: 'Veuillez réessayer dans quelques instants ou contacter le support.',
-          inline: false,
-        },
-      ],
-    },
   },
 };
 

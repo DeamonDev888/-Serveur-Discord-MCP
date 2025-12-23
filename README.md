@@ -80,7 +80,6 @@ Avec **26 outils puissants**, vous pouvez faire absolument tout sur Discord :
 | Outil                    | Description                                |
 | ------------------------ | ------------------------------------------ |
 | **creer_embed**          | Crée un embed enrichi personnalisable      |
-| **creer_embed_template** | Crée un embed depuis un template prédéfini |
 | **lister_templates**     | Liste tous les templates disponibles       |
 
 </details>

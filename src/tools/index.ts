@@ -1,16 +1,48 @@
-// Index des outils Discord
+// ============================================================================
+// 🔧 TOOLS MCP DISCORD - Index Principal
+// ============================================================================
 // Export tous les schémas, fonctions et types pour faciliter les imports
+//
+// NOUVELLE STRUCTURE ORGANISÉE PAR CATÉGORIES:
+// - messages/  : Gestion des messages Discord
+// - embeds/    : Messages avancés et embeds
+// - polls/     : Sondages et votes
+// - interactions/ : Boutons, menus, quiz
+// - persistent/   : Fonctions persistantes (boutons, menus avancés)
+// - members/     : Gestion des membres et serveurs
+// - moderation/  : Outils de modération
+// - roles/       : Gestion des rôles
+// - channels/    : Gestion des canaux
+// - files/       : Fichiers et webhooks
+// - system/      : Outils système
+// - utils/       : Utilitaires partagés
+// ============================================================================
 
 // ============================================================================
-// OUTILS PRINCIPAUX
+// OUTILS PRINCIPAUX (NOUVEAU STRUCTURE)
 // ============================================================================
 
-// Outils de sondages
-export * from './polls';
+// 📊 Messages
+export * from './messages/index.js';
 
-// Outils d'upload de fichiers
+// 🎨 Embeds
+export * from './embeds/index.js';
+
+// 📝 Polls
+export * from './polls/index.js';
+
+// 👥 Members
+export * from './members/index.js';
+
+// 📁 Files
+export * from './files/index.js';
+
+// ============================================================================
+// OUTILS EXISTANTS (COMPATIBILITÉ)
+// ============================================================================
+
+// Outils d'upload de fichiers (existant)
 export {
-  FileUploadSchema,
   FILE_LIMITS,
   getFileType,
   getMimeTypeFromExtension,
@@ -19,27 +51,24 @@ export {
   createFileUploadEmbed,
 } from './fileUpload';
 
-// Outils d'embeds
-export { createEmbedFromTemplate, EMBED_TEMPLATES } from './embedBuilder';
+// Outils d'embeds (existant)
+export { createEmbedFromTemplate } from './embedBuilder';
 export { DISCORD_COLORS } from './embedBuilder';
 
-// Outils d'interactions (boutons, menus, modals)
+// Outils d'interactions (boutons, menus, modals) (existant)
 export { buildActionRows, BUTTON_STYLES } from './interactions';
 
-// Outils de gestion de messages
+// Outils de gestion de messages (existant - à migrer)
 export {
-  sendMessage,
-  editMessage,
-  deleteMessage,
-  readMessages,
-  addReaction,
+  sendMessage as sendMessageLegacy,
+  editMessage as editMessageLegacy,
+  deleteMessage as deleteMessageLegacy,
+  readMessages as readMessagesLegacy,
+  addReaction as addReactionLegacy,
 } from './messageManager';
 
-// Outils de gestion de serveur
-export * from './serverInfo';
+// Outils de gestion de serveur (channelManager n'est pas dans members/)
 export * from './channelManager';
-export * from './memberManager';
-export * from './userManager';
 
 // Affichage de code avec coloration syntaxique
 export { createCodePreviewMessages, CodePreviewSchema, validateLanguage } from './codePreview';
@@ -50,7 +79,8 @@ export { SUPPORTED_LANGUAGES } from './codePreview';
 // ============================================================================
 
 // Documentation centralisée avec limites, erreurs, utilitaires
-export * from './documentation';
+export { MCP_DOCUMENTATION, ERROR_CODES, ERROR_MESSAGES, LIMITS, QUICK_START_GUIDE } from './documentation';
+export { formatFileSize, isValidDiscordId, parseColor, validateEmbedLimits, generatePollId, truncate } from './documentation';
 
 // Exemples pratiques pour utilisation one-shot
 export * from './examples';

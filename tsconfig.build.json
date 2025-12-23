@@ -12,11 +12,12 @@
     "noUnusedParameters": false,
     "noImplicitReturns": false,
     "skipLibCheck": true,
-    "module": "ESNext",
+    "module": "ES2022",
     "moduleResolution": "node",
     "target": "ES2022",
     "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "downlevelIteration": true
   },
   "include": ["src/**/*"],
   "exclude": [
