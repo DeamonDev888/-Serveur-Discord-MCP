@@ -61,9 +61,10 @@ const formatCodeBlocks = (content: string): string => {
 
   const flushCodeBuffer = (lang: string) => {
     if (codeBuffer.length > 0) {
-      formattedLines.push(`\`\`\`${lang}`);
+      const BACKTICK = '\x60';
+      formattedLines.push(BACKTICK + BACKTICK + BACKTICK + lang);
       formattedLines.push(...codeBuffer);
-      formattedLines.push('```');
+      formattedLines.push(BACKTICK + BACKTICK + BACKTICK);
       formattedLines.push(''); // Ligne vide après le bloc
       codeBuffer = [];
     }
@@ -130,18 +131,16 @@ export const createCodePreviewMessages = (code: string, language: string): strin
   const lineCount = code.split('\n').length;
   const displayLang = language.toUpperCase();
 
-  // Vérifier si c'est un fichier markdown
-  const isMarkdown = normalizedLang === 'markdown' || normalizedLang === 'md';
-  // Pour markdown: utiliser tel quel (Discord interprétera le markdown naturellement)
-  // Pour autres langages: utiliser le code tel quel aussi (formatCodeBlocks n'est pas nécessaire)
+  // Le code est toujours utilisé tel quel
   const formattedContent = code;
 
   // En-tête pour le markdown
-  const baseHeader = `📝 **Code Preview**
+  const baseHeader = `📝 **Code Preview** [v2.1-HEX]
 Langage: ${displayLang}
 Lignes: ${lineCount}
 
 `;
+  const BACKTICK = '\x60';
   const separator = `
 
 ---
@@ -151,23 +150,25 @@ Lignes: ${lineCount}
   // Calculer la longueur disponible (max 2000 - marge de sécurité)
   const maxTotalLength = 1950;
 
-  // Pour markdown: pas de blocs externes (formatCodeBlocks ajoute déjà ses propres balises)
-  // Pour autres langages: envelopper dans un bloc de code
-  const codeBlockStart = isMarkdown ? '' : `\`\`\`${langTag}\n`;
-  const codeBlockEnd = isMarkdown ? '' : `\n\`\`\``;
+  // TOUJOURS envelopper dans un bloc de code markdown, quel que soit le langage
+  // BACKTICK est déjà déclaré plus haut
+  const codeBlockStart = BACKTICK + BACKTICK + BACKTICK + langTag + '\n';
+  const codeBlockEnd = '\n' + BACKTICK + BACKTICK + BACKTICK;
   const totalCodeLength = codeBlockStart.length + formattedContent.length + codeBlockEnd.length;
   const totalWithHeader = baseHeader.length + totalCodeLength;
 
   // DEBUG: Afficher les informations de calcul
   console.log('[CODE_PREVIEW] DEBUG - Longueur du code:', code.length);
   console.log('[CODE_PREVIEW] DEBUG - Longueur après formatage:', formattedContent.length);
-  console.log('[CODE_PREVIEW] DEBUG - isMarkdown:', isMarkdown);
   console.log('[CODE_PREVIEW] DEBUG - maxTotalLength:', maxTotalLength);
   console.log('[CODE_PREVIEW] DEBUG - baseHeader.length:', baseHeader.length);
-  console.log('[CODE_PREVIEW] DEBUG - codeBlockStart:', codeBlockStart);
-  console.log('[CODE_PREVIEW] DEBUG - codeBlockEnd:', codeBlockEnd);
+  console.log('[CODE_PREVIEW] DEBUG - codeBlockStart:', JSON.stringify(codeBlockStart));
+  console.log('[CODE_PREVIEW] DEBUG - codeBlockEnd:', JSON.stringify(codeBlockEnd));
   console.log('[CODE_PREVIEW] DEBUG - totalWithHeader:', totalWithHeader);
   console.log('[CODE_PREVIEW] DEBUG - totalWithHeader <= maxTotalLength?', totalWithHeader <= maxTotalLength);
+  // DEBUG: Afficher le message complet qui sera envoyé
+  const fullMessage = `${baseHeader}${codeBlockStart}${formattedContent}${codeBlockEnd}`;
+  console.log('[CODE_PREVIEW] DEBUG - Message complet:', JSON.stringify(fullMessage));
 
   // Si le contenu tient dans un seul message
   if (totalWithHeader <= maxTotalLength) {
@@ -196,9 +197,11 @@ Lignes: ${lineCount}
 `;
 
     // Calculer la longueur disponible pour cette partie (en comptant les balises de code)
-    // Pour markdown: pas de blocs externes
-    const partCodeBlockStart = isMarkdown ? '' : `\`\`\`${langTag}\n`;
-    const partCodeBlockEnd = isMarkdown ? '' : `\n\`\`\``;
+    // TOUJOURS utiliser des blocs de code markdown, quel que soit le langage
+    // Utilisation des codes hex pour éviter les problèmes d'encodage
+    const BACKTICK = '\x60'; // Code hex U+0060 pour le backtick
+    const partCodeBlockStart = BACKTICK + BACKTICK + BACKTICK + langTag + '\n';
+    const partCodeBlockEnd = '\n' + BACKTICK + BACKTICK + BACKTICK;
     const availableLength = maxTotalLength - partHeader.length - partCodeBlockStart.length - partCodeBlockEnd.length;
 
     // Construire un chunk de lignes qui respecte la limite de longueur

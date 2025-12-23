@@ -16,8 +16,61 @@ import * as fs from 'fs';
 import { DiscordBridge } from './discord-bridge.js';
 import Logger from './utils/logger.js';
 
+// Imports des utilitaires de logos
+import {
+  getUniversalLogo,
+  buildClearbitLogoUrl,
+  getCryptoLogo,
+  getCryptoInfo,
+  buildCryptoLogoUrl
+} from './utils/logoUtils.js';
+
+// Imports des utilitaires de jeux
+import {
+  generateConfirmationMessage,
+  generateAnimation,
+  generateGameResult,
+  generateMinigame
+} from './utils/gameUtils.js';
+
+// Imports des données de jeux
+import {
+  VISUAL_SEPARATORS,
+  VISUAL_BADGES,
+  SUCCESS_ANIMATIONS,
+  FAILURE_ANIMATIONS,
+  CONFIRMATION_MESSAGES
+} from './utils/gameData.js';
+
+// Imports des données de logos
+import {
+  CRYPTO_LOGOS,
+  COMPANY_LOGOS,
+  MISC_LOGOS
+} from './data/logos.js';
+
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+
+// ============================================================================
+// IMPORTS DES OUTILS MCP ORGANISÉS PAR CATÉGORIE
+// ============================================================================
+
+import { registerEmbedTools } from './tools/embeds.js';
+import { registerMessageTools } from './tools/messages.js';
+import { registerEmojiThemeTools } from './tools/emojiThemes.js';
+import { registerGameTools } from './tools/games.js';
+
+// Imports des nouveaux outils organisés par catégorie
+import { registerModerationTools } from './tools/registerModeration.js';
+import { registerRolesTools } from './tools/registerRoles.js';
+import { registerChannelsTools } from './tools/registerChannels.js';
+import { registerPollsTools } from './tools/registerPolls.js';
+import { registerInteractionsTools } from './tools/registerInteractions.js';
+import { registerServerTools } from './tools/registerServer.js';
+import { registerWebhooksTools } from './tools/registerWebhooks.js';
+import { registerSystemTools } from './tools/registerSystem.js';
+import { registerLogosTools } from './tools/registerLogos.js';
 
 // Imports des utilitaires (compilés en JS)
 // Ces imports sont résolus au moment de l'exécution avec cache
@@ -33,13 +86,13 @@ import type { CustomMenu } from './utils/menuPersistence.js';
 
 // Fonction pour charger les utilitaires à la demande avec cache
 async function loadTools() {
-  // Chargement avec cache pour éviter les imports répétés
-  if (!toolsCodePreview && !toolsCache.has('codePreview')) {
-    toolsCodePreview = await import('./tools/codePreview.js');
-    toolsCache.set('codePreview', toolsCodePreview);
-  } else if (toolsCache.has('codePreview')) {
-    toolsCodePreview = toolsCache.get('codePreview');
+  // IMPORTANT: CodePreview rechargé à chaque appel (pas de cache) pour prendre en compte les rebuilds
+  // Supprimer le cache existant pour forcer le rechargement
+  if (toolsCache.has('codePreview')) {
+    toolsCache.delete('codePreview');
   }
+  toolsCodePreview = await import('./tools/codePreview.js');
+  toolsCache.set('codePreview', toolsCodePreview);
 
   if (!toolsFileUpload && !toolsCache.has('fileUpload')) {
     toolsFileUpload = await import('./tools/fileUpload.js');
@@ -72,9 +125,31 @@ console.log = (...args: any[]) => {
 // Charger les variables d'environnement avec chemin robuste
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const envPath = path.resolve(__dirname, '../.env'); // Si le .env est à la racine de serveur_discord
 
-// Logger.debug(`📂 Chargement .env depuis: ${envPath}`);
+// Chercher le .env à plusieurs endroits possibles
+function findEnvPath(): string {
+  // Ordre de recherche :
+  // 1. Même dossier que le script (pour dist/)
+  // 2. Dossier parent (pour src/)
+  // 3. 2 niveaux au-dessus (pour structures imbriquées)
+  const possiblePaths = [
+    path.resolve(__dirname, '.env'),
+    path.resolve(__dirname, '../.env'),
+    path.resolve(__dirname, '../../.env'),
+  ];
+
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      return p;
+    }
+  }
+
+  // Par défaut, utiliser le chemin classique
+  return path.resolve(__dirname, '../.env');
+}
+
+const envPath = findEnvPath();
+Logger.debug(`📂 Chargement .env depuis: ${envPath}`);
 config({ path: envPath });
 
 // Configuration
@@ -82,7 +157,7 @@ const botConfig = {
   token: process.env.DISCORD_BOT_TOKEN || process.env.DISCORD_TOKEN || 'YOUR_BOT_TOKEN',
   clientId: process.env.DISCORD_CLIENT_ID || 'YOUR_CLIENT_ID',
   guildId: process.env.DISCORD_GUILD_ID || 'YOUR_GUILD_ID',
-  activity: 'MCP Server v2.0 - 26 outils complets',
+  activity: 'MCP Server v2.0 - 88 outils complets',
   adminUserId: process.env.ADMIN_USER_ID || 'YOUR_ADMIN_USER_ID',
   environment: process.env.NODE_ENV || 'development',
 };
@@ -569,417 +644,20 @@ function withRateLimit<T extends any[], R>(toolName: string, fn: (...args: T) =>
 // ============================================================================
 // OUTILS MCP
 // ============================================================================
-
-// 1. Discord Status - SOLUTION FINALE avec rate limiting
-server.addTool({
-  name: 'discord_status',
-  description: 'Vérifie le statut de connexion du bot',
-  parameters: z.object({}),
-  execute: withRateLimit('discord_status', async () => {
-    try {
-      if (!botConfig.token || botConfig.token === 'YOUR_BOT_TOKEN') {
-        return '❌ Token Discord non configuré';
-      }
-
-      Logger.info('🔍 [discord_status] Checking bridge connection...');
-      const bridge = DiscordBridge.getInstance(botConfig.token);
-      const client = await bridge.getClient();
-
-      return `✅ Bot connecté | User: ${client.user!.tag} | Servers: ${client.guilds.cache.size} | Uptime: ${client.uptime}ms`;
-    } catch (error: any) {
-      Logger.error('❌ [discord_status] Erreur', error.message);
-      return `❌ Bot déconnecté | Erreur: ${error.message}`;
-    }
-  }),
-});
-
-// ============================================================================
-// OUTILS DE MODÉRATION
-// ============================================================================
-
-// Importer les outils de modération
-import {
-  initializeModeration,
-  kickMember,
-  banMember,
-  unbanMember,
-  muteMember,
-  unmuteMember,
-  warnMember,
-  getWarnings,
-  clearWarnings,
-  KickMemberSchema,
-  BanMemberSchema,
-  UnbanMemberSchema,
-  MuteMemberSchema,
-  UnmuteMemberSchema,
-  WarnMemberSchema,
-  GetWarningsSchema,
-  ClearWarningsSchema,
-} from './tools/moderation.js';
-
-// Initialiser la modération
-initializeModeration();
-
-// 1. Expulser un membre
-server.addTool({
-  name: 'kick_member',
-  description: 'Expulse un membre du serveur',
-  parameters: KickMemberSchema,
-  execute: async args => {
-    try {
-      Logger.info(`👢 [kick_member] User: ${args.userId}`);
-      const client = await ensureDiscordConnection();
-      const result = await kickMember(client, args);
-      return result;
-    } catch (error: any) {
-      Logger.error(`❌ [kick_member]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 2. Bannir un membre
-server.addTool({
-  name: 'ban_member',
-  description: 'Bannit un membre du serveur',
-  parameters: BanMemberSchema,
-  execute: async args => {
-    try {
-      Logger.info(`🔨 [ban_member] User: ${args.userId}`);
-      const client = await ensureDiscordConnection();
-      const result = await banMember(client, args);
-      return result;
-    } catch (error: any) {
-      Logger.error(`❌ [ban_member]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 3. Débannir un membre
-server.addTool({
-  name: 'unban_member',
-  description: 'Débannit un membre du serveur',
-  parameters: UnbanMemberSchema,
-  execute: async args => {
-    try {
-      Logger.info(`🔓 [unban_member] User: ${args.userId}`);
-      const client = await ensureDiscordConnection();
-      const result = await unbanMember(client, args);
-      return result;
-    } catch (error: any) {
-      Logger.error(`❌ [unban_member]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 4. Mute un membre
-server.addTool({
-  name: 'mute_member',
-  description: 'Mute un membre temporairement',
-  parameters: MuteMemberSchema,
-  execute: async args => {
-    try {
-      Logger.info(`🤐 [mute_member] User: ${args.userId}, Duration: ${args.duration}s`);
-      const client = await ensureDiscordConnection();
-      const result = await muteMember(client, args);
-      return result;
-    } catch (error: any) {
-      Logger.error(`❌ [mute_member]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 5. Démute un membre
-server.addTool({
-  name: 'unmute_member',
-  description: 'Démute un membre',
-  parameters: UnmuteMemberSchema,
-  execute: async args => {
-    try {
-      console.error(`🔊 [unmute_member] User: ${args.userId}`);
-      const client = await ensureDiscordConnection();
-      const result = await unmuteMember(client, args);
-      return result;
-    } catch (error: any) {
-      console.error(`❌ [unmute_member]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 6. Avertir un membre
-server.addTool({
-  name: 'warn_member',
-  description: 'Avertit un membre',
-  parameters: WarnMemberSchema,
-  execute: async args => {
-    try {
-      console.error(`⚠️ [warn_member] User: ${args.userId}`);
-      const client = await ensureDiscordConnection();
-      const result = await warnMember(client, args);
-      return result;
-    } catch (error: any) {
-      console.error(`❌ [warn_member]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 7. Voir les warns
-server.addTool({
-  name: 'get_warnings',
-  description: "Affiche les avertissements d'un membre",
-  parameters: GetWarningsSchema,
-  execute: async args => {
-    try {
-      console.error(`📋 [get_warnings] User: ${args.userId}`);
-      const client = await ensureDiscordConnection();
-      const result = await getWarnings(client, args);
-      return result;
-    } catch (error: any) {
-      console.error(`❌ [get_warnings]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 8. Effacer les warns
-server.addTool({
-  name: 'clear_warnings',
-  description: "Efface tous les avertissements d'un membre",
-  parameters: ClearWarningsSchema,
-  execute: async args => {
-    try {
-      Logger.info(`🧹 [clear_warnings] User: ${args.userId}`);
-      const client = await ensureDiscordConnection();
-      const result = await clearWarnings(client, args);
-      return result;
-    } catch (error: any) {
-      Logger.error(`❌ [clear_warnings]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
+// NOTE: Les outils de modération sont maintenant enregistrés via registerModerationTools()
+// voir appel à la ligne ~4000
 
 // ============================================================================
 // OUTILS DE GESTION DES RÔLES
 // ============================================================================
-
-// Importer les outils de gestion des rôles
-import {
-  createRole,
-  deleteRole,
-  editRole,
-  addRoleToMember,
-  removeRoleFromMember,
-  getMemberRoles,
-  CreateRoleSchema,
-  DeleteRoleSchema,
-  EditRoleSchema,
-  AddRoleToMemberSchema,
-  RemoveRoleFromMemberSchema,
-  GetMemberRolesSchema,
-} from './tools/roleManager.js';
-
-// 1. Créer un rôle
-server.addTool({
-  name: 'create_role',
-  description: 'Crée un nouveau rôle',
-  parameters: CreateRoleSchema,
-  execute: async args => {
-    try {
-      Logger.info(`🎭 [create_role] Name: ${args.name}`);
-      const client = await ensureDiscordConnection();
-      const result = await createRole(client, args);
-      return result;
-    } catch (error: any) {
-      Logger.error(`❌ [create_role]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 2. Supprimer un rôle
-server.addTool({
-  name: 'delete_role',
-  description: 'Supprime un rôle',
-  parameters: DeleteRoleSchema,
-  execute: async args => {
-    try {
-      Logger.info(`🗑️ [delete_role] Role: ${args.roleId}`);
-      const client = await ensureDiscordConnection();
-      const result = await deleteRole(client, args);
-      return result;
-    } catch (error: any) {
-      Logger.error(`❌ [delete_role]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 3. Modifier un rôle
-server.addTool({
-  name: 'edit_role',
-  description: 'Modifie un rôle existant',
-  parameters: EditRoleSchema,
-  execute: async args => {
-    try {
-      Logger.info(`✏️ [edit_role] Role: ${args.roleId}`);
-      const client = await ensureDiscordConnection();
-      const result = await editRole(client, args);
-      return result;
-    } catch (error: any) {
-      Logger.error(`❌ [edit_role]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 4. Donner un rôle à un membre
-server.addTool({
-  name: 'add_role_to_member',
-  description: 'Donne un rôle à un membre',
-  parameters: AddRoleToMemberSchema,
-  execute: async args => {
-    try {
-      Logger.info(`➕ [add_role_to_member] User: ${args.userId}, Role: ${args.roleId}`);
-      const client = await ensureDiscordConnection();
-      const result = await addRoleToMember(client, args);
-      return result;
-    } catch (error: any) {
-      Logger.error(`❌ [add_role_to_member]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 5. Retirer un rôle d'un membre
-server.addTool({
-  name: 'remove_role_from_member',
-  description: "Retire un rôle d'un membre",
-  parameters: RemoveRoleFromMemberSchema,
-  execute: async args => {
-    try {
-      console.error(`➖ [remove_role_from_member] User: ${args.userId}, Role: ${args.roleId}`);
-      const client = await ensureDiscordConnection();
-      const result = await removeRoleFromMember(client, args);
-      return result;
-    } catch (error: any) {
-      console.error(`❌ [remove_role_from_member]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 6. Voir les rôles d'un membre
-server.addTool({
-  name: 'get_member_roles',
-  description: "Affiche les rôles d'un membre",
-  parameters: GetMemberRolesSchema,
-  execute: async args => {
-    try {
-      console.error(`📋 [get_member_roles] User: ${args.userId}`);
-      const client = await ensureDiscordConnection();
-      const result = await getMemberRoles(client, args);
-      return result;
-    } catch (error: any) {
-      console.error(`❌ [get_member_roles]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
+// NOTE: Les outils de rôles sont maintenant enregistrés via registerRolesTools()
+// voir appel à la ligne ~4000
 
 // ============================================================================
 // OUTILS DE GESTION DES CANAUX
 // ============================================================================
-
-// Importer les outils de gestion des canaux
-import {
-  createChannel,
-  deleteChannel,
-  editChannel,
-  moveMemberToChannel,
-  CreateChannelSchema,
-  DeleteChannelSchema,
-  EditChannelSchema,
-  MoveMemberToChannelSchema,
-} from './tools/channelAdmin.js';
-
-// 1. Créer un canal
-server.addTool({
-  name: 'create_channel',
-  description: 'Crée un nouveau canal',
-  parameters: CreateChannelSchema,
-  execute: async args => {
-    try {
-      Logger.info(`📝 [create_channel] Name: ${args.name}, Type: ${args.type}`);
-      const client = await ensureDiscordConnection();
-      const result = await createChannel(client, args);
-      return result;
-    } catch (error: any) {
-      Logger.error(`❌ [create_channel]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 2. Supprimer un canal
-server.addTool({
-  name: 'delete_channel',
-  description: 'Supprime un canal',
-  parameters: DeleteChannelSchema,
-  execute: async args => {
-    try {
-      Logger.info(`🗑️ [delete_channel] Channel: ${args.channelId}`);
-      const client = await ensureDiscordConnection();
-      const result = await deleteChannel(client, args);
-      return result;
-    } catch (error: any) {
-      Logger.error(`❌ [delete_channel]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 3. Modifier un canal
-server.addTool({
-  name: 'edit_channel',
-  description: 'Modifie un canal existant',
-  parameters: EditChannelSchema,
-  execute: async args => {
-    try {
-      console.error(`✏️ [edit_channel] Channel: ${args.channelId}`);
-      const client = await ensureDiscordConnection();
-      const result = await editChannel(client, args);
-      return result;
-    } catch (error: any) {
-      console.error(`❌ [edit_channel]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 4. Déplacer un membre vers un canal vocal
-server.addTool({
-  name: 'move_member_to_channel',
-  description: 'Déplace un membre vers un canal vocal',
-  parameters: MoveMemberToChannelSchema,
-  execute: async args => {
-    try {
-      Logger.info(`🔄 [move_member_to_channel] User: ${args.userId}, Channel: ${args.channelId}`);
-      const client = await ensureDiscordConnection();
-      const result = await moveMemberToChannel(client, args);
-      return result;
-    } catch (error: any) {
-      Logger.error(`❌ [move_member_to_channel]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
+// NOTE: Les outils de canaux sont maintenant enregistrés via registerChannelsTools()
+// voir appel à la ligne ~4000
 
 // 4. Envoyer Message Simple - SOLUTION FINALE avec rate limiting
 server.addTool({
@@ -1240,567 +918,6 @@ function generateAsciiChart(type: string, data: number[], labels?: string[], opt
   return chart;
 }
 
-// ============================================================================
-// SYSTÈME DE LOGOS CRYPTO 🪙
-// ============================================================================
-
-// Mapping des crypto-monnaies vers leurs logos (cryptologos.cc)
-const CRYPTO_LOGOS: Record<string, { name: string; symbol: string; logo: string }> = {
-  // Top 50 Cryptos
-  BTC: { name: 'bitcoin', symbol: 'btc', logo: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png' },
-  ETH: { name: 'ethereum', symbol: 'eth', logo: 'https://cryptologos.cc/logos/ethereum-eth-logo.png' },
-  XRP: { name: 'xrp', symbol: 'xrp', logo: 'https://cryptologos.cc/logos/xrp-xrp-logo.png' },
-  USDT: { name: 'tether', symbol: 'usdt', logo: 'https://cryptologos.cc/logos/tether-usdt-logo.png' },
-  BNB: { name: 'bnb', symbol: 'bnb', logo: 'https://cryptologos.cc/logos/bnb-bnb-logo.png' },
-  SOL: { name: 'solana', symbol: 'sol', logo: 'https://cryptologos.cc/logos/solana-sol-logo.png' },
-  USDC: { name: 'usd-coin', symbol: 'usdc', logo: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png' },
-  ADA: { name: 'cardano', symbol: 'ada', logo: 'https://cryptologos.cc/logos/cardano-ada-logo.png' },
-  DOGE: { name: 'dogecoin', symbol: 'doge', logo: 'https://cryptologos.cc/logos/dogecoin-doge-logo.png' },
-  TRX: { name: 'tron', symbol: 'trx', logo: 'https://cryptologos.cc/logos/tron-trx-logo.png' },
-  TON: { name: 'toncoin', symbol: 'ton', logo: 'https://cryptologos.cc/logos/toncoin-ton-logo.png' },
-  LINK: { name: 'chainlink', symbol: 'link', logo: 'https://cryptologos.cc/logos/chainlink-link-logo.png' },
-  MATIC: { name: 'polygon', symbol: 'matic', logo: 'https://cryptologos.cc/logos/polygon-matic-logo.png' },
-  DOT: { name: 'polkadot-new', symbol: 'dot', logo: 'https://cryptologos.cc/logos/polkadot-new-dot-logo.png' },
-  SHIB: { name: 'shiba-inu', symbol: 'shib', logo: 'https://cryptologos.cc/logos/shiba-inu-shib-logo.png' },
-  AVAX: { name: 'avalanche', symbol: 'avax', logo: 'https://cryptologos.cc/logos/avalanche-avax-logo.png' },
-  LTC: { name: 'litecoin', symbol: 'ltc', logo: 'https://cryptologos.cc/logos/litecoin-ltc-logo.png' },
-  BCH: { name: 'bitcoin-cash', symbol: 'bch', logo: 'https://cryptologos.cc/logos/bitcoin-cash-bch-logo.png' },
-  UNI: { name: 'uniswap', symbol: 'uni', logo: 'https://cryptologos.cc/logos/uniswap-uni-logo.png' },
-  ATOM: { name: 'cosmos', symbol: 'atom', logo: 'https://cryptologos.cc/logos/cosmos-atom-logo.png' },
-  XLM: { name: 'stellar', symbol: 'xlm', logo: 'https://cryptologos.cc/logos/stellar-xlm-logo.png' },
-  XMR: { name: 'monero', symbol: 'xmr', logo: 'https://cryptologos.cc/logos/monero-xmr-logo.png' },
-  ETC: { name: 'ethereum-classic', symbol: 'etc', logo: 'https://cryptologos.cc/logos/ethereum-classic-etc-logo.png' },
-  APT: { name: 'aptos', symbol: 'apt', logo: 'https://cryptologos.cc/logos/aptos-apt-logo.png' },
-  NEAR: { name: 'near-protocol', symbol: 'near', logo: 'https://cryptologos.cc/logos/near-protocol-near-logo.png' },
-  FIL: { name: 'filecoin', symbol: 'fil', logo: 'https://cryptologos.cc/logos/filecoin-fil-logo.png' },
-  ARB: { name: 'arbitrum', symbol: 'arb', logo: 'https://cryptologos.cc/logos/arbitrum-arb-logo.png' },
-  OP: { name: 'optimism', symbol: 'op', logo: 'https://cryptologos.cc/logos/optimism-ethereum-op-logo.png' },
-  AAVE: { name: 'aave', symbol: 'aave', logo: 'https://cryptologos.cc/logos/aave-aave-logo.png' },
-  MKR: { name: 'maker', symbol: 'mkr', logo: 'https://cryptologos.cc/logos/maker-mkr-logo.png' },
-  VET: { name: 'vechain', symbol: 'vet', logo: 'https://cryptologos.cc/logos/vechain-vet-logo.png' },
-  ALGO: { name: 'algorand', symbol: 'algo', logo: 'https://cryptologos.cc/logos/algorand-algo-logo.png' },
-  FTM: { name: 'fantom', symbol: 'ftm', logo: 'https://cryptologos.cc/logos/fantom-ftm-logo.png' },
-  SAND: { name: 'the-sandbox', symbol: 'sand', logo: 'https://cryptologos.cc/logos/the-sandbox-sand-logo.png' },
-  MANA: { name: 'decentraland', symbol: 'mana', logo: 'https://cryptologos.cc/logos/decentraland-mana-logo.png' },
-  AXS: { name: 'axie-infinity', symbol: 'axs', logo: 'https://cryptologos.cc/logos/axie-infinity-axs-logo.png' },
-  THETA: { name: 'theta-network', symbol: 'theta', logo: 'https://cryptologos.cc/logos/theta-network-theta-logo.png' },
-  EGLD: { name: 'multiversx-egld', symbol: 'egld', logo: 'https://cryptologos.cc/logos/multiversx-egld-egld-logo.png' },
-  XTZ: { name: 'tezos', symbol: 'xtz', logo: 'https://cryptologos.cc/logos/tezos-xtz-logo.png' },
-  EOS: { name: 'eos', symbol: 'eos', logo: 'https://cryptologos.cc/logos/eos-eos-logo.png' },
-  FLOW: { name: 'flow', symbol: 'flow', logo: 'https://cryptologos.cc/logos/flow-flow-logo.png' },
-  GRT: { name: 'the-graph', symbol: 'grt', logo: 'https://cryptologos.cc/logos/the-graph-grt-logo.png' },
-  CRO: { name: 'cronos', symbol: 'cro', logo: 'https://cryptologos.cc/logos/cronos-cro-logo.png' },
-  RUNE: { name: 'thorchain', symbol: 'rune', logo: 'https://cryptologos.cc/logos/thorchain-rune-logo.png' },
-  KAVA: { name: 'kava', symbol: 'kava', logo: 'https://cryptologos.cc/logos/kava-kava-logo.png' },
-  ZEC: { name: 'zcash', symbol: 'zec', logo: 'https://cryptologos.cc/logos/zcash-zec-logo.png' },
-  DASH: { name: 'dash', symbol: 'dash', logo: 'https://cryptologos.cc/logos/dash-dash-logo.png' },
-  NEO: { name: 'neo', symbol: 'neo', logo: 'https://cryptologos.cc/logos/neo-neo-logo.png' },
-  IOTA: { name: 'iota', symbol: 'iota', logo: 'https://cryptologos.cc/logos/iota-iota-logo.png' },
-  CAKE: { name: 'pancakeswap', symbol: 'cake', logo: 'https://cryptologos.cc/logos/pancakeswap-cake-logo.png' },
-  // Stablecoins & Wrapped
-  DAI: { name: 'multi-collateral-dai', symbol: 'dai', logo: 'https://cryptologos.cc/logos/multi-collateral-dai-dai-logo.png' },
-  BUSD: { name: 'binance-usd', symbol: 'busd', logo: 'https://cryptologos.cc/logos/binance-usd-busd-logo.png' },
-  WBTC: { name: 'wrapped-bitcoin', symbol: 'wbtc', logo: 'https://cryptologos.cc/logos/wrapped-bitcoin-wbtc-logo.png' },
-  WETH: { name: 'weth', symbol: 'weth', logo: 'https://cryptologos.cc/logos/ethereum-eth-logo.png' },
-  // DeFi & Others
-  COMP: { name: 'compound', symbol: 'comp', logo: 'https://cryptologos.cc/logos/compound-comp-logo.png' },
-  SNX: { name: 'synthetix-network-token', symbol: 'snx', logo: 'https://cryptologos.cc/logos/synthetix-network-token-snx-logo.png' },
-  CRV: { name: 'curve-dao-token', symbol: 'crv', logo: 'https://cryptologos.cc/logos/curve-dao-token-crv-logo.png' },
-  SUSHI: { name: 'sushiswap', symbol: 'sushi', logo: 'https://cryptologos.cc/logos/sushiswap-sushi-logo.png' },
-  YFI: { name: 'yearn-finance', symbol: 'yfi', logo: 'https://cryptologos.cc/logos/yearn-finance-yfi-logo.png' },
-  INCH: { name: '1inch', symbol: '1inch', logo: 'https://cryptologos.cc/logos/1inch-1inch-logo.png' },
-  ENS: { name: 'ethereum-name-service', symbol: 'ens', logo: 'https://cryptologos.cc/logos/ethereum-name-service-ens-logo.png' },
-  LDO: { name: 'lido-dao', symbol: 'ldo', logo: 'https://cryptologos.cc/logos/lido-dao-ldo-logo.png' },
-  RPL: { name: 'rocket-pool', symbol: 'rpl', logo: 'https://cryptologos.cc/logos/rocket-pool-rpl-logo.png' },
-  // Meme coins
-  PEPE: { name: 'pepe', symbol: 'pepe', logo: 'https://cryptologos.cc/logos/pepe-pepe-logo.png' },
-  FLOKI: { name: 'floki-inu', symbol: 'floki', logo: 'https://cryptologos.cc/logos/floki-inu-floki-logo.png' },
-  BONK: { name: 'bonk', symbol: 'bonk', logo: 'https://cryptologos.cc/logos/bonk-bonk-logo.png' },
-  // Exchanges
-  FTT: { name: 'ftx-token', symbol: 'ftt', logo: 'https://cryptologos.cc/logos/ftx-token-ftt-logo.png' },
-  OKB: { name: 'okb', symbol: 'okb', logo: 'https://cryptologos.cc/logos/okb-okb-logo.png' },
-  LEO: { name: 'unus-sed-leo', symbol: 'leo', logo: 'https://cryptologos.cc/logos/unus-sed-leo-leo-logo.png' },
-  // Privacy
-  SCRT: { name: 'secret', symbol: 'scrt', logo: 'https://cryptologos.cc/logos/secret-scrt-logo.png' },
-  ROSE: { name: 'oasis-network', symbol: 'rose', logo: 'https://cryptologos.cc/logos/oasis-network-rose-logo.png' },
-  // AI & Others
-  RNDR: { name: 'render-token', symbol: 'rndr', logo: 'https://cryptologos.cc/logos/render-token-rndr-logo.png' },
-  INJ: { name: 'injective', symbol: 'inj', logo: 'https://cryptologos.cc/logos/injective-inj-logo.png' },
-  SUI: { name: 'sui', symbol: 'sui', logo: 'https://cryptologos.cc/logos/sui-sui-logo.png' },
-  SEI: { name: 'sei', symbol: 'sei', logo: 'https://cryptologos.cc/logos/sei-sei-logo.png' },
-  TIA: { name: 'celestia', symbol: 'tia', logo: 'https://cryptologos.cc/logos/celestia-tia-logo.png' },
-};
-
-// ============================================================================
-// SYSTÈME DE LOGOS ENTREPRISES & INDICES 📈
-// ============================================================================
-
-// Base de données des logos d'entreprises (utilise wsrv.nl + SimpleIcons - gratuit, open-source)
-const COMPANY_LOGOS: Record<string, { name: string; symbol: string; logo: string; sector: string }> = {
-  // === TOP 30 S&P 500 ===
-  AAPL: { name: 'Apple', symbol: 'AAPL', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/apple&output=png', sector: 'Technology' },
-  MSFT: { name: 'Microsoft', symbol: 'MSFT', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/microsoft&output=png', sector: 'Technology' },
-  GOOGL: { name: 'Alphabet (Google)', symbol: 'GOOGL', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/google&output=png', sector: 'Technology' },
-  AMZN: { name: 'Amazon', symbol: 'AMZN', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/amazon&output=png', sector: 'Consumer' },
-  NVDA: { name: 'NVIDIA', symbol: 'NVDA', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/nvidia&output=png', sector: 'Technology' },
-  META: { name: 'Meta (Facebook)', symbol: 'META', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/meta&output=png', sector: 'Technology' },
-  TSLA: { name: 'Tesla', symbol: 'TSLA', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/tesla&output=png', sector: 'Automotive' },
-  BRK: { name: 'Berkshire Hathaway', symbol: 'BRK', logo: 'https://logo.clearbit.com/berkshirehathaway.com', sector: 'Finance' },
-  JPM: { name: 'JPMorgan Chase', symbol: 'JPM', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/jpmorgan&output=png', sector: 'Finance' },
-  V: { name: 'Visa', symbol: 'V', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/visa&output=png', sector: 'Finance' },
-  JNJ: { name: 'Johnson & Johnson', symbol: 'JNJ', logo: 'https://logo.clearbit.com/jnj.com', sector: 'Healthcare' },
-  WMT: { name: 'Walmart', symbol: 'WMT', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/walmart&output=png', sector: 'Retail' },
-  MA: { name: 'Mastercard', symbol: 'MA', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/mastercard&output=png', sector: 'Finance' },
-  PG: { name: 'Procter & Gamble', symbol: 'PG', logo: 'https://logo.clearbit.com/pg.com', sector: 'Consumer' },
-  XOM: { name: 'Exxon Mobil', symbol: 'XOM', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/exxonmobil&output=png', sector: 'Energy' },
-  HD: { name: 'Home Depot', symbol: 'HD', logo: 'https://logo.clearbit.com/homedepot.com', sector: 'Retail' },
-  CVX: { name: 'Chevron', symbol: 'CVX', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/chevron&output=png', sector: 'Energy' },
-  MRK: { name: 'Merck', symbol: 'MRK', logo: 'https://logo.clearbit.com/merck.com', sector: 'Healthcare' },
-  ABBV: { name: 'AbbVie', symbol: 'ABBV', logo: 'https://logo.clearbit.com/abbvie.com', sector: 'Healthcare' },
-  PEP: { name: 'PepsiCo', symbol: 'PEP', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/pepsi&output=png', sector: 'Consumer' },
-  KO: { name: 'Coca-Cola', symbol: 'KO', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/cocacola&output=png', sector: 'Consumer' },
-  COST: { name: 'Costco', symbol: 'COST', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/costco&output=png', sector: 'Retail' },
-  AVGO: { name: 'Broadcom', symbol: 'AVGO', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/broadcom&output=png', sector: 'Technology' },
-  TMO: { name: 'Thermo Fisher', symbol: 'TMO', logo: 'https://logo.clearbit.com/thermofisher.com', sector: 'Healthcare' },
-  MCD: { name: 'McDonald\'s', symbol: 'MCD', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/mcdonalds&output=png', sector: 'Consumer' },
-  CSCO: { name: 'Cisco', symbol: 'CSCO', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/cisco&output=png', sector: 'Technology' },
-  ACN: { name: 'Accenture', symbol: 'ACN', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/accenture&output=png', sector: 'Technology' },
-  ABT: { name: 'Abbott Labs', symbol: 'ABT', logo: 'https://logo.clearbit.com/abbott.com', sector: 'Healthcare' },
-  DHR: { name: 'Danaher', symbol: 'DHR', logo: 'https://logo.clearbit.com/danaher.com', sector: 'Healthcare' },
-  LIN: { name: 'Linde', symbol: 'LIN', logo: 'https://logo.clearbit.com/linde.com', sector: 'Materials' },
-
-  // === TECH GIANTS ===
-  INTC: { name: 'Intel', symbol: 'INTC', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/intel&output=png', sector: 'Technology' },
-  AMD: { name: 'AMD', symbol: 'AMD', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/amd&output=png', sector: 'Technology' },
-  IBM: { name: 'IBM', symbol: 'IBM', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/ibm&output=png', sector: 'Technology' },
-  ORCL: { name: 'Oracle', symbol: 'ORCL', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/oracle&output=png', sector: 'Technology' },
-  CRM: { name: 'Salesforce', symbol: 'CRM', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/salesforce&output=png', sector: 'Technology' },
-  ADBE: { name: 'Adobe', symbol: 'ADBE', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/adobe&output=png', sector: 'Technology' },
-  NFLX: { name: 'Netflix', symbol: 'NFLX', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/netflix&output=png', sector: 'Entertainment' },
-  PYPL: { name: 'PayPal', symbol: 'PYPL', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/paypal&output=png', sector: 'Finance' },
-  SQ: { name: 'Block (Square)', symbol: 'SQ', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/block&output=png', sector: 'Finance' },
-  SHOP: { name: 'Shopify', symbol: 'SHOP', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/shopify&output=png', sector: 'Technology' },
-  UBER: { name: 'Uber', symbol: 'UBER', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/uber&output=png', sector: 'Technology' },
-  LYFT: { name: 'Lyft', symbol: 'LYFT', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/lyft&output=png', sector: 'Technology' },
-  ABNB: { name: 'Airbnb', symbol: 'ABNB', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/airbnb&output=png', sector: 'Technology' },
-  SNAP: { name: 'Snap', symbol: 'SNAP', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/snapchat&output=png', sector: 'Technology' },
-  TWTR: { name: 'X (Twitter)', symbol: 'TWTR', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/x&output=png', sector: 'Technology' },
-  SPOT: { name: 'Spotify', symbol: 'SPOT', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/spotify&output=png', sector: 'Entertainment' },
-  ZOOM: { name: 'Zoom', symbol: 'ZM', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/zoom&output=png', sector: 'Technology' },
-  PLTR: { name: 'Palantir', symbol: 'PLTR', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/palantir&output=png', sector: 'Technology' },
-
-  // === BANQUES & FINANCE ===
-  BAC: { name: 'Bank of America', symbol: 'BAC', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/bankofamerica&output=png', sector: 'Finance' },
-  WFC: { name: 'Wells Fargo', symbol: 'WFC', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/wellsfargo&output=png', sector: 'Finance' },
-  C: { name: 'Citigroup', symbol: 'C', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/citi&output=png', sector: 'Finance' },
-  GS: { name: 'Goldman Sachs', symbol: 'GS', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/goldmansachs&output=png', sector: 'Finance' },
-  MS: { name: 'Morgan Stanley', symbol: 'MS', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/morganstanley&output=png', sector: 'Finance' },
-  AXP: { name: 'American Express', symbol: 'AXP', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/americanexpress&output=png', sector: 'Finance' },
-  BLK: { name: 'BlackRock', symbol: 'BLK', logo: 'https://logo.clearbit.com/blackrock.com', sector: 'Finance' },
-  SCHW: { name: 'Charles Schwab', symbol: 'SCHW', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/charlesschwab&output=png', sector: 'Finance' },
-
-  // === AUTOMOBILE ===
-  GM: { name: 'General Motors', symbol: 'GM', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/generalmotors&output=png', sector: 'Automotive' },
-  F: { name: 'Ford', symbol: 'F', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/ford&output=png', sector: 'Automotive' },
-  TM: { name: 'Toyota', symbol: 'TM', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/toyota&output=png', sector: 'Automotive' },
-  HMC: { name: 'Honda', symbol: 'HMC', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/honda&output=png', sector: 'Automotive' },
-  RIVN: { name: 'Rivian', symbol: 'RIVN', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/rivian&output=png', sector: 'Automotive' },
-  LCID: { name: 'Lucid', symbol: 'LCID', logo: 'https://logo.clearbit.com/lucidmotors.com', sector: 'Automotive' },
-  NIO: { name: 'NIO', symbol: 'NIO', logo: 'https://logo.clearbit.com/nio.com', sector: 'Automotive' },
-
-  // === PHARMA & HEALTHCARE ===
-  PFE: { name: 'Pfizer', symbol: 'PFE', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/pfizer&output=png', sector: 'Healthcare' },
-  UNH: { name: 'UnitedHealth', symbol: 'UNH', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/unitedhealthgroup&output=png', sector: 'Healthcare' },
-  LLY: { name: 'Eli Lilly', symbol: 'LLY', logo: 'https://logo.clearbit.com/lilly.com', sector: 'Healthcare' },
-  BMY: { name: 'Bristol-Myers', symbol: 'BMY', logo: 'https://logo.clearbit.com/bms.com', sector: 'Healthcare' },
-  GILD: { name: 'Gilead', symbol: 'GILD', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/gilead&output=png', sector: 'Healthcare' },
-  MRNA: { name: 'Moderna', symbol: 'MRNA', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/moderna&output=png', sector: 'Healthcare' },
-  BNTX: { name: 'BioNTech', symbol: 'BNTX', logo: 'https://logo.clearbit.com/biontech.de', sector: 'Healthcare' },
-
-  // === RETAIL & CONSUMER ===
-  NKE: { name: 'Nike', symbol: 'NKE', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/nike&output=png', sector: 'Consumer' },
-  SBUX: { name: 'Starbucks', symbol: 'SBUX', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/starbucks&output=png', sector: 'Consumer' },
-  DIS: { name: 'Disney', symbol: 'DIS', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/disney&output=png', sector: 'Entertainment' },
-  TGT: { name: 'Target', symbol: 'TGT', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/target&output=png', sector: 'Retail' },
-  LOW: { name: 'Lowe\'s', symbol: 'LOW', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/lowes&output=png', sector: 'Retail' },
-  EBAY: { name: 'eBay', symbol: 'EBAY', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/ebay&output=png', sector: 'Retail' },
-
-  // === ENERGY ===
-  COP: { name: 'ConocoPhillips', symbol: 'COP', logo: 'https://logo.clearbit.com/conocophillips.com', sector: 'Energy' },
-  SLB: { name: 'Schlumberger', symbol: 'SLB', logo: 'https://logo.clearbit.com/slb.com', sector: 'Energy' },
-  OXY: { name: 'Occidental', symbol: 'OXY', logo: 'https://logo.clearbit.com/oxy.com', sector: 'Energy' },
-
-  // === AEROSPACE & DEFENSE ===
-  BA: { name: 'Boeing', symbol: 'BA', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/boeing&output=png', sector: 'Aerospace' },
-  LMT: { name: 'Lockheed Martin', symbol: 'LMT', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/lockheedmartin&output=png', sector: 'Aerospace' },
-  RTX: { name: 'RTX (Raytheon)', symbol: 'RTX', logo: 'https://logo.clearbit.com/rtx.com', sector: 'Aerospace' },
-  NOC: { name: 'Northrop Grumman', symbol: 'NOC', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/northropgrumman&output=png', sector: 'Aerospace' },
-  GD: { name: 'General Dynamics', symbol: 'GD', logo: 'https://logo.clearbit.com/gd.com', sector: 'Aerospace' },
-
-  // === TELECOM ===
-  T: { name: 'AT&T', symbol: 'T', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/att&output=png', sector: 'Telecom' },
-  VZ: { name: 'Verizon', symbol: 'VZ', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/verizon&output=png', sector: 'Telecom' },
-  TMUS: { name: 'T-Mobile', symbol: 'TMUS', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/tmobile&output=png', sector: 'Telecom' },
-};
-
-// Base de données des logos divers (services, réseaux sociaux, etc.)
-const MISC_LOGOS: Record<string, { name: string; category: string; logo: string }> = {
-  // === RÉSEAUX SOCIAUX ===
-  DISCORD: { name: 'Discord', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/discord&output=png' },
-  TWITTER: { name: 'X (Twitter)', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/x&output=png' },
-  FACEBOOK: { name: 'Facebook', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/facebook&output=png' },
-  INSTAGRAM: { name: 'Instagram', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/instagram&output=png' },
-  LINKEDIN: { name: 'LinkedIn', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/linkedin&output=png' },
-  TIKTOK: { name: 'TikTok', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/tiktok&output=png' },
-  REDDIT: { name: 'Reddit', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/reddit&output=png' },
-  YOUTUBE: { name: 'YouTube', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/youtube&output=png' },
-  TWITCH: { name: 'Twitch', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/twitch&output=png' },
-  TELEGRAM: { name: 'Telegram', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/telegram&output=png' },
-  WHATSAPP: { name: 'WhatsApp', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/whatsapp&output=png' },
-  SIGNAL: { name: 'Signal', category: 'Social', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/signal&output=png' },
-
-  // === SERVICES CLOUD ===
-  AWS: { name: 'Amazon AWS', category: 'Cloud', logo: 'https://logo.clearbit.com/aws.amazon.com' },
-  AZURE: { name: 'Microsoft Azure', category: 'Cloud', logo: 'https://logo.clearbit.com/azure.microsoft.com' },
-  GCP: { name: 'Google Cloud', category: 'Cloud', logo: 'https://logo.clearbit.com/cloud.google.com' },
-  CLOUDFLARE: { name: 'Cloudflare', category: 'Cloud', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/cloudflare&output=png' },
-  DIGITALOCEAN: { name: 'DigitalOcean', category: 'Cloud', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/digitalocean&output=png' },
-  HEROKU: { name: 'Heroku', category: 'Cloud', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/heroku&output=png' },
-  VERCEL: { name: 'Vercel', category: 'Cloud', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/vercel&output=png' },
-  NETLIFY: { name: 'Netlify', category: 'Cloud', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/netlify&output=png' },
-
-  // === EXCHANGES CRYPTO ===
-  BINANCE: { name: 'Binance', category: 'Exchange', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/binance&output=png' },
-  COINBASE: { name: 'Coinbase', category: 'Exchange', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/coinbase&output=png' },
-  KRAKEN: { name: 'Kraken', category: 'Exchange', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/kraken&output=png' },
-  FTX: { name: 'FTX', category: 'Exchange', logo: 'https://logo.clearbit.com/ftx.com' },
-  KUCOIN: { name: 'KuCoin', category: 'Exchange', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/kucoin&output=png' },
-  BYBIT: { name: 'Bybit', category: 'Exchange', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/bybit&output=png' },
-  OKX: { name: 'OKX', category: 'Exchange', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/okx&output=png' },
-  BITFINEX: { name: 'Bitfinex', category: 'Exchange', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/bitfinex&output=png' },
-
-  // === BROKERS ===
-  ROBINHOOD: { name: 'Robinhood', category: 'Broker', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/robinhood&output=png' },
-  ETRADE: { name: 'E*TRADE', category: 'Broker', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/etrade&output=png' },
-  FIDELITY: { name: 'Fidelity', category: 'Broker', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/fidelity&output=png' },
-  TD: { name: 'TD Ameritrade', category: 'Broker', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/tdameritrade&output=png' },
-  INTERACTIVE: { name: 'Interactive Brokers', category: 'Broker', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/interactivebrokers&output=png' },
-  TRADINGVIEW: { name: 'TradingView', category: 'Broker', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/tradingview&output=png' },
-
-  // === INDICES ===
-  SPX: { name: 'S&P 500', category: 'Index', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/spglobal&output=png' },
-  DJI: { name: 'Dow Jones', category: 'Index', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/dowjones&output=png' },
-  NASDAQ: { name: 'NASDAQ', category: 'Index', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/nasdaq&output=png' },
-  NYSE: { name: 'NYSE', category: 'Index', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/nyse&output=png' },
-  CME: { name: 'CME Group', category: 'Index', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/cmegroup&output=png' },
-
-  // === BANQUES MONDIALES ===
-  HSBC: { name: 'HSBC', category: 'Bank', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/hsbc&output=png' },
-  BARCLAYS: { name: 'Barclays', category: 'Bank', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/barclays&output=png' },
-  UBS: { name: 'UBS', category: 'Bank', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/ubs&output=png' },
-  CS: { name: 'Credit Suisse', category: 'Bank', logo: 'https://logo.clearbit.com/credit-suisse.com' },
-  DB: { name: 'Deutsche Bank', category: 'Bank', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/deutschebank&output=png' },
-  BNP: { name: 'BNP Paribas', category: 'Bank', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/bnpparibas&output=png' },
-  SANTANDER: { name: 'Santander', category: 'Bank', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/santander&output=png' },
-
-  // === PAIEMENTS ===
-  STRIPE: { name: 'Stripe', category: 'Payment', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/stripe&output=png' },
-  WISE: { name: 'Wise', category: 'Payment', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/wise&output=png' },
-  REVOLUT: { name: 'Revolut', category: 'Payment', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/revolut&output=png' },
-  N26: { name: 'N26', category: 'Payment', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/n26&output=png' },
-  VENMO: { name: 'Venmo', category: 'Payment', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/venmo&output=png' },
-  CASHAPP: { name: 'Cash App', category: 'Payment', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/cashapp&output=png' },
-
-  // === NEWS & MEDIAS ===
-  BLOOMBERG: { name: 'Bloomberg', category: 'News', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/bloomberg&output=png' },
-  REUTERS: { name: 'Reuters', category: 'News', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/reuters&output=png' },
-  CNBC: { name: 'CNBC', category: 'News', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/cnbc&output=png' },
-  WSJ: { name: 'Wall Street Journal', category: 'News', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/wsj&output=png' },
-  FT: { name: 'Financial Times', category: 'News', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/financialtimes&output=png' },
-  YAHOO: { name: 'Yahoo Finance', category: 'News', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/yahoo&output=png' },
-  COINDESK: { name: 'CoinDesk', category: 'News', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/coindesk&output=png' },
-  COINTELEGRAPH: { name: 'Cointelegraph', category: 'News', logo: 'https://wsrv.nl/?url=https://cdn.simpleicons.org/cointelegraph&output=png' },
-};
-
-// Fonction universelle pour obtenir un logo
-function getUniversalLogo(symbol: string): { name: string; logo: string; type: string } | null {
-  const upperSymbol = symbol.toUpperCase().replace(/[-_\s]/g, '');
-
-  // Chercher dans les cryptos
-  if (CRYPTO_LOGOS[upperSymbol]) {
-    const crypto = CRYPTO_LOGOS[upperSymbol];
-    return { name: crypto.name, logo: crypto.logo, type: 'crypto' };
-  }
-
-  // Chercher dans les entreprises
-  if (COMPANY_LOGOS[upperSymbol]) {
-    const company = COMPANY_LOGOS[upperSymbol];
-    return { name: company.name, logo: company.logo, type: 'company' };
-  }
-
-  // Chercher dans les logos divers
-  if (MISC_LOGOS[upperSymbol]) {
-    const misc = MISC_LOGOS[upperSymbol];
-    return { name: misc.name, logo: misc.logo, type: misc.category.toLowerCase() };
-  }
-
-  return null;
-}
-
-// Fonction pour construire une URL de logo Clearbit dynamique
-function buildClearbitLogoUrl(domain: string, size: number = 128): string {
-  return `https://logo.clearbit.com/${domain}?size=${size}`;
-}
-
-// Fonction pour obtenir le logo d'une crypto
-function getCryptoLogo(symbol: string): string | null {
-  const upperSymbol = symbol.toUpperCase().replace('-', '').replace('USDT', '').replace('USD', '').replace('PERP', '').replace('BMEX', '').replace('CME', '');
-  const crypto = CRYPTO_LOGOS[upperSymbol];
-  return crypto ? crypto.logo : null;
-}
-
-// Fonction pour obtenir toutes les infos d'une crypto
-function getCryptoInfo(symbol: string): { name: string; symbol: string; logo: string } | null {
-  const upperSymbol = symbol.toUpperCase().replace('-', '').replace('USDT', '').replace('USD', '').replace('PERP', '').replace('BMEX', '').replace('CME', '');
-  return CRYPTO_LOGOS[upperSymbol] || null;
-}
-
-// Fonction pour construire une URL de logo personnalisée
-function buildCryptoLogoUrl(name: string, symbol: string, format: 'png' | 'svg' = 'png'): string {
-  return `https://cryptologos.cc/logos/${name.toLowerCase()}-${symbol.toLowerCase()}-logo.${format}`;
-}
-
-// ============================================================================
-// NOUVELLES FONCTIONS UTILITAIRES POUR LES MINI-JEUX 🎮
-// ============================================================================
-
-// Séparateurs visuels pour le design
-const VISUAL_SEPARATORS = {
-  line: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-  dots: '• • • • • • • • • • • • • • •',
-  stars: '★ ☆ ★ ☆ ★ ☆ ★ ☆ ★ ☆ ★ ☆ ★ ☆ ★',
-  arrows: '➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤ ➤',
-  wave: '〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️',
-  sparkles: '✨ ✨ ✨ ✨ ✨ ✨ ✨ ✨ ✨ ✨',
-  fire: '🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥',
-  diamonds: '💎 💎 💎 💎 💎 💎 💎 💎 💎 💎',
-};
-
-// Badges visuels
-const VISUAL_BADGES = {
-  hot: '🔥 HOT',
-  new: '✨ NEW',
-  trending: '📈 TRENDING',
-  vip: '👑 VIP',
-  verified: '✅ VERIFIED',
-  premium: '💎 PREMIUM',
-  live: '🔴 LIVE',
-  beta: '🧪 BETA',
-};
-
-// 🎉 Animations de réussite
-const SUCCESS_ANIMATIONS = {
-  confetti: '🎉🎊✨🌟💫⭐🎉🎊✨🌟💫⭐',
-  fireworks: '🎆🎇✨💥🎆🎇✨💥🎆🎇✨💥',
-  trophy: '🏆🥇🎖️🏅👑🏆🥇🎖️🏅👑',
-  party: '🥳🎉🎈🎁🪅🎊🥳🎉🎈🎁',
-  stars: '⭐🌟✨💫⭐🌟✨💫⭐🌟✨💫',
-  hearts: '💚💙💜❤️🧡💛💚💙💜❤️',
-  money: '💰💵💎🤑💰💵💎🤑💰💵',
-  rocket: '🚀✨🌟💫🚀✨🌟💫🚀✨',
-};
-
-// ❌ Animations d'échec
-const FAILURE_ANIMATIONS = {
-  sad: '😢😭💔😿😞😢😭💔😿😞',
-  explosion: '💥💢❌🚫💥💢❌🚫💥💢',
-  skull: '💀☠️👻😵💀☠️👻😵💀☠️',
-  rain: '🌧️💧😢🌧️💧😢🌧️💧😢🌧️',
-  broken: '💔🔴❌⛔💔🔴❌⛔💔🔴',
-  warning: '⚠️🚨❗❌⚠️🚨❗❌⚠️🚨',
-};
-
-// Messages de confirmation
-const CONFIRMATION_MESSAGES = {
-  success: {
-    fr: [
-      '✅ **Bravo !** Vous avez réussi !',
-      '🎉 **Excellent !** C\'est la bonne réponse !',
-      '🏆 **Félicitations !** Vous êtes un champion !',
-      '⭐ **Parfait !** Continuez comme ça !',
-      '💪 **Impressionnant !** Quelle performance !',
-      '🚀 **Incroyable !** Vous êtes en feu !',
-    ],
-    en: [
-      '✅ **Great job!** You got it right!',
-      '🎉 **Excellent!** That\'s correct!',
-      '🏆 **Congratulations!** You\'re a champion!',
-    ],
-  },
-  failure: {
-    fr: [
-      '❌ **Dommage !** Ce n\'était pas la bonne réponse.',
-      '😢 **Raté !** Essayez encore !',
-      '💪 **Presque !** Vous y étiez presque !',
-      '🔄 **Pas grave !** Retentez votre chance !',
-      '📚 **Continuez !** L\'apprentissage c\'est la clé !',
-    ],
-    en: [
-      '❌ **Too bad!** That wasn\'t the right answer.',
-      '😢 **Missed!** Try again!',
-    ],
-  },
-  retry: {
-    fr: '🔄 **Réessayer ?** Cliquez sur le bouton ci-dessous !',
-    en: '🔄 **Try again?** Click the button below!',
-  },
-};
-
-// Fonction pour générer un message de confirmation
-function generateConfirmationMessage(type: 'success' | 'failure', lang: 'fr' | 'en' = 'fr'): string {
-  const messages = CONFIRMATION_MESSAGES[type][lang];
-  return messages[Math.floor(Math.random() * messages.length)];
-}
-
-// Fonction pour générer une animation
-function generateAnimation(type: 'success' | 'failure', style?: string): string {
-  if (type === 'success') {
-    const animations = SUCCESS_ANIMATIONS;
-    const key = style && style in animations ? style as keyof typeof animations : 'confetti';
-    return animations[key];
-  } else {
-    const animations = FAILURE_ANIMATIONS;
-    const key = style && style in animations ? style as keyof typeof animations : 'sad';
-    return animations[key];
-  }
-}
-
-// Fonction pour générer un résultat de jeu complet
-function generateGameResult(
-  isSuccess: boolean,
-  options: {
-    points?: number;
-    badge?: string;
-    correctAnswer?: string;
-    userAnswer?: string;
-    animationStyle?: string;
-    showRetry?: boolean;
-    lang?: 'fr' | 'en';
-  } = {}
-): string {
-  const lang = options.lang || 'fr';
-  const animation = generateAnimation(isSuccess ? 'success' : 'failure', options.animationStyle);
-  const message = generateConfirmationMessage(isSuccess ? 'success' : 'failure', lang);
-
-  let result = `${animation}\n\n${message}\n\n`;
-
-  if (isSuccess) {
-    if (options.points) {
-      result += `💰 **+${options.points} points** gagnés !\n`;
-    }
-    if (options.badge) {
-      result += `🏅 **Nouveau badge:** ${options.badge}\n`;
-    }
-  } else {
-    if (options.correctAnswer) {
-      result += `📝 **Bonne réponse:** ${options.correctAnswer}\n`;
-    }
-    if (options.userAnswer) {
-      result += `❌ **Votre réponse:** ${options.userAnswer}\n`;
-    }
-  }
-
-  if (options.showRetry) {
-    result += `\n${CONFIRMATION_MESSAGES.retry[lang]}`;
-  }
-
-  result += `\n${animation}`;
-
-  return result;
-}
-
-// Fonction pour générer un mini-jeu avec design amélioré
-function generateMinigame(game: any, gameId: string): string {
-  let gameText = '';
-  const separator = VISUAL_SEPARATORS.line;
-
-  switch (game.type) {
-    case 'quiz':
-      gameText = `${separator}
-╔══════════════════════════════╗
-║  🎮 **QUIZ #${gameId}**  ${VISUAL_BADGES.hot}
-╚══════════════════════════════╝
-
-❓ ${game.question}
-
-${game.options?.map((opt: string, i: number) => {
-  const letters = ['🅰️', '🅱️', '©️', '🇩'];
-  return `${letters[i] || `${String.fromCharCode(65 + i)}.`} ${opt}`;
-}).join('\n') || ''}
-
-${game.emoji ? `\n${game.emoji}` : ''}
-💡 *Cliquez sur un bouton pour répondre !*
-${game.rewards ? `\n🏆 **Récompense:** ${game.rewards.points} pts${game.rewards.badge ? ` + 🏅 ${game.rewards.badge}` : ''}` : ''}
-${separator}`;
-      break;
-
-    case 'emoji_reaction':
-      gameText = `${VISUAL_SEPARATORS.sparkles}
-🎯 **JEU D'EMOJIS #${gameId}**
-
-${game.question}
-
-${game.emoji ? `👉 Cliquez: ${game.emoji}` : '👆 Réagissez !'}
-
-${game.rewards ? `🎁 **+${game.rewards.points || 10} points**` : ''}
-${VISUAL_SEPARATORS.sparkles}`;
-      break;
-
-    case 'trivia':
-      gameText = `${VISUAL_SEPARATORS.stars}
-🧠 **TRIVIA #${gameId}** ${VISUAL_BADGES.trending}
-
-❓ ${game.question}
-
-💡 *Utilisez les boutons pour répondre*
-
-${game.rewards ? `🏆 **Récompense:** ${game.rewards.points} pts${game.rewards.badge ? `\n🏅 **Badge:** ${game.rewards.badge}` : ''}` : ''}
-${VISUAL_SEPARATORS.stars}`;
-      break;
-
-    case 'riddle':
-      gameText = `${VISUAL_SEPARATORS.diamonds}
-🔮 **ÉNIGME #${gameId}** ${VISUAL_BADGES.premium}
-
-🤔 *${game.question}*
-
-💭 Réfléchissez bien...
-⏱️ Prenez votre temps !
-
-🎁 **Bonne réponse = ${game.rewards?.points || 10} points**
-${VISUAL_SEPARATORS.diamonds}`;
-      break;
-
-    case 'puzzle':
-      gameText = `${VISUAL_SEPARATORS.fire}
-🧩 **PUZZLE #${gameId}** ${VISUAL_BADGES.new}
-
-${game.question}
-
-${game.emoji || '🎯'} *Résolvez le puzzle !*
-
-⚡ *Interagissez avec les boutons*
-${VISUAL_SEPARATORS.fire}`;
-      break;
-
-    default:
-      gameText = `🎮 Mini-jeu #${gameId}`;
-  }
-
-  return gameText;
-}
-
-// ============================================================================
 // NOUVELLES FONCTIONS UTILITAIRES POUR LES LIENS ADAPTATIFS 🔗
 // ============================================================================
 
@@ -2686,28 +1803,8 @@ server.addTool({
 });
 
 // 🔍 Outil universel pour obtenir une miniature (thumbnail) pour embed Discord
-server.addTool({
-  name: 'get_thumbnail',
-  description: '🖼️ Récupérer l\'URL de la MINIATURE (thumbnail) pour un embed Discord. Utilise quand tu mentionnes une entreprise/cryptomonnaie pour afficher son logo en haut à droite de l\'embed. Retourne uniquement l\'URL de l\'image.',
-  parameters: z.object({
-    symbol: z.string().describe('Symbole ou nom (BTC, ETH, AAPL, Apple, DISCORD, etc.)'),
-  }),
-  execute: async (args) => {
-    try {
-      const result = getUniversalLogo(args.symbol);
-
-      if (result) {
-        // Retourne uniquement l'URL pour l'embed
-        return result.logo;
-      }
-
-      // Si pas trouvé, retourne une chaîne vide
-      return '';
-    } catch (error: any) {
-      return '';
-    }
-  },
-});
+// NOTE: get_thumbnail est maintenant enregistré via registerLogosTools()
+// voir appel à la ligne ~4000
 
 // 🎮 Outil pour afficher un résultat de jeu avec animation
 server.addTool({
@@ -3027,321 +2124,21 @@ server.addTool({
   },
 });
 
-// 8. Créer Sondage - Version ULTRA simple sans composants
-server.addTool({
-  name: 'creer_sondage',
-  description: 'Crée un sondage simple avec embed et réactions (100% compatible Discord.js)',
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal où créer le sondage'),
-    question: z.string().min(5).max(500).describe('Question du sondage (5-500 caractères)'),
-    options: z.array(z.string()).min(2).max(10).describe('Options du sondage (2-10 options)'),
-    duration: z
-      .number()
-      .min(5)
-      .max(604800)
-      .optional()
-      .default(300)
-      .describe('Durée en secondes (min: 5s, max: 7j, défaut: 5m)'),
-    anonymous: z.boolean().optional().default(false).describe('Sondage anonyme'),
-  }),
-  execute: async args => {
-    try {
-      console.error(`🗳️ [creer_sondage] Question: ${args.question}, Options: ${args.options.length}`);
-      const client = await ensureDiscordConnection();
-      const channel = await client.channels.fetch(args.channelId);
+// 8. Créer Sondage - maintenant enregistré via registerPollsTools()
+// voir appel à la ligne ~4000
+// NOTE: formatDuration est maintenant définie dans registerPolls.ts
 
-      if (!channel || !('send' in channel)) {
-        throw new Error('Canal invalide ou inaccessible');
-      }
+// REMOVED: // 9. Créer Boutons Personnalisés
+// See register*Tools() functions
 
-      // Emojis pour les options
-      const emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
+// REMOVED: // 10. Créer Menu
+// See register*Tools() functions
 
-      // Créer l'embed simple
-      const embed = new EmbedBuilder()
-        .setTitle('📊 Sondage')
-        .setDescription(`**${args.question}**\n\n${args.options.map((opt, i) => `${emojis[i]} ${opt}`).join('\n')}`)
-        .setColor(0x5865f2)
-        .addFields(
-          { name: '⏱️ Durée', value: formatDuration(args.duration), inline: true },
-          { name: '👤 Mode', value: args.anonymous ? 'Anonyme' : 'Public', inline: true },
-          { name: '🔢 Votes', value: args.options.length + ' options', inline: true }
-        )
-        .setFooter({ text: 'Réagissez avec les emojis pour voter !' })
-        .setTimestamp();
+// REMOVED: // 11. Infos Serveur
+// See register*Tools() functions
 
-      // Envoyer le message SANS aucun composant
-      const message = await channel.send({ embeds: [embed] });
-
-      // Ajouter les réactions une par une
-      await message.react(emojis[0]);
-      if (args.options.length > 1) await message.react(emojis[1]);
-      if (args.options.length > 2) await message.react(emojis[2]);
-      if (args.options.length > 3) await message.react(emojis[3]);
-      if (args.options.length > 4) await message.react(emojis[4]);
-
-      const endTime = new Date(Date.now() + args.duration * 1000);
-      return `✅ Sondage créé | ID: ${message.id} | ${args.options.length} options | Fin: <t:${Math.floor(endTime.getTime() / 1000)}:R>`;
-    } catch (error: any) {
-      console.error(`❌ [creer_sondage]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// Fonction utilitaire pour formater la durée
-function formatDuration(seconds: number): string {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-
-  if (hours > 0) {
-    return `${hours}h${minutes > 0 ? ` ${minutes}m` : ''}${secs > 0 ? ` ${secs}s` : ''}`;
-  } else if (minutes > 0) {
-    return `${minutes}m${secs > 0 ? ` ${secs}s` : ''}`;
-  } else {
-    return `${secs}s`;
-  }
-}
-
-// 9. Créer Boutons Personnalisés
-server.addTool({
-  name: 'create_custom_buttons',
-  description: 'Crée des boutons personnalisés',
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal'),
-    content: z.string().describe('Contenu'),
-    buttons: z
-      .array(
-        z.object({
-          label: z.string(),
-          style: z.enum(['Primary', 'Secondary', 'Success', 'Danger']),
-          customId: z.string().optional(),
-          emoji: z.string().optional(),
-          action: z.object({
-            type: z.string().describe('Type d\'action'),
-            data: z.any().optional().describe('Données supplémentaires pour l\'action'),
-          }).optional().describe('Action à exécuter quand le bouton est cliqué'),
-        })
-      )
-      .min(1)
-      .max(5),
-  }),
-  execute: async args => {
-    try {
-      const client = await ensureDiscordConnection();
-      const channel = await client.channels.fetch(args.channelId);
-
-      if (!channel || !('send' in channel)) {
-        throw new Error('Canal invalide ou inaccessible');
-      }
-
-      // Importer la persistance des boutons
-      const { loadCustomButtons, addCustomButton } = await import('./utils/buttonPersistence.js');
-
-      const rows: ActionRowBuilder<any>[] = [];
-      let currentRow = new ActionRowBuilder<any>();
-      const now = new Date();
-      const savedButtons: string[] = [];
-
-      const styleMap = {
-        Primary: ButtonStyle.Primary,
-        Secondary: ButtonStyle.Secondary,
-        Success: ButtonStyle.Success,
-        Danger: ButtonStyle.Danger,
-      };
-
-      // Charger les boutons existants
-      const existingButtons = await loadCustomButtons();
-
-      args.buttons.forEach((btn, index) => {
-        if (index > 0 && index % 5 === 0) {
-          rows.push(currentRow);
-          currentRow = new ActionRowBuilder<any>();
-        }
-
-        // Générer un customId unique si non fourni
-        const customId = btn.customId || `btn_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`;
-
-        const button = new ButtonBuilder()
-          .setLabel(btn.label)
-          .setCustomId(customId)
-          .setStyle(styleMap[btn.style as keyof typeof styleMap]);
-
-        if (btn.emoji) button.setEmoji(btn.emoji);
-
-        // Sauvegarder le bouton dans le système de persistance
-        if (btn.action) {
-          const customButton: CustomButton = {
-            id: customId,
-            messageId: '', // Sera mis à jour après l'envoi
-            channelId: args.channelId,
-            label: btn.label,
-            action: {
-              type: btn.action.type || 'message',
-              data: btn.action.data || {}
-            },
-            createdAt: now,
-          };
-
-          addCustomButton(customButton, existingButtons);
-          savedButtons.push(customId);
-        }
-
-        currentRow.addComponents(button);
-      });
-
-      rows.push(currentRow);
-
-      const message = await channel.send({
-        content: args.content,
-        components: rows.map(row => row.toJSON()),
-      });
-
-      // Mettre à jour les IDs de message pour les boutons persistés
-      if (savedButtons.length > 0) {
-        const { saveCustomButtons } = await import('./utils/buttonPersistence.js');
-
-        // Mettre à jour les boutons avec le messageId
-        for (const buttonId of savedButtons) {
-          const button = existingButtons.get(buttonId);
-          if (button) {
-            button.messageId = message.id;
-          }
-        }
-
-        await saveCustomButtons(existingButtons);
-        Logger.info(`💾 ${savedButtons.length} boutons persistés pour le message ${message.id}`);
-      }
-
-      return `✅ Boutons créés | ID: ${message.id} | ${savedButtons.length > 0 ? `${savedButtons.length} persistés` : 'sans persistance'}`;
-    } catch (error: any) {
-      Logger.error('❌ [create_custom_buttons]', error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 10. Créer Menu
-server.addTool({
-  name: 'create_custom_menu',
-  description: 'Crée un menu déroulant',
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal'),
-    content: z.string().describe('Contenu'),
-    options: z
-      .array(
-        z.object({
-          label: z.string(),
-          value: z.string(),
-          description: z.string().optional(),
-        })
-      )
-      .min(1)
-      .max(25),
-  }),
-  execute: async args => {
-    try {
-      const client = await ensureDiscordConnection();
-      const channel = await client.channels.fetch(args.channelId);
-
-      if (!channel || !('send' in channel)) {
-        throw new Error('Canal invalide ou inaccessible');
-      }
-
-      const menu = new StringSelectMenuBuilder()
-        .setCustomId(`menu_${Date.now()}`)
-        .setPlaceholder('Sélectionnez une option...');
-
-      args.options.forEach(opt => {
-        const menuOption = new StringSelectMenuOptionBuilder()
-          .setLabel(opt.label)
-          .setValue(opt.value);
-
-        if (opt.description) {
-          menuOption.setDescription(opt.description);
-        }
-
-        menu.addOptions(menuOption);
-      });
-
-      const row = new ActionRowBuilder();
-      row.addComponents(menu);
-
-      const message = await channel.send({
-        content: args.content,
-        components: [row.toJSON()],
-      });
-
-      return `✅ Menu créé | ID: ${message.id}`;
-    } catch (error: any) {
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 11. Infos Serveur
-server.addTool({
-  name: 'get_server_info',
-  description: 'Informations détaillées du serveur',
-  parameters: z.object({
-    guildId: z.string().optional().describe('ID du serveur'),
-  }),
-  execute: async args => {
-    try {
-      const client = await ensureDiscordConnection();
-      const guildId = args.guildId || client.guilds.cache.first()?.id;
-
-      if (!guildId) {
-        throw new Error('Aucun serveur disponible');
-      }
-
-      const guild = await client.guilds.fetch(guildId);
-      return `📊 ${guild.name} | Members: ${guild.memberCount} | Channels: ${guild.channels.cache.size} | Roles: ${guild.roles.cache.size}`;
-    } catch (error: any) {
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 12. Lister Canaux
-server.addTool({
-  name: 'get_channels',
-  description: 'Liste tous les canaux',
-  parameters: z.object({
-    guildId: z.string().optional().describe('ID du serveur'),
-    type: z.string().optional().describe('Type de canal'),
-  }),
-  execute: async args => {
-    try {
-      const client = await ensureDiscordConnection();
-      const guildId = args.guildId || client.guilds.cache.first()?.id;
-
-      if (!guildId) {
-        throw new Error('Aucun serveur disponible');
-      }
-
-      const guild = await client.guilds.fetch(guildId);
-      const channels = await guild.channels.fetch();
-
-      let filtered = channels;
-      if (args.type) {
-        filtered = channels.filter(ch =>
-          ch?.name?.toLowerCase().includes(args.type!.toLowerCase())
-        );
-      }
-
-      const list = Array.from(filtered.values())
-        .filter(ch => ch !== null)
-        .map(ch => `#${ch!.name} (${ch!.id})`)
-        .join('\n');
-
-      return `📋 ${filtered.size} canaux:\n${list}`;
-    } catch (error: any) {
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
+// REMOVED: // 12. Lister Canaux
+// See register*Tools() functions
 
 // 13. Code Preview - Version améliorée
 server.addTool({
@@ -3459,851 +2256,59 @@ server.addTool({
   },
 });
 
-// 15. Lister Membres
-server.addTool({
-  name: 'list_members',
-  description: "Liste les membres et leurs rôles d'un serveur",
-  parameters: z.object({
-    guildId: z.string().optional().describe('ID du serveur (défaut: premier serveur)'),
-    limit: z.number().min(1).max(100).default(50).describe('Nombre maximum de membres'),
-  }),
-  execute: async args => {
-    try {
-      console.error(`👥 [list_members] Guild: ${args.guildId || 'auto'}, Limit: ${args.limit}`);
-      const client = await ensureDiscordConnection();
-      const guildId = args.guildId || client.guilds.cache.first()?.id;
+// REMOVED: // 15. Lister Membres
+// See register*Tools() functions
 
-      if (!guildId) {
-        throw new Error('Aucun serveur disponible');
-      }
+// REMOVED: // 16. Obtenir Info Utilisateur
+// See register*Tools() functions
 
-      const guild = await client.guilds.fetch(guildId);
-      const members = await guild.members.fetch({ limit: args.limit });
+// REMOVED: // 17. Créer Webhook
+// See register*Tools() functions
 
-      const list = Array.from(members.values())
-        .slice(0, args.limit)
-        .map(m => `• ${m.user.username} (${m.roles.cache.size} rôles)`)
-        .join('\n');
+// REMOVED: // 16. Lister Webhooks
+// See register*Tools() functions
 
-      return `👥 ${members.size} membres:\n${list}`;
-    } catch (error: any) {
-      console.error(`❌ [list_members]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
+// REMOVED: // 17. Envoyer via Webhook
+// See register*Tools() functions
 
-// 16. Obtenir Info Utilisateur
-server.addTool({
-  name: 'get_user_info',
-  description: 'Obtenir des informations détaillées sur un utilisateur',
-  parameters: z.object({
-    userId: z.string().describe("ID de l'utilisateur"),
-    guildId: z.string().optional().describe('ID du serveur pour les informations de membre'),
-  }),
-  execute: async args => {
-    try {
-      console.error(`👤 [get_user_info] User: ${args.userId}`);
-      const client = await ensureDiscordConnection();
-      const user = await client.users.fetch(args.userId);
+// REMOVED: // 18. Voter Sondage - Version refactorisée
+// See register*Tools() functions
 
-      let memberInfo = '';
-      if (args.guildId) {
-        try {
-          const guild = await client.guilds.fetch(args.guildId);
-          const member = await guild.members.fetch(args.userId);
-          memberInfo = `\n📊 **Membre du serveur:**\n• Rôles: ${member.roles.cache.size}\n• Surnom: ${member.nickname || 'Aucun'}\n• Rejoins: ${new Date(member.joinedAt!).toLocaleDateString()}`;
-        } catch (e) {
-          memberInfo = '\n⚠️ Membre non trouvé sur ce serveur';
-        }
-      }
+// REMOVED: // 19. Appuyer Bouton - Version refactorisée
+// See register*Tools() functions
 
-      return `👤 **Utilisateur:** ${user.username}#${user.discriminator}\n🆔 ID: ${user.id}\n📅 Créé le: ${new Date(user.createdAt).toLocaleDateString()}${memberInfo}`;
-    } catch (error: any) {
-      console.error(`❌ [get_user_info]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
+// REMOVED: // 20. Sélectionner Menu - Version refactorisée
+// See register*Tools() functions
 
-// 17. Créer Webhook
-server.addTool({
-  name: 'create_webhook',
-  description: 'Crée un webhook sur un canal',
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal où créer le webhook'),
-    name: z.string().describe('Nom du webhook'),
-    avatarUrl: z.string().optional().describe("URL de l'avatar du webhook"),
-  }),
-  execute: async args => {
-    try {
-      console.error(`🪝 [create_webhook] Canal: ${args.channelId}, Nom: ${args.name}`);
-      const client = await ensureDiscordConnection();
-      const channel = await client.channels.fetch(args.channelId);
+// REMOVED: // 22. Lister les boutons personnalisés actifs
+// See register*Tools() functions
 
-      if (!channel || !('createWebhook' in channel)) {
-        throw new Error('Canal invalide ou ne supporte pas les webhooks');
-      }
+// REMOVED: // 23. Supprimer un bouton personnalisé
+// See register*Tools() functions
 
-      const webhook = await channel.createWebhook({
-        name: args.name,
-        avatar: args.avatarUrl,
-      });
+// REMOVED: // 24. Nettoyer les anciens boutons
+// See register*Tools() functions
 
-      return `✅ Webhook créé | Nom: ${webhook.name} | ID: ${webhook.id}`;
-    } catch (error: any) {
-      console.error(`❌ [create_webhook]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
+// REMOVED: // 25. Enregistrer une fonction personnalisée pour un bouton
+// See register*Tools() functions
 
-// 16. Lister Webhooks
-server.addTool({
-  name: 'list_webhooks',
-  description: "Liste tous les webhooks d'un canal",
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal'),
-  }),
-  execute: async args => {
-    try {
-      console.error(`📋 [list_webhooks] Canal: ${args.channelId}`);
-      const client = await ensureDiscordConnection();
-      const channel = await client.channels.fetch(args.channelId);
+// REMOVED: // 26. Créer un bouton avec fonction personnalisée
+// See register*Tools() functions
 
-      if (!channel || !('fetchWebhooks' in channel)) {
-        throw new Error('Canal invalide');
-      }
+// REMOVED: // 27. Lister les fonctions de boutons enregistrées
+// See register*Tools() functions
 
-      const webhooks = await channel.fetchWebhooks();
-      const list = Array.from(webhooks.values())
-        .map(w => `• ${w.name} (${w.id})`)
-        .join('\n');
+// REMOVED: // 28. Créer un menu déroulant persistant
+// See register*Tools() functions
 
-      return `📋 ${webhooks.size} webhook(s):\n${list}`;
-    } catch (error: any) {
-      console.error(`❌ [list_webhooks]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
+// REMOVED: // 29. Lister les menus persistants actifs
+// See register*Tools() functions
 
-// 17. Envoyer via Webhook
-server.addTool({
-  name: 'send_webhook',
-  description: 'Envoie un message via webhook',
-  parameters: z.object({
-    webhookId: z.string().describe('ID du webhook'),
-    webhookToken: z.string().describe('Token du webhook'),
-    content: z.string().optional().describe('Contenu du message'),
-    username: z.string().optional().describe("Nom d'utilisateur personnalisé"),
-    avatarUrl: z.string().optional().describe("URL de l'avatar personnalisé"),
-  }),
-  execute: async args => {
-    try {
-      console.error(`📤 [send_webhook] Webhook: ${args.webhookId}`);
-      const client = await ensureDiscordConnection();
+// REMOVED: // 30. Créer un sondage avec boutons persistants
+// See register*Tools() functions
 
-      const webhook = await client.fetchWebhook(args.webhookId, args.webhookToken);
-
-      const message = await webhook.send({
-        content: args.content,
-        username: args.username,
-        avatarURL: args.avatarUrl,
-      });
-
-      return `✅ Message envoyé via webhook | ID: ${message.id}`;
-    } catch (error: any) {
-      console.error(`❌ [send_webhook]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 18. Voter Sondage - Version refactorisée
-server.addTool({
-  name: 'vote_sondage',
-  description: 'Vote dans un sondage interactif',
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal où voter'),
-    messageId: z.string().describe('ID du message du sondage'),
-    optionIndex: z.number().min(0).describe("Index de l'option à voter"),
-    userId: z.string().optional().describe("ID de l'utilisateur (défaut: bot)"),
-  }),
-  execute: async args => {
-    try {
-      console.error(`🗳️ [vote_sondage] Message: ${args.messageId}, Option: ${args.optionIndex}`);
-      const client = await ensureDiscordConnection();
-      const channel = await client.channels.fetch(args.channelId);
-
-      if (!channel || !('messages' in channel)) {
-        throw new Error('Canal invalide');
-      }
-
-      const message = await channel.messages.fetch(args.messageId);
-
-      // Vérifier que c'est un sondage créé par le bot
-      if (!message.author.bot || !message.components.length) {
-        return `❌ Ce message n'est pas un sondage valide`;
-      }
-
-      const buttons = message.components
-        .flatMap((row: any) => row.components)
-        .filter((c: any) => c.type === 2);
-
-      if (args.optionIndex >= buttons.length) {
-        return `❌ Index d'option invalide. Max: ${buttons.length - 1}`;
-      }
-
-      const button = buttons[args.optionIndex];
-
-      // Récupérer l'emoji du bouton pour voter
-      const emoji = button.emoji || button.label || `Option ${args.optionIndex}`;
-
-      // Ajouter une réaction emoji pour simuler le vote
-      await message.react(emoji);
-
-      // Envoyer un message confirmant le vote
-      const voterMention = args.userId ? `<@${args.userId}>` : 'le bot';
-      if ('send' in channel) {
-        await channel.send({
-          content: `✅ ${voterMention} a voté pour: **${button.label}**`,
-          embeds: [],
-        });
-      }
-
-      return `✅ Vote enregistré pour l'option ${args.optionIndex} (${button.label})`;
-    } catch (error: any) {
-      console.error(`❌ [vote_sondage]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 19. Appuyer Bouton - Version refactorisée
-server.addTool({
-  name: 'appuyer_bouton',
-  description: 'Appuie sur un bouton personnalisé',
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal'),
-    messageId: z.string().describe('ID du message'),
-    buttonCustomId: z.string().describe('Custom ID du bouton'),
-  }),
-  execute: async args => {
-    try {
-      console.error(
-        `🔘 [appuyer_bouton] Message: ${args.messageId}, Button: ${args.buttonCustomId}`
-      );
-      const client = await ensureDiscordConnection();
-      const channel = await client.channels.fetch(args.channelId);
-
-      if (!channel || !('messages' in channel)) {
-        throw new Error('Canal invalide');
-      }
-
-      const message = await channel.messages.fetch(args.messageId);
-
-      // Vérifier que le message a des composants
-      if (!message.components || !message.components.length) {
-        return `❌ Ce message n'a pas de boutons`;
-      }
-
-      const buttons = message.components
-        .flatMap((row: any) => row.components)
-        .filter((c: any) => c.type === 2);
-
-      const button = buttons.find((b: any) => b.customId === args.buttonCustomId);
-
-      if (!button) {
-        return `❌ Bouton non trouvé (Custom ID: ${args.buttonCustomId})`;
-      }
-
-      // Simuler l'appui sur le bouton en ajoutant une réaction
-      const reactionEmoji = button.emoji || '✅';
-      await message.react(reactionEmoji);
-
-      // Envoyer un message confirmant l'action
-      if ('send' in channel) {
-        await channel.send({
-          content: `🔘 Bouton actionné: **${button.label}** (${args.buttonCustomId})`,
-          embeds: [],
-        });
-      }
-
-      return `✅ Bouton actionné: ${args.buttonCustomId} (${button.label})`;
-    } catch (error: any) {
-      console.error(`❌ [appuyer_bouton]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 20. Sélectionner Menu - Version refactorisée
-server.addTool({
-  name: 'selectionner_menu',
-  description: 'Sélectionne une option dans un menu déroulant',
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal'),
-    messageId: z.string().describe('ID du message'),
-    menuCustomId: z.string().describe('Custom ID du menu'),
-    value: z.string().describe('Valeur à sélectionner'),
-  }),
-  execute: async args => {
-    try {
-      console.error(
-        `📋 [selectionner_menu] Message: ${args.messageId}, Menu: ${args.menuCustomId}, Value: ${args.value}`
-      );
-      const client = await ensureDiscordConnection();
-      const channel = await client.channels.fetch(args.channelId);
-
-      if (!channel || !('messages' in channel)) {
-        throw new Error('Canal invalide');
-      }
-
-      const message = await channel.messages.fetch(args.messageId);
-
-      // Vérifier que le message a des composants
-      if (!message.components || !message.components.length) {
-        return `❌ Ce message n'a pas de menu déroulant`;
-      }
-
-      const menus = message.components
-        .flatMap((row: any) => row.components)
-        .filter((c: any) => c.type === 3);
-
-      const menu = menus.find((m: any) => m.customId === args.menuCustomId);
-
-      if (!menu) {
-        return `❌ Menu non trouvé (Custom ID: ${args.menuCustomId}). Menus disponibles: ${menus.map((m: any) => m.customId).join(', ')}`;
-      }
-
-      // Trouver l'option sélectionnée
-      const selectedOption = menu.options.find((opt: any) => opt.value === args.value);
-
-      if (!selectedOption) {
-        return `❌ Option non trouvée (${args.value}). Options disponibles: ${menu.options.map((opt: any) => opt.value).join(', ')}`;
-      }
-
-      // Simuler la sélection en ajoutant une réaction
-      await message.react('📋');
-
-      // Envoyer un message confirmant la sélection
-      if ('send' in channel) {
-        await channel.send({
-          content: `📋 Menu sélectionné: **${selectedOption.label}** (valeur: ${args.value})`,
-          embeds: [],
-        });
-      }
-
-      return `✅ Sélection effectuée: ${args.value} (${selectedOption.label})`;
-    } catch (error: any) {
-      console.error(`❌ [selectionner_menu]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 22. Lister les boutons personnalisés actifs
-server.addTool({
-  name: 'lister_boutons_actifs',
-  description: 'Liste tous les boutons personnalisés actifs avec leur état',
-  parameters: z.object({
-    channelId: z.string().optional().describe('Filtrer par canal spécifique'),
-  }),
-  execute: async args => {
-    try {
-      const { loadCustomButtons } = await import('./utils/buttonPersistence.js');
-      const buttons = await loadCustomButtons();
-
-      let filteredButtons = Array.from(buttons.values());
-
-      // Filtrer par canal si spécifié
-      if (args.channelId) {
-        filteredButtons = filteredButtons.filter(btn => btn.channelId === args.channelId);
-      }
-
-      if (filteredButtons.length === 0) {
-        return `📋 Aucun bouton actif${args.channelId ? ` dans le canal ${args.channelId}` : ''}`;
-      }
-
-      const now = new Date();
-      const list = filteredButtons.map(button => {
-        const createdAt = new Date(button.createdAt);
-        const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
-        const status = hoursDiff > 24 ? '⏰ Expiré' : '✅ Actif';
-        const age = Math.floor(hoursDiff);
-
-        return `
-• **${button.label}** (${status})
-  🆔 ID: ${button.id}
-  💬 Canal: ${button.channelId}
-  📨 Message: ${button.messageId || 'Non envoyé'}
-  ⏱️ Âge: ${age}h
-  🔧 Action: ${button.action.type}
-  📊 Données: ${JSON.stringify(button.action.data || {})}
-        `.trim();
-      }).join('\n\n');
-
-      return `📋 ${filteredButtons.length} bouton(s) trouvé(s):\n\n${list}`;
-    } catch (error: any) {
-      Logger.error('❌ [lister_boutons_actifs]', error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 23. Supprimer un bouton personnalisé
-server.addTool({
-  name: 'supprimer_bouton_perso',
-  description: 'Supprime un bouton personnalisé du système de persistance',
-  parameters: z.object({
-    buttonId: z.string().describe('ID du bouton à supprimer'),
-  }),
-  execute: async args => {
-    try {
-      const { loadCustomButtons, deleteCustomButton } = await import('./utils/buttonPersistence.js');
-      const buttons = await loadCustomButtons();
-
-      const button = buttons.get(args.buttonId);
-      if (!button) {
-        return `❌ Bouton non trouvé: ${args.buttonId}`;
-      }
-
-      await deleteCustomButton(args.buttonId, buttons);
-
-      return `✅ Bouton supprimé: ${button.label} (${args.buttonId})`;
-    } catch (error: any) {
-      Logger.error('❌ [supprimer_bouton_perso]', error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 24. Nettoyer les anciens boutons
-server.addTool({
-  name: 'nettoyer_anciens_boutons',
-  description: 'Supprime tous les boutons de plus de 24h',
-  parameters: z.object({}),
-  execute: async () => {
-    try {
-      const { loadCustomButtons, cleanOldButtons } = await import('./utils/buttonPersistence.js');
-      const buttons = await loadCustomButtons();
-
-      const deletedCount = await cleanOldButtons(buttons);
-
-      return `🧹 Nettoyage terminé. ${deletedCount} ancien(s) bouton(s) supprimé(s)`;
-    } catch (error: any) {
-      Logger.error('❌ [nettoyer_anciens_boutons]', error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 25. Enregistrer une fonction personnalisée pour un bouton
-server.addTool({
-  name: 'enregistrer_fonction_bouton',
-  description: 'Enregistre une fonction personnalisée qui sera exécutée quand un bouton est cliqué',
-  parameters: z.object({
-    buttonId: z.string().describe('ID du bouton (customId)'),
-    code: z.string().describe('Code JavaScript de la fonction (async)'),
-    description: z.string().optional().describe('Description de la fonction'),
-  }),
-  execute: async args => {
-    try {
-      // Créer une fonction à partir du code
-      const func = async (interaction: any, buttonData: any) => {
-        const { EmbedBuilder, ButtonStyle, ActionRowBuilder, ButtonBuilder } = require('discord.js');
-        eval(`(async () => { ${args.code} })()`);
-      };
-
-      // Importer le registre de fonctions
-      const { registerButtonFunction } = await import('./discord-bridge.js');
-
-      // Enregistrer la fonction
-      registerButtonFunction(args.buttonId, func);
-
-      Logger.info(`✅ Fonction enregistrée pour le bouton: ${args.buttonId}`);
-      return `✅ Fonction enregistrée avec succès pour le bouton ${args.buttonId}${args.description ? `\nDescription: ${args.description}` : ''}`;
-    } catch (error: any) {
-      Logger.error('❌ [enregistrer_fonction_bouton]', error.message);
-      return `❌ Erreur lors de l'enregistrement: ${error.message}`;
-    }
-  },
-});
-
-// 26. Créer un bouton avec fonction personnalisée
-server.addTool({
-  name: 'creer_bouton_avance',
-  description: 'Crée un bouton avec une fonction personnalisée complexe',
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal'),
-    content: z.string().describe('Contenu du message'),
-    buttonLabel: z.string().describe('Texte du bouton'),
-    buttonStyle: z.enum(['Primary', 'Secondary', 'Success', 'Danger']).default('Primary'),
-    buttonId: z.string().optional().describe('ID du bouton (généré si non fourni)'),
-    functionCode: z.string().describe('Code JavaScript à exécuter lors du clic'),
-    ephemeral: z.boolean().optional().default(false).describe('Réponse éphémère'),
-  }),
-  execute: async args => {
-    try {
-      const client = await ensureDiscordConnection();
-      const channel = await client.channels.fetch(args.channelId);
-
-      if (!channel || !('send' in channel)) {
-        throw new Error('Canal invalide ou inaccessible');
-      }
-
-      // Générer un ID unique si non fourni
-      const buttonId = args.buttonId || `btn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-      // Créer la fonction personnalisée
-      const func = async (interaction: any, buttonData: any) => {
-        const { EmbedBuilder, ButtonStyle, ActionRowBuilder, ButtonBuilder } = require('discord.js');
-        eval(`(async () => { ${args.functionCode} })()`);
-      };
-
-      // Importer le registre de fonctions
-      const { registerButtonFunction } = await import('./discord-bridge.js');
-
-      // Enregistrer la fonction
-      registerButtonFunction(buttonId, func);
-
-      // Créer le bouton
-      const styleMap = {
-        Primary: 1, // ButtonStyle.Primary
-        Secondary: 2, // ButtonStyle.Secondary
-        Success: 3, // ButtonStyle.Success
-        Danger: 4, // ButtonStyle.Danger
-      };
-
-      const button = new ButtonBuilder()
-        .setLabel(args.buttonLabel)
-        .setCustomId(buttonId)
-        .setStyle(styleMap[args.buttonStyle as keyof typeof styleMap]);
-
-      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
-
-      // Envoyer le message
-      const message = await channel.send({
-        content: args.content,
-        components: [row],
-      });
-
-      // Persister le bouton
-      try {
-        const { loadCustomButtons, addCustomButton } = await import('./utils/buttonPersistence.js');
-        const buttons = await loadCustomButtons();
-        await addCustomButton({
-            id: buttonId,
-            messageId: message.id,
-            channelId: args.channelId,
-            label: args.buttonLabel,
-            action: { type: 'custom', data: {} },
-            functionCode: args.functionCode,
-            createdAt: new Date()
-        }, buttons);
-        Logger.info(`💾 Bouton avancé persisté: ${buttonId}`);
-      } catch (err) {
-        Logger.error('❌ Erreur persistance bouton:', err);
-      }
-
-      Logger.info(`✅ Bouton avancé créé: ${buttonId} - Message: ${message.id}`);
-      return `✅ Bouton avancé créé | ID: ${message.id} | Bouton: ${buttonId}`;
-    } catch (error: any) {
-      Logger.error('❌ [creer_bouton_avance]', error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 27. Lister les fonctions de boutons enregistrées
-server.addTool({
-  name: 'lister_fonctions_boutons',
-  description: 'Liste toutes les fonctions personnalisées enregistrées',
-  parameters: z.object({}),
-  execute: async () => {
-    try {
-      const { listButtonFunctions } = await import('./discord-bridge.js');
-      const functions = listButtonFunctions();
-
-      if (functions.length === 0) {
-        return '📋 Aucune fonction personnalisée enregistrée';
-      }
-
-      return `📋 ${functions.length} fonction(s) personnalisée(s) enregistrées:\n\n${functions.map(f => `• ${f}`).join('\n')}`;
-    } catch (error: any) {
-      Logger.error('❌ [lister_fonctions_boutons]', error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 28. Créer un menu déroulant persistant
-server.addTool({
-  name: 'creer_menu_persistant',
-  description: 'Crée un menu déroulant persistant avec actions personnalisées',
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal'),
-    content: z.string().describe('Contenu du message'),
-    placeholder: z.string().optional().describe('Texte placeholder du menu'),
-    minValues: z.number().min(0).max(25).optional().default(1).describe('Nombre minimum de sélections'),
-    maxValues: z.number().min(1).max(25).optional().default(1).describe('Nombre maximum de sélections'),
-    options: z.array(z.object({
-      label: z.string().min(1).max(100),
-      value: z.string().min(1).max(100),
-      description: z.string().max(100).optional(),
-      emoji: z.string().optional(),
-    })).min(1).max(25).describe('Options du menu'),
-    action: z.object({
-      type: z.enum(['message', 'embed', 'role', 'webhook', 'custom']),
-      data: z.any().optional().describe('Données pour l\'action'),
-    }).describe('Action à exécuter lors de la sélection'),
-    menuId: z.string().optional().describe('ID du menu (généré si non fourni)'),
-  }),
-  execute: async args => {
-    try {
-      const client = await ensureDiscordConnection();
-      const channel = await client.channels.fetch(args.channelId);
-
-      if (!channel || !('send' in channel)) {
-        throw new Error('Canal invalide ou inaccessible');
-      }
-
-      // Importer la persistance des menus
-      const { loadCustomMenus, addCustomMenu } = await import('./utils/menuPersistence.js');
-
-      const menuId = args.menuId || `menu_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const customId = `select_${menuId}`;
-
-      // Créer le menu déroulant
-      const menu = new StringSelectMenuBuilder()
-        .setCustomId(customId)
-        .setPlaceholder(args.placeholder || 'Sélectionnez une option...')
-        .setMinValues(args.minValues)
-        .setMaxValues(args.maxValues);
-
-      // Ajouter les options
-      args.options.forEach(opt => {
-        const option = new StringSelectMenuOptionBuilder()
-          .setLabel(opt.label)
-          .setValue(opt.value);
-
-        if (opt.description) option.setDescription(opt.description);
-        if (opt.emoji) option.setEmoji(opt.emoji);
-
-        menu.addOptions(option);
-      });
-
-      const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu);
-
-      // Envoyer le message
-      const message = await channel.send({
-        content: args.content,
-        components: [row],
-      });
-
-      // Sauvegarder le menu dans le système de persistance
-      const existingMenus = await loadCustomMenus();
-      const customMenu: CustomMenu = {
-        id: menuId,
-        messageId: message.id,
-        channelId: args.channelId,
-        customId,
-        placeholder: args.placeholder || 'Sélectionnez une option...',
-        minValues: args.minValues,
-        maxValues: args.maxValues,
-        options: args.options as any,
-        action: {
-          type: args.action.type,
-          data: args.action.data || {},
-        },
-        multipleSelections: args.maxValues > 1,
-        createdAt: new Date(),
-        creatorId: 'SYSTEM',
-        isActive: true,
-      };
-
-      await addCustomMenu(customMenu, existingMenus);
-
-      Logger.info(`✅ Menu persistant créé: ${menuId} - Message: ${message.id}`);
-      return `✅ Menu persistant créé | ID: ${message.id} | Menu: ${menuId} | Options: ${args.options.length}`;
-    } catch (error: any) {
-      Logger.error('❌ [creer_menu_persistant]', error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 29. Lister les menus persistants actifs
-server.addTool({
-  name: 'lister_menus_actifs',
-  description: 'Liste tous les menus déroulants persistants avec leur état',
-  parameters: z.object({
-    channelId: z.string().optional().describe('Filtrer par canal spécifique'),
-  }),
-  execute: async args => {
-    try {
-      const { loadCustomMenus } = await import('./utils/menuPersistence.js');
-      const menus = await loadCustomMenus();
-
-      let filteredMenus = Array.from(menus.values());
-
-      // Filtrer par canal si spécifié
-      if (args.channelId) {
-        filteredMenus = filteredMenus.filter(menu => menu.channelId === args.channelId);
-      }
-
-      if (filteredMenus.length === 0) {
-        return `📋 Aucun menu actif${args.channelId ? ` dans le canal ${args.channelId}` : ''}`;
-      }
-
-      const now = new Date();
-      const list = filteredMenus.map(menu => {
-        const createdAt = new Date(menu.createdAt);
-        const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
-        const status = !menu.isActive ? '❌ Inactif' : hoursDiff > 24 ? '⏰ Expiré' : '✅ Actif';
-        const age = Math.floor(hoursDiff);
-
-        return `
-• **${menu.placeholder}** (${status})
-  🆔 ID: ${menu.id}
-  🎯 CustomId: ${menu.customId}
-  💬 Canal: ${menu.channelId}
-  📨 Message: ${menu.messageId || 'Non envoyé'}
-  ⏱️ Âge: ${age}h
-  🔧 Action: ${menu.action.type}
-  📊 Options: ${menu.options.length} (sélection${menu.maxValues > 1 ? 's' : ''}: ${menu.minValues}-${menu.maxValues})
-        `.trim();
-      }).join('\n\n');
-
-      return `📋 ${filteredMenus.length} menu(s) trouvé(s):\n\n${list}`;
-    } catch (error: any) {
-      Logger.error('❌ [lister_menus_actifs]', error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 30. Créer un sondage avec boutons persistants
-server.addTool({
-  name: 'creer_sondage_boutons',
-  description: 'Crée un sondage interactif avec boutons qui persistent',
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal'),
-    question: z.string().min(5).max(500).describe('Question du sondage'),
-    options: z.array(z.string()).min(2).max(5).describe('Options du sondage'),
-    duration: z.number().min(60).max(604800).optional().default(3600).describe('Durée en secondes (min: 1min, max: 7j)'),
-    allowMultiple: z.boolean().optional().default(false).describe('Autoriser plusieurs votes'),
-  }),
-  execute: async args => {
-    try {
-      const client = await ensureDiscordConnection();
-      const channel = await client.channels.fetch(args.channelId);
-
-      if (!channel || !('send' in channel)) {
-        throw new Error('Canal invalide ou inaccessible');
-      }
-
-      const pollId = `poll_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-      // Créer l'embed du sondage
-      const embed = new EmbedBuilder()
-        .setTitle('📊 Sondage Interactif')
-        .setDescription(`**${args.question}**\n\n${args.options.map((opt, i) => `${i + 1}. ${opt}`).join('\n')}`)
-        .setColor(0x5865f2)
-        .addFields(
-          { name: '⏱️ Durée', value: `${Math.floor(args.duration / 60)} minutes`, inline: true },
-          { name: '🔢 Votes multiples', value: args.allowMultiple ? 'Oui' : 'Non', inline: true },
-          { name: '📊 Statut', value: 'En cours', inline: true }
-        )
-        .setFooter({ text: `ID: ${pollId}` })
-        .setTimestamp();
-
-      // Créer les boutons pour voter
-      const rows: ActionRowBuilder<ButtonBuilder>[] = [];
-      let currentRow = new ActionRowBuilder<ButtonBuilder>();
-
-      args.options.forEach((option, index) => {
-        const button = new ButtonBuilder()
-          .setLabel(`${index + 1}. ${option}`)
-          .setCustomId(`vote_${pollId}_${index}`)
-          .setStyle(index % 2 === 0 ? ButtonStyle.Primary : ButtonStyle.Secondary);
-
-        currentRow.addComponents(button);
-
-        // Maximum 5 boutons par rangée
-        if (currentRow.components.length >= 5) {
-          rows.push(currentRow);
-          currentRow = new ActionRowBuilder<ButtonBuilder>();
-        }
-      });
-
-      if (currentRow.components.length > 0) {
-        rows.push(currentRow);
-      }
-
-      // Ajouter un bouton pour voir les résultats
-      const resultsRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder()
-          .setLabel('📊 Voir les résultats')
-          .setCustomId(`results_${pollId}`)
-          .setStyle(ButtonStyle.Success)
-      );
-
-      rows.push(resultsRow);
-
-      // Envoyer le sondage
-      const message = await channel.send({
-        embeds: [embed],
-        components: rows,
-      });
-
-      // Sauvegarder le sondage dans le système de persistance
-      const { loadPolls, addPoll } = await import('./utils/pollPersistence.js');
-      const existingPolls = await loadPolls();
-
-      const pollData = {
-        id: pollId,
-        messageId: message.id,
-        channelId: args.channelId,
-        question: args.question,
-        options: args.options.map(option => ({
-          text: option,
-          votes: 0,
-          percentage: 0,
-        })),
-        totalVotes: 0,
-        ended: false,
-        endTime: new Date(Date.now() + args.duration * 1000),
-        allowMultiple: args.allowMultiple,
-        anonymous: false,
-      };
-
-      await addPoll(pollData as any, existingPolls);
-
-      Logger.info(`✅ Sondage avec boutons créé: ${pollId} - Message: ${message.id}`);
-      return `✅ Sondage créé | ID: ${message.id} | Sondage: ${pollId} | Durée: ${Math.floor(args.duration / 60)}min`;
-    } catch (error: any) {
-      Logger.error('❌ [creer_sondage_boutons]', error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 21. Statut Bot avec rate limiting
-server.addTool({
-  name: 'statut_bot',
-  description: 'Statut actuel du bot',
-  parameters: z.object({}),
-  execute: withRateLimit('statut_bot', async () => {
-    try {
-      const client = await ensureDiscordConnection();
-      return `🤖 Status: Connecté\nUser: ${client.user!.tag}\nGuilds: ${client.guilds.cache.size}\nUptime: ${client.uptime}ms\nNode: ${process.version}`;
-    } catch (error: any) {
-      return `❌ Déconnecté | Erreur: ${error.message}`;
-    }
-  }),
-});
+// REMOVED: // 21. Statut Bot avec rate limiting
+// See register*Tools() functions
 
 // ============================================================================
 // NETTOYAGE
@@ -4497,6 +2502,29 @@ async function logRoleAction(action: string, data: any) {
 // ============================================================================
 // DÉMARRAGE
 // ============================================================================
+// ENREGISTREMENT DES OUTILS MCP ORGANISÉS
+// ============================================================================
+
+// Enregistrer les outils organisés par catégorie
+registerEmbedTools(server);
+registerMessageTools(server);
+registerEmojiThemeTools(server);
+registerGameTools(server);
+
+// Enregistrer les nouveaux outils organisés par catégorie
+registerModerationTools(server);
+registerRolesTools(server);
+registerChannelsTools(server);
+registerPollsTools(server);
+registerInteractionsTools(server);
+registerServerTools(server);
+registerWebhooksTools(server);
+registerSystemTools(server);
+registerLogosTools(server);
+
+// ============================================================================
+// FONCTION PRINCIPALE
+// ============================================================================
 
 async function main() {
   Logger.info('🚀 Démarrage Discord MCP v2.0...\n');
@@ -4518,7 +2546,7 @@ async function main() {
     Logger.info(`   • Nom: discord-mcp-server`);
     Logger.info(`   • Version: 2.0.0`);
     Logger.info(
-      `   • Outils: 26 (messages, embeds, fichiers, sondages, webhooks, membres, interactions)`
+      `   • Outils: 88 (messages, embeds, fichiers, sondages, webhooks, membres, interactions, modération, rôles, canaux, serveur, système, logos)`
     );
     Logger.info(`   • Environment: ${botConfig.environment}`);
   } catch (error) {
@@ -4529,82 +2557,7 @@ async function main() {
 }
 
 main();
-// 31. Déployer le RPG
-server.addTool({
-  name: 'deploy_rpg',
-  description: 'Déploie le mini-RPG persistant dans le canal spécifié',
-  parameters: z.object({}),
-  execute: async () => {
-    try {
-      const { deployRPG } = await import('./utils/rpgDeploy.js');
-      const result = await deployRPG(botConfig.token);
-      return result;
-    } catch (error: any) {
-      Logger.error('❌ [deploy_rpg]', error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// Auto-déploiement du RPG au démarrage (optionnel) - DÉSACTIVÉ
-// Pour réactiver, supprimez les // devant les lignes suivantes
-/*
-setTimeout(async () => {
-    try {
-        const { deployRPG } = await import('./utils/rpgDeploy.js');
-        await deployRPG(botConfig.token);
-        Logger.info('🎮 [RPG] Auto-déploiement réussi lors du démarrage');
-    } catch (e) {
-        // Silencieux si déjà lancé ou erreur
-    }
-}, 5000);
-*/
-
-
-// 33. Explorateur de Logs - Surprise !
-server.addTool({
-  name: 'logs_explorer',
-  description: 'Explore les derniers logs du serveur',
-  parameters: z.object({
-    lines: z.number().min(1).max(100).default(20).describe('Nombre de lignes à afficher'),
-    level: z.enum(['INFO', 'WARN', 'ERROR', 'DEBUG']).optional().describe('Filtrer par niveau')
-  }),
-  execute: async (args) => {
-    try {
-      const logDir = path.join(process.cwd(), 'logs');
-      const logFiles = await fs.promises.readdir(logDir);
-      const latestLog = logFiles.filter(f => f.endsWith('.log')).sort().reverse()[0];
-      
-      if (!latestLog) return "❌ Aucun fichier de log trouvé.";
-      
-      const content = await fs.promises.readFile(path.join(logDir, latestLog), 'utf-8');
-      let linesArray = content.split('\n').filter(l => l.trim() !== '');
-      
-      if (args.level) {
-        linesArray = linesArray.filter(l => l.includes(`[${args.level}]`));
-      }
-      
-      const result = linesArray.slice(-args.lines).join('\n');
-      return `📋 **Derniers logs (${latestLog})**:\n\`\`\`\n${result || 'Aucune ligne correspondante.'}\n\`\`\``;
-    } catch (err: any) {
-      return `❌ Erreur lecture logs: ${err.message}`;
-    }
-  }
-});
-// 34. Nettoyer les anciens boutons - Surprise !
-server.addTool({
-  name: 'nettoyer_anciens_boutons',
-  description: 'Supprime tous les boutons de plus de 24h du système de persistance',
-  parameters: z.object({}),
-  execute: async () => {
-    try {
-      const { loadCustomButtons, cleanOldButtons } = await import('./utils/buttonPersistence.js');
-      const buttons = await loadCustomButtons();
-      const count = await cleanOldButtons(buttons);
-      return `🧹 ${count} boutons expirés ont été supprimés de la base de données.`;
-    } catch (err: any) {
-      return `❌ Erreur nettoyage: ${err.message}`;
-    }
-  }
-});
-
+// NOTE: Les outils suivants étaient dupliqués après main() et sont maintenant enregistrés via register*Tools():
+// - deploy_rpg -> registerSystemTools()
+// - logs_explorer -> registerSystemTools()
+// - nettoyer_anciens_boutons -> registerInteractionsTools()
