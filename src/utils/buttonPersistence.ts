@@ -27,7 +27,7 @@ const BUTTON_PERSISTENCE = new PersistenceManager<CustomButton[]>(BUTTONS_FILE, 
 // Charger tous les boutons depuis le fichier
 export async function loadCustomButtons(): Promise<Map<string, CustomButton>> {
   const buttonsArray = await BUTTON_PERSISTENCE.load([]);
-  
+
   const buttonsMap = new Map<string, CustomButton>();
   buttonsArray.forEach(button => {
     button.createdAt = new Date(button.createdAt);
@@ -35,13 +35,16 @@ export async function loadCustomButtons(): Promise<Map<string, CustomButton>> {
   });
 
   Logger.info(`✅ ${buttonsMap.size} boutons personnalisés chargés avec robustesse`);
+  if (buttonsMap.size > 0) {
+    Logger.debug(`Boutons chargés: ${Array.from(buttonsMap.keys()).join(', ')}`);
+  }
   return buttonsMap;
 }
 
 // Sauvegarder tous les boutons dans le fichier
 export async function saveCustomButtons(buttons: Map<string, CustomButton>): Promise<void> {
   const buttonsArray = Array.from(buttons.values());
-  
+
   // Convertir les dates en strings pour la sérialisation JSON
   const buttonsToSave = buttonsArray.map(button => ({
     ...button,
@@ -49,6 +52,7 @@ export async function saveCustomButtons(buttons: Map<string, CustomButton>): Pro
   }));
 
   await BUTTON_PERSISTENCE.saveImmediate(buttonsToSave as any);
+  Logger.info(`💾 ${buttonsArray.length} bouton(s) sauvegardé(s) dans buttons.json`);
 }
 
 // Ajouter un nouveau bouton

@@ -99,8 +99,8 @@ export function applyTheme(themeName: string, customizations: any = {}): any {
   return {
     ...customizations,
     color: customizations.color || theme.color,
-    authorIcon: customizations.authorIcon || theme.emojis[0],
-    footerIcon: customizations.footerIcon || theme.emojis[1],
+    // ⚠️ Ne pas assigner d'emojis à authorIcon/footerIcon - Discord exige des URLs d'images valides
+    // Les emojis sont utilisés uniquement pour les titres et descriptions
   };
 }
 

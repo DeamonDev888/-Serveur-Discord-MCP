@@ -1,7 +1,8 @@
 import { z } from 'zod';
-import { AttachmentBuilder } from 'discord.js';
+import { AttachmentBuilder, EmbedBuilder } from 'discord.js';
 import { readFile, stat } from 'fs/promises';
 import { extname } from 'path';
+import Logger from '../utils/logger.js';
 
 // Schéma pour l'upload de fichiers
 export const FileUploadSchema = z.object({
@@ -156,17 +157,87 @@ export const createFileUploadEmbed = (
     document: '📄',
   };
 
-  return {
-    title: `${spoiler ? '🚫' : iconMap[fileType] || '📎'} Fichier Uploadé`,
-    color: 0x00ff00,
-    description: description || `Fichier **${fileName}** uploadé avec succès`,
-    fields: [
-      {
-        name: 'Informations',
-        value: `**Nom:** ${fileName}\n**Taille:** ${sizeMB} MB\n**Type:** ${fileType}`,
-        inline: true,
-      },
-    ],
-    timestamp: new Date().toISOString(),
-  };
+  return new EmbedBuilder()
+    .setTitle(`${spoiler ? '🚫' : iconMap[fileType] || '📎'} Fichier Uploadé`)
+    .setColor(0x00ff00)
+    .setDescription(description || `Fichier **${fileName}** uploadé avec succès`)
+    .addFields({
+      name: 'Informations',
+      value: `**Nom:** ${fileName}\n**Taille:** ${sizeMB} MB\n**Type:** ${fileType}`,
+      inline: true,
+    })
+    .setTimestamp();
 };
+
+// ============================================================================
+// ENREGISTREMENT DE L'OUTIL MCP
+// ============================================================================
+
+import type { FastMCP } from 'fastmcp';
+import { ensureDiscordConnection } from './common.js';
+
+export function registerFileUploadTools(server: FastMCP) {
+  server.addTool({
+    name: 'uploader_fichier',
+    description: 'Upload un fichier local vers un canal Discord avec validation',
+    parameters: z.object({
+      channelId: z.string().describe('ID du canal où uploader le fichier'),
+      filePath: z.string().describe('Chemin local du fichier à uploader'),
+      fileName: z.string().optional().describe('Nom personnalisé pour le fichier'),
+      message: z.string().optional().describe('Message accompagnant le fichier'),
+      spoiler: z.boolean().optional().default(false).describe('Marquer comme spoiler (SPOILER)'),
+      description: z.string().optional().describe('Description du fichier'),
+    }),
+    execute: async (args) => {
+      try {
+        console.error(`📤 [file_upload] Fichier: ${args.filePath}`);
+        const client = await ensureDiscordConnection();
+        const channel = await client.channels.fetch(args.channelId);
+
+        if (!channel || !('send' in channel)) {
+          throw new Error('Canal invalide ou inaccessible');
+        }
+
+        // Vérifier la taille du fichier
+        const sizeCheck = await checkFileSize(args.filePath);
+        if (!sizeCheck.valid) {
+          return `❌ ${sizeCheck.error}`;
+        }
+
+        // Créer l'attachment
+        const attachmentResult = await createAttachmentFromFile(
+          args.filePath,
+          args.fileName,
+          args.spoiler
+        );
+
+        if (!attachmentResult.success || !attachmentResult.attachment) {
+          return `❌ ${attachmentResult.error}`;
+        }
+
+        // Créer l'embed d'information
+        const fileName = args.fileName || args.filePath.split(/[/\\]/).pop() || 'fichier';
+        const embed = createFileUploadEmbed(
+          fileName,
+          attachmentResult.size!,
+          args.description,
+          args.spoiler
+        );
+
+        // Envoyer le message avec le fichier
+        const message = await channel.send({
+          content: args.message,
+          embeds: [embed],
+          files: [attachmentResult.attachment],
+        });
+
+        return `✅ Fichier uploadé | Taille: ${(attachmentResult.size! / 1024 / 1024).toFixed(2)} MB | ID: ${message.id}`;
+      } catch (error: any) {
+        console.error(`❌ [file_upload]`, error.message);
+        return `❌ Erreur: ${error.message}`;
+      }
+    },
+  });
+
+  Logger.info('✅ Outils file_upload enregistrés');
+}

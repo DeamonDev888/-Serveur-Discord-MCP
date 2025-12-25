@@ -23,52 +23,49 @@
 // ============================================================================
 
 // 📊 Messages
-export * from './messages/index.js';
+export * from './messages';
 
 // 🎨 Embeds
-export * from './embeds/index.js';
+export * from './embeds';
 
-// 📝 Polls
-export * from './polls/index.js';
+// 🔧 Édition d'Embeds
+export * from './editEmbed';
 
 // 👥 Members
-export * from './members/index.js';
-
-// 📁 Files
-export * from './files/index.js';
+export * from './members';
 
 // ============================================================================
 // OUTILS EXISTANTS (COMPATIBILITÉ)
 // ============================================================================
 
 // Outils d'upload de fichiers (existant)
-export {
-  FILE_LIMITS,
-  getFileType,
-  getMimeTypeFromExtension,
-  checkFileSize,
-  createAttachmentFromFile,
-  createFileUploadEmbed,
-} from './fileUpload';
+// export {
+//   FILE_LIMITS,
+//   getFileType,
+//   getMimeTypeFromExtension,
+//   checkFileSize,
+//   createAttachmentFromFile,
+//   createFileUploadEmbed,
+// } from './fileUpload';
 
 // Outils d'embeds (existant)
-export { createEmbedFromTemplate } from './embedBuilder';
-export { DISCORD_COLORS } from './embedBuilder';
+// export { createEmbedFromTemplate } from './embedBuilder';
+// export { DISCORD_COLORS } from './embedBuilder';
 
 // Outils d'interactions (boutons, menus, modals) (existant)
 export { buildActionRows, BUTTON_STYLES } from './interactions';
 
 // Outils de gestion de messages (existant - à migrer)
-export {
-  sendMessage as sendMessageLegacy,
-  editMessage as editMessageLegacy,
-  deleteMessage as deleteMessageLegacy,
-  readMessages as readMessagesLegacy,
-  addReaction as addReactionLegacy,
-} from './messageManager';
+// export {
+//   sendMessage as sendMessageLegacy,
+//   editMessage as editMessageLegacy,
+//   deleteMessage as deleteMessageLegacy,
+//   readMessages as readMessagesLegacy,
+//   addReaction as addReactionLegacy,
+// } from './messageManager';
 
 // Outils de gestion de serveur (channelManager n'est pas dans members/)
-export * from './channelManager';
+// export * from './channelManager';
 
 // Affichage de code avec coloration syntaxique
 export { createCodePreviewMessages, CodePreviewSchema, validateLanguage } from './codePreview';
@@ -79,11 +76,11 @@ export { SUPPORTED_LANGUAGES } from './codePreview';
 // ============================================================================
 
 // Documentation centralisée avec limites, erreurs, utilitaires
-export { MCP_DOCUMENTATION, ERROR_CODES, ERROR_MESSAGES, LIMITS, QUICK_START_GUIDE } from './documentation';
-export { formatFileSize, isValidDiscordId, parseColor, validateEmbedLimits, generatePollId, truncate } from './documentation';
+// export { MCP_DOCUMENTATION, ERROR_CODES, ERROR_MESSAGES, LIMITS, QUICK_START_GUIDE } from './documentation';
+// export { formatFileSize, isValidDiscordId, parseColor, validateEmbedLimits, generatePollId, truncate } from './documentation';
 
 // Exemples pratiques pour utilisation one-shot
-export * from './examples';
+// export * from './examples';
 
 // ============================================================================
 // TYPES ET CONSTANTES EXPORTÉES POUR CONVENIENCE
@@ -93,11 +90,11 @@ export * from './examples';
 export type {
   // Types des sondages
   PollResult,
-  CreatePollParams,
+  // CreatePollParams,
 
   // Types des embeds
-  CreateEmbedParams,
-  EmbedTemplateName,
+  // CreateEmbedParams,
+  // EmbedTemplateName,
   EmbedValidationResult,
 
   // Types des interactions
@@ -108,9 +105,9 @@ export type {
   ComponentValidationResult,
 
   // Types des messages
-  SendMessageParams,
-  EditMessageParams,
-  DeleteMessageParams,
+  // SendMessageParams,
+  // EditMessageParams,
+  // DeleteMessageParams,
 
   // Types des fichiers
   FileUploadParams,
@@ -128,7 +125,7 @@ export type {
   OperationResult,
   DiscordId,
   DiscordColor,
-  ErrorCode,
+  // ErrorCode,
   FormattedError,
 } from './types';
 

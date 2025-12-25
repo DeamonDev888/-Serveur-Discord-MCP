@@ -1,11 +1,29 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import { PollResult } from '../tools/polls.js';
 import Logger from './logger.js';
 
 // Configuration
 const DATA_DIR = join(process.cwd(), 'data');
 const POLLS_FILE = join(DATA_DIR, 'polls.json');
+
+// Interface pour les sondages
+export interface PollResult {
+  id: string;
+  question: string;
+  options: Array<{
+    text: string;
+    votes: number;
+    percentage: number;
+  }>;
+  totalVotes: number;
+  endTime: Date;
+  ended: boolean;
+  allowMultiple: boolean;
+  anonymous: boolean;
+  messageId?: string;
+  channelId: string;
+  createdAt: Date;
+}
 
 import { PersistenceManager } from './persistenceManager.js';
 
