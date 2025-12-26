@@ -1,6 +1,8 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
     "strict": false,
     "noImplicitAny": false,
     "strictNullChecks": false,
@@ -12,11 +14,11 @@
     "noUnusedParameters": false,
     "noImplicitReturns": false,
     "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "module": "ES2022",
     "moduleResolution": "node",
     "target": "ES2022",
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
     "downlevelIteration": true
   },
   "include": ["src/**/*"],

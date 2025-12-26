@@ -438,3 +438,177 @@ export const validateComponents = (components: any[]): { valid: boolean; errors:
     errors,
   };
 };
+
+// ============================================================================
+// ENREGISTREMENT DES OUTILS MCP
+// ============================================================================
+
+import type { FastMCP } from 'fastmcp';
+import { EmbedBuilder } from 'discord.js';
+import Logger from '../utils/logger.js';
+import { ensureDiscordConnection } from './common.js';
+
+export function registerInteractionTools(server: FastMCP) {
+
+  // ========================================================================
+  // 1. CRÉER UN BOUTON
+  // ========================================================================
+
+  server.addTool({
+    name: 'create_button',
+    description: 'Crée un message avec un bouton interactif',
+    parameters: z.object({
+      channelId: z.string().describe('ID du canal'),
+      message: z.string().optional().describe('Message à envoyer'),
+      label: z.string().describe('Texte du bouton'),
+      style: z.enum(['Primary', 'Secondary', 'Success', 'Danger']).default('Primary'),
+      customId: z.string().describe('ID unique du bouton'),
+      emoji: z.string().optional().describe('Emoji du bouton'),
+    }),
+    execute: async (args) => {
+      try {
+        const client = await ensureDiscordConnection();
+        const channel = await client.channels.fetch(args.channelId);
+
+        if (!channel || !('send' in channel)) {
+          throw new Error('Canal invalide');
+        }
+
+        const row = new ActionRowBuilder<ButtonBuilder>();
+        const button = new ButtonBuilder()
+          .setCustomId(args.customId)
+          .setLabel(args.label)
+          .setStyle(BUTTON_STYLES[args.style.toUpperCase() as keyof typeof BUTTON_STYLES]);
+
+        if (args.emoji) {
+          button.setEmoji(args.emoji);
+        }
+
+        row.addComponents(button);
+
+        const msg = await channel.send({
+          content: args.message || '',
+          components: [row],
+        });
+
+        return `✅ Bouton créé | ID: ${msg.id} | customId: ${args.customId}`;
+      } catch (error: any) {
+        Logger.error('❌ [create_button]', error.message);
+        return `❌ Erreur: ${error.message}`;
+      }
+    },
+  });
+
+  // ========================================================================
+  // 2. CRÉER UN MENU DÉROULANT
+  // ========================================================================
+
+  server.addTool({
+    name: 'create_menu',
+    description: 'Crée un message avec un menu déroulant',
+    parameters: z.object({
+      channelId: z.string().describe('ID du canal'),
+      message: z.string().optional().describe('Message à envoyer'),
+      customId: z.string().describe('ID unique du menu'),
+      placeholder: z.string().optional().describe('Texte d\'attente'),
+      options: z.array(z.object({
+        label: z.string(),
+        value: z.string(),
+        description: z.string().optional(),
+        emoji: z.string().optional(),
+      })).min(1).max(25).describe('Options du menu'),
+      minValues: z.number().optional().default(1).describe('Nombre minimum de sélections'),
+      maxValues: z.number().optional().default(1).describe('Nombre maximum de sélections'),
+    }),
+    execute: async (args) => {
+      try {
+        const client = await ensureDiscordConnection();
+        const channel = await client.channels.fetch(args.channelId);
+
+        if (!channel || !('send' in channel)) {
+          throw new Error('Canal invalide');
+        }
+
+        const menuData = {
+          type: COMPONENT_TYPES.STRING_SELECT,
+          customId: args.customId,
+          placeholder: args.placeholder,
+          minValues: args.minValues,
+          maxValues: args.maxValues,
+          options: args.options,
+        };
+
+        const menu = buildStringSelect(menuData);
+        const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu);
+
+        const msg = await channel.send({
+          content: args.message || '',
+          components: [row],
+        });
+
+        return `✅ Menu créé | ID: ${msg.id} | customId: ${args.customId}`;
+      } catch (error: any) {
+        Logger.error('❌ [create_menu]', error.message);
+        return `❌ Erreur: ${error.message}`;
+      }
+    },
+  });
+
+  // ========================================================================
+  // 3. CRÉER UN SONDAGE
+  // ========================================================================
+
+  server.addTool({
+    name: 'create_poll',
+    description: 'Crée un sondage interactif avec boutons',
+    parameters: z.object({
+      channelId: z.string().describe('ID du canal'),
+      question: z.string().describe('Question du sondage'),
+      options: z.array(z.string()).min(2).max(10).describe('Options de réponse'),
+      duration: z.number().optional().describe('Durée en minutes (optionnel)'),
+      allowMultiple: z.boolean().optional().default(false).describe('Autoriser plusieurs choix'),
+    }),
+    execute: async (args) => {
+      try {
+        const client = await ensureDiscordConnection();
+        const channel = await client.channels.fetch(args.channelId);
+
+        if (!channel || !('send' in channel)) {
+          throw new Error('Canal invalide');
+        }
+
+        const pollId = `poll_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+
+        const embed = new EmbedBuilder()
+          .setTitle('📊 Sondage')
+          .setDescription(`**${args.question}**\n\n${args.options.map((opt, i) => `${i + 1}. ${opt}`).join('\n')}`)
+          .setColor(0x5865f2)
+          .setFooter({ text: args.duration ? `Durée: ${args.duration} min` : 'Votez en cliquant sur les boutons' })
+          .setTimestamp();
+
+        const row = new ActionRowBuilder<ButtonBuilder>();
+        const buttonStyles = [BUTTON_STYLES.PRIMARY, BUTTON_STYLES.SUCCESS, BUTTON_STYLES.SECONDARY, BUTTON_STYLES.DANGER];
+
+        args.options.slice(0, 5).forEach((opt, index) => {
+          const button = new ButtonBuilder()
+            .setCustomId(`${pollId}_option_${index}`)
+            .setLabel(`${index + 1}`)
+            .setStyle(Object.values(BUTTON_STYLES)[index % 4]);
+          row.addComponents(button);
+        });
+
+        const msg = await channel.send({
+          embeds: [embed],
+          components: [row],
+        });
+
+        return `✅ Sondage créé | ID: ${msg.id} | pollId: ${pollId}`;
+      } catch (error: any) {
+        Logger.error('❌ [create_poll]', error.message);
+        return `❌ Erreur: ${error.message}`;
+      }
+    },
+  });
+
+  Logger.info('✅ Outils interactions enregistrés (3 outils: create_button, create_menu, create_poll)');
+}

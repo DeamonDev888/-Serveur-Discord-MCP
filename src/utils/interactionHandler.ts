@@ -1,7 +1,16 @@
 import { loadPolls, savePolls } from './pollPersistence.js';
 import { loadCustomButtons, saveCustomButtons } from './buttonPersistence.js';
 import { loadCustomMenus, saveCustomMenus, saveMenuSelection } from './menuPersistence.js';
+import {
+  loadPersistentButtons,
+  loadPersistentMenus,
+  getPersistentButton,
+  getPersistentMenu,
+  type ButtonAction,
+  type MenuAction
+} from './distPersistence.js';
 import Logger from './logger.js';
+import { introManager } from './introManager.js';
 
 /**
  * Gestionnaire principal des interactions Discord
@@ -9,7 +18,9 @@ import Logger from './logger.js';
 export class InteractionHandler {
   private polls: Map<string, any> = new Map();
   private buttons: Map<string, any> = new Map();
+  private persistentButtons: Map<string, { action: ButtonAction; label: string; channelId: string }> = new Map();
   private menus: Map<string, any> = new Map();
+  private persistentMenus: Map<string, { action: MenuAction; placeholder?: string; channelId: string }> = new Map();
 
   constructor() {
     this.initialize();
@@ -20,10 +31,77 @@ export class InteractionHandler {
     this.polls = await loadPolls();
     this.buttons = await loadCustomButtons();
     this.menus = await loadCustomMenus();
+    const persistentBtns = await loadPersistentButtons();
+    const persistentMenus = await loadPersistentMenus();
+
+    // Indexer les boutons persistants pour un accès rapide
+    this.persistentButtons.clear();
+    persistentBtns.forEach(btn => {
+      this.persistentButtons.set(btn.id, {
+        action: btn.action,
+        label: btn.label,
+        channelId: btn.channelId,
+      });
+    });
+
+    // Indexer les menus persistants pour un accès rapide
+    this.persistentMenus.clear();
+    persistentMenus.forEach(menu => {
+      this.persistentMenus.set(menu.id, {
+        action: menu.action,
+        placeholder: menu.placeholder,
+        channelId: menu.channelId,
+      });
+    });
+
     Logger.info("✅ Gestionnaire d'interactions initialisé");
     Logger.info(`   • ${this.polls.size} sondages chargés`);
     Logger.info(`   • ${this.buttons.size} boutons chargés`);
+    Logger.info(`   • ${this.persistentButtons.size} boutons persistants chargés (dist/data/)`);
     Logger.info(`   • ${this.menus.size} menus chargés`);
+    Logger.info(`   • ${this.persistentMenus.size} menus persistants chargés (dist/data/)`);
+  }
+
+  /**
+   * Rafraîchir la liste des boutons depuis la persistance
+   */
+  async refreshButtons(): Promise<void> {
+    this.buttons = await loadCustomButtons();
+    const persistentBtns = await loadPersistentButtons();
+
+    this.persistentButtons.clear();
+    persistentBtns.forEach(btn => {
+      this.persistentButtons.set(btn.id, {
+        action: btn.action,
+        label: btn.label,
+        channelId: btn.channelId,
+      });
+    });
+
+    Logger.info(`🔄 Boutons rechargés dans le gestionnaire:`);
+    Logger.info(`   • ${this.buttons.size} boutons standards`);
+    Logger.info(`   • ${this.persistentButtons.size} boutons persistants`);
+  }
+
+  /**
+   * Rafraîchir la liste des menus depuis la persistance
+   */
+  async refreshMenus(): Promise<void> {
+    this.menus = await loadCustomMenus();
+    const persistentMenusData = await loadPersistentMenus();
+
+    this.persistentMenus.clear();
+    persistentMenusData.forEach(menu => {
+      this.persistentMenus.set(menu.id, {
+        action: menu.action,
+        placeholder: menu.placeholder,
+        channelId: menu.channelId,
+      });
+    });
+
+    Logger.info(`🔄 Menus rechargés dans le gestionnaire:`);
+    Logger.info(`   • ${this.menus.size} menus standards`);
+    Logger.info(`   • ${this.persistentMenus.size} menus persistants`);
   }
 
   /**
@@ -188,10 +266,64 @@ export class InteractionHandler {
 
     Logger.info(`🔘 Bouton personnalisé cliqué: ${customId} par ${user.username}`);
 
-    // Récupérer la configuration du bouton
-    const button = this.buttons.get(customId);
+    // Gestion du questionnaire d'intro
+    if (customId.startsWith('intro_')) {
+      await introManager.handleInteraction({
+        customId,
+        user,
+        channelId,
+        messageId
+      });
+      return true;
+    }
+
+    // 🔒 GESTION DES BOUTONS PERSISTANTS (dist/data/)
+    if (customId.startsWith('pb_')) {
+      Logger.info(`🔒 Bouton persistant détecté: ${customId}`);
+
+      let persistentButton = this.persistentButtons.get(customId);
+
+      // Fallback: recharger si pas trouvé
+      if (!persistentButton) {
+        Logger.info(`⚠️ Bouton persistant non trouvé, rechargement...`);
+        await this.refreshButtons();
+        persistentButton = this.persistentButtons.get(customId);
+      }
+
+      if (persistentButton) {
+        try {
+          await this.executePersistentButtonAction(persistentButton.action, {
+            user,
+            channelId,
+            messageId,
+            customId,
+          });
+          return true;
+        } catch (error: any) {
+          Logger.error(`❌ Erreur bouton persistant: ${error.message}`);
+          return true; // Marquer comme géré même en erreur
+        }
+      }
+
+      Logger.warn(`❌ Bouton persistant non trouvé: ${customId}`);
+      return false;
+    }
+
+    Logger.info(`🔍 Nombre total de boutons en mémoire: ${this.buttons.size}`);
+
+    // Récupérer la configuration du bouton standard
+    let button = this.buttons.get(customId);
+    
+    // Fallback: Tentative de rechargement si le bouton n'est pas trouvé
     if (!button) {
-      // Ne plus logger de warning ou d'erreur ici car le bouton peut être géré par un autre système (ex: RPG)
+      Logger.info(`⚠️ Bouton ${customId} non trouvé en mémoire, tentative de rechargement...`);
+      await this.refreshButtons();
+      button = this.buttons.get(customId);
+    }
+    
+    if (!button) {
+      Logger.warn(`❌ Bouton non trouvé dans la persistance après reload: ${customId}`);
+      Logger.debug(`Boutons disponibles: ${Array.from(this.buttons.keys()).join(', ')}`);
       return false;
     }
 
@@ -226,19 +358,28 @@ export class InteractionHandler {
         messageId,
       });
 
-      // Envoyer une confirmation à Discord
-      this.sendToDiscord({
-        action: 'button_success',
-        channelId,
-        messageId,
-        customId,
-        label: button.label,
-        actionType: button.action.type,
-        user: {
-          id: user.id,
-          username: user.username,
-        },
-      });
+      // 🔥 NE PAS envoyer button_success pour les boutons embedv2_ avec action custom
+      // car ils sont gérés directement par discord-bridge.ts pour éviter les doublons
+      const isEmbedV2CustomButton = customId.startsWith('embedv2_') && button.action.type === 'custom';
+
+      if (!isEmbedV2CustomButton) {
+        // Envoyer une confirmation à Discord uniquement pour les autres boutons
+        this.sendToDiscord({
+          action: 'button_success',
+          channelId,
+          messageId,
+          customId,
+          label: button.label,
+          actionType: button.action.type,
+          user: {
+            id: user.id,
+            username: user.username,
+          },
+        });
+      } else {
+        Logger.debug(`🔄 [Handler] Bouton embedv2_ custom géré par discord-bridge - pas de button_success`);
+      }
+
       return true;
     } catch (error: any) {
       Logger.error(`❌ Erreur lors de l'exécution du bouton: ${error.message}`);
@@ -252,6 +393,94 @@ export class InteractionHandler {
         label: button.label,
       });
       return true;
+    }
+  }
+
+  /**
+   * Exécuter une action de bouton persistant
+   */
+  private async executePersistentButtonAction(action: ButtonAction, context: any): Promise<void> {
+    const { user, channelId, messageId, customId } = context;
+
+    Logger.info(`🔒 Exécution action bouton persistant: ${action.type}`);
+
+    switch (action.type) {
+      case 'message':
+        // Envoyer un message éphéméral
+        this.sendToDiscord({
+          action: 'button_message_response',
+          channelId,
+          messageId,
+          content: action.content,
+          ephemeral: action.ephemeral !== false,
+          user: { id: user.id, username: user.username },
+        });
+        break;
+
+      case 'embed':
+        // Envoyer un embed en réponse
+        this.sendToDiscord({
+          action: 'button_embed_response',
+          channelId,
+          messageId,
+          embed: action.embed,
+          ephemeral: action.ephemeral !== false,
+          user: { id: user.id, username: user.username },
+        });
+        break;
+
+      case 'link':
+        // Ouvrir un lien
+        this.sendToDiscord({
+          action: 'button_link_response',
+          channelId,
+          messageId,
+          url: action.url,
+          user: { id: user.id, username: user.username },
+        });
+        break;
+
+      case 'role':
+        // Gérer un rôle (toggle)
+        this.sendToDiscord({
+          action: 'button_role_toggle',
+          channelId,
+          messageId,
+          roleId: action.roleId,
+          userId: user.id,
+        });
+        break;
+
+      case 'delete':
+        // Supprimer le message
+        this.sendToDiscord({
+          action: 'button_delete_message',
+          channelId,
+          messageId,
+        });
+        break;
+
+      case 'refresh':
+        // Rafraîchir l'embed
+        this.sendToDiscord({
+          action: 'button_refresh_embed',
+          channelId,
+          messageId,
+        });
+        break;
+
+      case 'edit':
+        // Modifier l'embed
+        this.sendToDiscord({
+          action: 'button_edit_embed',
+          channelId,
+          messageId,
+          newEmbed: action.newEmbed,
+        });
+        break;
+
+      default:
+        Logger.warn(`⚠️ Type d'action bouton persistant inconnu: ${action.type}`);
     }
   }
 
@@ -276,15 +505,23 @@ export class InteractionHandler {
       case 'embed':
         // Envoyer un embed
         if (action.data?.embed) {
+          const embedWithPlaceholders = {
+            ...action.data.embed,
+            // Remplacer les placeholders
+            title: action.data.embed.title?.replace('{user}', user.username),
+            description: action.data.embed.description?.replace('{user}', user.username),
+          };
+
+          // Utiliser ephemeral si spécifié dans customData
+          const ephemeral = action.data.ephemeral !== false;
+
           this.sendToDiscord({
-            action: 'send_embed',
+            action: 'button_embed_response',
             channelId,
-            embed: {
-              ...action.data.embed,
-              // Remplacer les placeholders
-              title: action.data.embed.title?.replace('{user}', user.username),
-              description: action.data.embed.description?.replace('{user}', user.username),
-            },
+            messageId,
+            embed: embedWithPlaceholders,
+            ephemeral,
+            user: { id: user.id, username: user.username },
           });
         }
         break;
@@ -355,9 +592,221 @@ export class InteractionHandler {
         }
         break;
 
+      // ============================================================================
+      // ACTIONS SPÉCIFIQUES AUX BOUTONS EMBED
+      // ============================================================================
+
+      case 'none':
+        // Afficher un message simple de confirmation
+        this.sendToDiscord({
+          action: 'send_message',
+          channelId,
+          content: `✅ Bouton cliqué (action: ${button.label})`,
+          ephemeral: true,
+        });
+        break;
+
+      case 'refresh':
+        // Rafraîchir l'embed avec un timestamp
+        this.sendToDiscord({
+          action: 'edit_message',
+          channelId,
+          messageId,
+          refreshEmbed: true,
+        });
+        break;
+
+      case 'link':
+        // Ouvrir un lien
+        if (action.data?.value) {
+          this.sendToDiscord({
+            action: 'send_message',
+            channelId,
+            content: `🔗 ${action.data.value}`,
+            ephemeral: false,
+          });
+        } else {
+          this.sendToDiscord({
+            action: 'send_message',
+            channelId,
+            content: '❌ Lien non configuré',
+            ephemeral: true,
+          });
+        }
+        break;
+
+      case 'custom':
+        // Action personnalisée avec customData
+        // Gérer les boutons custom créés par creer_embed
+        if (action.data?.embed) {
+          // Cas 1: Custom avec embed
+          this.sendToDiscord({
+            action: 'button_embed_response',
+            channelId,
+            messageId,
+            embed: action.data.embed,
+            ephemeral: action.data.ephemeral !== false,
+            user: { id: user.id, username: user.username },
+          });
+        } else if (action.data?.message) {
+          // Cas 2: Custom avec message
+          this.sendToDiscord({
+            action: 'button_message_response',
+            channelId,
+            messageId,
+            content: action.data.message.replace('{user}', user.username),
+            ephemeral: action.data.ephemeral !== false,
+            user: { id: user.id, username: user.username },
+          });
+        } else {
+          // Cas 3: Custom basique
+          this.sendToDiscord({
+            action: 'send_message',
+            channelId,
+            content: `⚙️ Action personnalisée: ${button.label}`,
+            ephemeral: true,
+          });
+        }
+        break;
+
+      case 'modal':
+        // Afficher un modal (placeholder)
+        this.sendToDiscord({
+          action: 'send_message',
+          channelId,
+          content: '📝 Fonctionnalité Modal à implémenter',
+          ephemeral: true,
+        });
+        break;
+
       default:
         Logger.warn(`⚠️ Type d'action de bouton inconnu: ${action.type}`);
         throw new Error(`Type d'action non supporté: ${action.type}`);
+    }
+  }
+
+  /**
+   * Exécuter l'action d'un menu persistant
+   */
+  private async executePersistentMenuAction(action: MenuAction, context: {
+    user: { id: string; username: string };
+    values: string[];
+    channelId: string;
+    messageId: string;
+    customId: string;
+  }): Promise<void> {
+    const { user, values, channelId, messageId, customId } = context;
+
+    Logger.info(`🔒 Exécution action menu persistant: ${action.type}`);
+
+    switch (action.type) {
+      case 'message':
+        // Envoyer un message avec template
+        const content = action.template
+          ? action.template.replace('{values}', values.join(', ')).replace('{user}', user.username)
+          : action.content;
+        this.sendToDiscord({
+          action: 'button_message_response',
+          channelId,
+          messageId,
+          content,
+          ephemeral: action.ephemeral !== false,
+          user: { id: user.id, username: user.username },
+        });
+        break;
+
+      case 'embed':
+        // Envoyer un embed
+        this.sendToDiscord({
+          action: 'button_embed_response',
+          channelId,
+          messageId,
+          embed: action.embed,
+          ephemeral: action.ephemeral !== false,
+          user: { id: user.id, username: user.username },
+        });
+        break;
+
+      case 'role':
+        // Gérer un rôle
+        const mode = action.mode || 'add';
+        this.sendToDiscord({
+          action: 'button_role_response',
+          channelId,
+          messageId,
+          roleId: action.roleId,
+          mode,
+          user: { id: user.id, username: user.username },
+        });
+        break;
+
+      case 'delete':
+        // Supprimer le message
+        this.sendToDiscord({
+          action: 'button_delete_response',
+          channelId,
+          messageId,
+        });
+        break;
+
+      case 'refresh':
+        // Rafraîchir l'embed
+        this.sendToDiscord({
+          action: 'edit_message',
+          channelId,
+          messageId,
+          refreshEmbed: true,
+        });
+        break;
+
+      case 'link':
+        // Ouvrir un lien avec template
+        const url = action.template
+          ? action.template.replace('{values}', values.join(','))
+          : action.url;
+        this.sendToDiscord({
+          action: 'send_message',
+          channelId,
+          content: `🔗 ${url}`,
+          ephemeral: false,
+        });
+        break;
+
+      case 'edit':
+        // Modifier l'embed
+        this.sendToDiscord({
+          action: 'edit_message',
+          channelId,
+          messageId,
+          newEmbed: action.newEmbed,
+        });
+        break;
+
+      case 'custom':
+        // Action personnalisée
+        this.sendToDiscord({
+          action: 'send_message',
+          channelId,
+          content: `⚙️ Action personnalisée: ${action.handler} - Valeurs: ${values.join(', ')}`,
+          ephemeral: true,
+        });
+        break;
+
+      case 'modal':
+        // Afficher un modal
+        this.sendToDiscord({
+          action: 'show_modal',
+          channelId,
+          messageId,
+          modalId: action.modalId,
+          user: { id: user.id, username: user.username },
+        });
+        break;
+
+      default:
+        const _never: never = action;
+        Logger.warn(`⚠️ Type d'action inconnu: ${JSON.stringify(_never)}`);
+        throw new Error(`Type d'action non supporté: ${JSON.stringify(_never)}`);
     }
   }
 
@@ -371,7 +820,41 @@ export class InteractionHandler {
     Logger.info(`📋 Menu sélectionné: ${customId} par ${user.username}`);
     Logger.debug('Valeurs sélectionnées:', values);
 
-    // Récupérer la configuration du menu
+    // Gestion du questionnaire d'intro
+    if (customId.startsWith('intro_')) {
+      await introManager.handleInteraction({
+        customId,
+        user,
+        channelId,
+        messageId,
+        values
+      });
+      return true;
+    }
+
+    // 🔒 GESTION DES MENUS PERSISTANTS (dist/data/)
+    if (customId.startsWith('pm_')) {
+      Logger.info(`🔒 Menu persistant détecté: ${customId}`);
+      let persistentMenu = this.persistentMenus.get(customId);
+
+      if (!persistentMenu) {
+        await this.refreshMenus();
+        persistentMenu = this.persistentMenus.get(customId);
+      }
+
+      if (persistentMenu) {
+        await this.executePersistentMenuAction(persistentMenu.action, {
+          user,
+          values,
+          channelId,
+          messageId,
+          customId,
+        });
+        return true;
+      }
+    }
+
+    // Récupérer la configuration du menu standard
     const menu = this.menus.get(customId) || this.getMenuByCustomId(customId);
     if (!menu) {
       Logger.warn(`❌ Menu non trouvé: ${customId}`);
@@ -553,8 +1036,8 @@ export class InteractionHandler {
         break;
 
       default:
-        Logger.warn(`⚠️ Type d'action de menu inconnu: ${action.type}`);
-        throw new Error(`Type d'action non supporté: ${action.type}`);
+        Logger.warn(`⚠️ Type d'action de menu inconnu: ${(action as any).type}`);
+        throw new Error(`Type d'action non supporté: ${(action as any).type}`);
     }
   }
 

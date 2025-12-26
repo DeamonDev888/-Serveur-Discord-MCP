@@ -270,3 +270,58 @@ export const validateLanguage = (language: string): boolean => {
     Object.values(SUPPORTED_LANGUAGES).includes(normalizedLang)
   );
 };
+
+// ============================================================================
+// ENREGISTREMENT DE L'OUTIL MCP
+// ============================================================================
+
+import type { FastMCP } from 'fastmcp';
+import { ensureDiscordConnection } from './common.js';
+
+export function registerCodePreviewTools(server: FastMCP) {
+  server.addTool({
+    name: 'code_preview',
+    description: 'Affiche du code avec coloration syntaxique et division automatique si trop long',
+    parameters: z.object({
+      channelId: z.string().describe('ID du canal où afficher le code'),
+      code: z.string().describe('Code à afficher avec coloration syntaxique'),
+      language: z.string().describe('Langage de programmation (js, ts, py, bash, etc.)'),
+    }),
+    execute: async (args) => {
+      try {
+        console.error(
+          `🔍 [code_preview] Langage: ${args.language}, Taille: ${args.code.length} chars`
+        );
+        const client = await ensureDiscordConnection();
+        const channel = await client.channels.fetch(args.channelId);
+
+        if (!channel || !('send' in channel)) {
+          throw new Error('Canal invalide ou inaccessible');
+        }
+
+        // Valider le langage
+        if (!validateLanguage(args.language)) {
+          return `❌ Langage non supporté: ${args.language}`;
+        }
+
+        // Créer les messages avec division automatique
+        const messages = createCodePreviewMessages(args.code, args.language);
+        console.error(`📤 [code_preview] ${messages.length} message(s) à envoyer`);
+
+        // Envoyer tous les messages
+        const sentMessages = [];
+        for (const messageContent of messages) {
+          const message = await channel.send(messageContent);
+          sentMessages.push(message.id);
+        }
+
+        return `✅ Code affiché | ${messages.length} message(s) | IDs: ${sentMessages.join(', ')}`;
+      } catch (error: any) {
+        console.error(`❌ [code_preview]`, error.message);
+        return `❌ Erreur: ${error.message}`;
+      }
+    },
+  });
+
+  Logger.info('✅ Outils code_preview enregistrés');
+}

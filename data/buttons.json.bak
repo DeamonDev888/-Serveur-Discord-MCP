@@ -1,0 +1,515 @@
+[
+  {
+    "id": "embedv2_embed_1766601614930_16jxx8gbq_custom_1766601614932_ndjyi",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "💖 TESTER LE BOUTON",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "✅ ÇA MARCHE !",
+          "description": "Le bouton custom fonctionne !\n\n💖 Réponse embed personnalisée affichée !",
+          "color": 65280
+        }
+      }
+    },
+    "createdAt": "2025-12-24T18:40:14.933Z"
+  },
+  {
+    "id": "embedv2_embed_1766601961461_61bxquy84_custom_1766601961463_se8rb",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "💖 TESTER LE BOUTON",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "✅ ÇA MARCHE !",
+          "description": "Le bouton custom fonctionne !\n\n💖 Réponse embed personnalisée affichée !",
+          "color": 65280
+        }
+      }
+    },
+    "createdAt": "2025-12-24T18:46:01.464Z"
+  },
+  {
+    "id": "embedv2_embed_1766602034639_ebfux2zrj_custom_1766602034642_quk4x",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "💖 TESTER LE BOUTON",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "✅ ÇA MARCHE !",
+          "description": "Le bouton custom fonctionne !\n\n💖 Réponse embed personnalisée affichée !",
+          "color": 65280
+        }
+      }
+    },
+    "createdAt": "2025-12-24T18:47:14.643Z"
+  },
+  {
+    "id": "embedv2_embed_1766602172092_bpch0azlx_custom_1766602172097_vp0cc",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "🎅 PAPA NOËL",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "🎅 HO HO HO !",
+          "description": "Joyeux Noël !\n\n🎁 Tu as été sage cette année ?",
+          "color": 16711680
+        }
+      }
+    },
+    "createdAt": "2025-12-24T18:49:32.098Z"
+  },
+  {
+    "id": "embedv2_embed_1766602172092_bpch0azlx_custom_1766602172098_xsji3",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "❄️ FLOCONS",
+    "action": {
+      "type": "custom",
+      "data": {
+        "message": "❄️ Les flocons de neige dansent dans l'air !"
+      }
+    },
+    "createdAt": "2025-12-24T18:49:32.098Z"
+  },
+  {
+    "id": "embedv2_embed_1766602273919_uenmalf38_custom_1766602273924_cavm2",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "🎅 PAPA NOËL",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "🎅 HO HO HO !",
+          "description": "Joyeux Noël !\n\n🎁 Tu as été sage cette année ?",
+          "color": 16711680
+        }
+      }
+    },
+    "createdAt": "2025-12-24T18:51:13.925Z"
+  },
+  {
+    "id": "embedv2_embed_1766602273919_uenmalf38_custom_1766602273925_4tsdk",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "❄️ FLOCONS",
+    "action": {
+      "type": "custom",
+      "data": {
+        "message": "❄️ Les flocons de neige dansent dans l'air !"
+      }
+    },
+    "createdAt": "2025-12-24T18:51:13.925Z"
+  },
+  {
+    "id": "embedv2_embed_1766602273919_uenmalf38_custom_1766602273925_o0x0g",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "🎁 CADEAU",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "🎁 UN CADEAU POUR TOI !",
+          "description": "🎊 Félicitations ! Tu as reçu un cadeau virtuel !\n\n💝 Enjoy your gift!",
+          "color": 16761035
+        }
+      }
+    },
+    "createdAt": "2025-12-24T18:51:13.926Z"
+  },
+  {
+    "id": "embedv2_embed_1766602445687_z6swaw4fv_custom_1766602445693_lna6b",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "🎅 PAPA NOËL",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "🎅 HO HO HO !",
+          "description": "Joyeux Noël !\n\n🎁 Tu as été sage cette année ?",
+          "color": 16711680
+        }
+      }
+    },
+    "createdAt": "2025-12-24T18:54:05.694Z"
+  },
+  {
+    "id": "embedv2_embed_1766602445687_z6swaw4fv_custom_1766602445694_ngf32",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "❄️ FLOCONS",
+    "action": {
+      "type": "custom",
+      "data": {
+        "message": "❄️ Les flocons de neige dansent dans l'air !"
+      }
+    },
+    "createdAt": "2025-12-24T18:54:05.694Z"
+  },
+  {
+    "id": "embedv2_embed_1766602445687_z6swaw4fv_custom_1766602445694_flv35",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "🎁 CADEAU",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "🎁 UN CADEAU POUR TOI !",
+          "description": "🎊 Félicitations ! Tu as reçu un cadeau virtuel !\n\n💝 Enjoy your gift!",
+          "color": 16761035
+        }
+      }
+    },
+    "createdAt": "2025-12-24T18:54:05.694Z"
+  },
+  {
+    "id": "embedv2_embed_1766602993459_ndztazerf_custom_1766602993465_pcubm",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "🎅 PAPA NOËL",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "🎅 HO HO HO !",
+          "description": "Joyeux Noël !\n\n🎁 Tu as été sage cette année ?",
+          "color": 16711680
+        }
+      }
+    },
+    "createdAt": "2025-12-24T19:03:13.466Z"
+  },
+  {
+    "id": "embedv2_embed_1766602993459_ndztazerf_custom_1766602993466_opod0",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "❄️ FLOCONS",
+    "action": {
+      "type": "custom",
+      "data": {
+        "message": "❄️ Les flocons de neige dansent dans l'air !"
+      }
+    },
+    "createdAt": "2025-12-24T19:03:13.466Z"
+  },
+  {
+    "id": "embedv2_embed_1766602993459_ndztazerf_custom_1766602993466_dedb5",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "🎁 CADEAU",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "🎁 UN CADEAU POUR TOI !",
+          "description": "🎊 Félicitations ! Tu as reçu un cadeau virtuel !\n\n💝 Enjoy your gift!",
+          "color": 16761035
+        }
+      }
+    },
+    "createdAt": "2025-12-24T19:03:13.466Z"
+  },
+  {
+    "id": "embedv2_embed_1766603663466_ub3cfal97_custom_1766603663471_nuvv0",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "🎅 PAPA NOËL",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "🎅 HO HO HO !",
+          "description": "Joyeux Noël !\n\n🎁 Tu as été sage cette année ?",
+          "color": 16711680
+        }
+      }
+    },
+    "createdAt": "2025-12-24T19:14:23.472Z"
+  },
+  {
+    "id": "embedv2_embed_1766603663466_ub3cfal97_custom_1766603663472_9x9th",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "❄️ FLOCONS",
+    "action": {
+      "type": "custom",
+      "data": {
+        "message": "❄️ Les flocons de neige dansent dans l'air !"
+      }
+    },
+    "createdAt": "2025-12-24T19:14:23.472Z"
+  },
+  {
+    "id": "embedv2_embed_1766603663466_ub3cfal97_custom_1766603663472_2pifx",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "🎁 CADEAU",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "🎁 UN CADEAU POUR TOI !",
+          "description": "🎊 Félicitations ! Tu as reçu un cadeau virtuel !\n\n💝 Enjoy your gift!",
+          "color": 16761035
+        }
+      }
+    },
+    "createdAt": "2025-12-24T19:14:23.472Z"
+  },
+  {
+    "id": "embedv2_embed_1766603758188_q02tihmkp_custom_1766603758193_gavt7",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "🎅 PAPA NOËL",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "🎅 HO HO HO !",
+          "description": "Joyeux Noël !\n\n🎁 Tu as été sage cette année ?",
+          "color": 16711680
+        }
+      }
+    },
+    "createdAt": "2025-12-24T19:15:58.194Z"
+  },
+  {
+    "id": "embedv2_embed_1766603758188_q02tihmkp_custom_1766603758194_sbknq",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "❄️ FLOCONS",
+    "action": {
+      "type": "custom",
+      "data": {
+        "message": "❄️ Les flocons de neige dansent dans l'air !"
+      }
+    },
+    "createdAt": "2025-12-24T19:15:58.194Z"
+  },
+  {
+    "id": "embedv2_embed_1766603758188_q02tihmkp_custom_1766603758194_ps1ac",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "🎁 CADEAU",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "🎁 UN CADEAU POUR TOI !",
+          "description": "🎊 Félicitations ! Tu as reçu un cadeau virtuel !\n\n💝 Enjoy your gift!",
+          "color": 16761035
+        }
+      }
+    },
+    "createdAt": "2025-12-24T19:15:58.194Z"
+  },
+  {
+    "id": "embedv2_embed_1766603834527_w3alyvth7_custom_1766603834533_9uat2",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "🎅 PAPA NOËL",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "🎅 HO HO HO !",
+          "description": "Joyeux Noël !\n\n🎁 Tu as été sage cette année ?",
+          "color": 16711680
+        }
+      }
+    },
+    "createdAt": "2025-12-24T19:17:14.534Z"
+  },
+  {
+    "id": "embedv2_embed_1766603834527_w3alyvth7_custom_1766603834534_j9406",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "❄️ FLOCONS",
+    "action": {
+      "type": "custom",
+      "data": {
+        "message": "❄️ Les flocons de neige dansent dans l'air !"
+      }
+    },
+    "createdAt": "2025-12-24T19:17:14.534Z"
+  },
+  {
+    "id": "embedv2_embed_1766603834527_w3alyvth7_custom_1766603834534_yeij7",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "🎁 CADEAU",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "🎁 UN CADEAU POUR TOI !",
+          "description": "🎊 Félicitations ! Tu as reçu un cadeau virtuel !\n\n💝 Enjoy your gift!",
+          "color": 16761035
+        }
+      }
+    },
+    "createdAt": "2025-12-24T19:17:14.534Z"
+  },
+  {
+    "id": "embedv2_embed_1766603923056_8d8aa1wrm_custom_1766603923063_0nmm4",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "✅ BOUTON 1",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "✅ ÇA MARCHE !",
+          "description": "Le premier bouton fonctionne !",
+          "color": 65280
+        }
+      }
+    },
+    "createdAt": "2025-12-24T19:18:43.063Z"
+  },
+  {
+    "id": "embedv2_embed_1766603923056_8d8aa1wrm_custom_1766603923064_p8dca",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "💬 BOUTON 2",
+    "action": {
+      "type": "custom",
+      "data": {
+        "message": "✅ Message personnalisé envoyé !"
+      }
+    },
+    "createdAt": "2025-12-24T19:18:43.064Z"
+  },
+  {
+    "id": "embedv2_embed_1766604006820_a6rrl1uuf_custom_1766604006826_ngwlp",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "✅ BOUTON 1",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "✅ ÇA MARCHE !",
+          "description": "Le premier bouton fonctionne !",
+          "color": 65280
+        }
+      }
+    },
+    "createdAt": "2025-12-24T19:20:06.827Z"
+  },
+  {
+    "id": "embedv2_embed_1766604006820_a6rrl1uuf_custom_1766604006827_uso1t",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "💬 BOUTON 2",
+    "action": {
+      "type": "custom",
+      "data": {
+        "message": "✅ Message personnalisé envoyé !"
+      }
+    },
+    "createdAt": "2025-12-24T19:20:06.827Z"
+  },
+  {
+    "id": "embedv2_embed_1766604076102_wsdf5glxt_custom_1766604076108_m6lij",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "✅ BOUTON 1",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "✅ ÇA MARCHE !",
+          "description": "Le premier bouton fonctionne !",
+          "color": 65280
+        }
+      }
+    },
+    "createdAt": "2025-12-24T19:21:16.109Z"
+  },
+  {
+    "id": "embedv2_embed_1766604076102_wsdf5glxt_custom_1766604076109_25msd",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "💬 BOUTON 2",
+    "action": {
+      "type": "custom",
+      "data": {
+        "message": "✅ Message personnalisé envoyé !"
+      }
+    },
+    "createdAt": "2025-12-24T19:21:16.109Z"
+  },
+  {
+    "id": "embedv2_embed_1766604179311_5wlqi6i7d_custom_1766604179317_6qb0i",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "✅ BOUTON 1",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "✅ ÇA MARCHE !",
+          "description": "Le premier bouton fonctionne !",
+          "color": 65280
+        }
+      }
+    },
+    "createdAt": "2025-12-24T19:22:59.318Z"
+  },
+  {
+    "id": "embedv2_embed_1766604179311_5wlqi6i7d_custom_1766604179318_fcdbw",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "💬 BOUTON 2",
+    "action": {
+      "type": "custom",
+      "data": {
+        "message": "✅ Message personnalisé envoyé !"
+      }
+    },
+    "createdAt": "2025-12-24T19:22:59.319Z"
+  },
+  {
+    "id": "embedv2_embed_1766604301344_nagoo6xut_custom_1766604301350_ha7kz",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "✅ BOUTON 1",
+    "action": {
+      "type": "custom",
+      "data": {
+        "embed": {
+          "title": "✅ ÇA MARCHE !",
+          "description": "Le premier bouton fonctionne !",
+          "color": 65280
+        }
+      }
+    },
+    "createdAt": "2025-12-24T19:25:01.351Z"
+  },
+  {
+    "id": "embedv2_embed_1766604301344_nagoo6xut_custom_1766604301351_hal06",
+    "messageId": "",
+    "channelId": "1442317829998383235",
+    "label": "💬 BOUTON 2",
+    "action": {
+      "type": "custom",
+      "data": {
+        "message": "✅ Message personnalisé envoyé !"
+      }
+    },
+    "createdAt": "2025-12-24T19:25:01.351Z"
+  }
+]

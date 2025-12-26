@@ -206,9 +206,111 @@ export class DiscordBridge {
     const messageId = interaction.message.id;
     let wasHandled = false;
 
+    // 🔥 VÉRIFIER L'ÉTAT DE L'INTERACTION dès le début
+    Logger.debug(`🔍 [Bridge] État interaction - replied: ${interaction.replied}, deferred: ${interaction.deferred}`);
+
+    // Si l'interaction est déjà acquittée, ne rien faire
+    if (interaction.replied || interaction.deferred) {
+      Logger.debug(`🔄 [Bridge] Interaction déjà acquittée, ignorée`);
+      return;
+    }
+
     Logger.info(`🔘 [Bridge] Bouton cliqué: ${customId} par ${user.username}`);
 
-    // Si c'est un bouton RPG, on court-circuite le gestionnaire classique pour plus de rapidité
+    // 1. GESTION DIRECTE des boutons custom avec embed/message (priorité MAXIMALE)
+    // On traite ces boutons AVANT tout le reste pour éviter les timeouts
+    Logger.debug(`🔍 [Bridge] Vérification bouton: ${customId.startsWith('embedv2_') || customId.startsWith('pb_')}`);
+
+    if (customId.startsWith('embedv2_') || customId.startsWith('pb_')) {
+        Logger.debug(`🔍 [Bridge] Bouton détecté comme embedv2_/pb_: ${customId}`);
+
+        // Vérifier si l'interaction a déjà été traitée (pour éviter les conflits)
+        if (interaction.replied || interaction.deferred) {
+            Logger.debug(`🔄 [Bridge] Interaction déjà traitée pour ${customId}`);
+        } else {
+            Logger.debug(`🔍 [Bridge] Chargement des boutons custom...`);
+            const { loadCustomButtons } = await import('./utils/buttonPersistence.js');
+            const buttons = await loadCustomButtons();
+            Logger.debug(`🔍 [Bridge] Boutons chargés: ${buttons.size} boutons`);
+            Logger.debug(`🔍 [Bridge] IDs disponibles:`, Array.from(buttons.keys()).slice(0, 5).join(', '));
+            const button = buttons.get(customId);
+            Logger.debug(`🔍 [Bridge] Bouton trouvé:`, button ? 'OUI' : 'NON');
+            if (button) {
+                Logger.debug(`🔍 [Bridge] Structure du bouton:`, JSON.stringify(button, null, 2).substring(0, 500));
+            }
+
+            // 🔥 CORRECTION: Détecter les actions custom avec différentes structures
+            let actionData = null;
+            let isActionEmbed = false;
+
+            if (button) {
+                Logger.debug(`🔍 [Bridge] Type d'action: ${button.action?.type}`);
+
+                // Structure 1: Boutons standards (embedv2_) avec action.data
+                if (button.action?.type === 'custom' && button.action?.data) {
+                    actionData = button.action.data;
+                    Logger.debug(`🔍 [Bridge] Structure 1 détectée (action.data)`);
+                    Logger.debug(`🔍 [Bridge] Données:`, JSON.stringify(actionData, null, 2).substring(0, 300));
+                }
+                // Structure 2: Boutons persistants (pb_) avec action.embed/action.message
+                else if (button.action?.type === 'embed' || button.action?.type === 'message') {
+                    actionData = button.action;
+                    isActionEmbed = button.action.type === 'embed';
+                    Logger.debug(`🔍 [Bridge] Structure 2 détectée (action directe)`);
+                    Logger.debug(`🔍 [Bridge] Type: ${button.action.type}`);
+                }
+            }
+
+            if (actionData) {
+                Logger.debug(`🔍 [Bridge] Action custom détectée avec données!`);
+                wasHandled = true; // 🔥 MARQUER comme géré pour éviter l'auto-handler
+
+                // Envoyer embed si disponible
+                if (isActionEmbed || actionData.embed) {
+                    Logger.debug(`🔍 [Bridge] Envoi embed custom...`);
+                    const embedData = isActionEmbed ? actionData.embed : actionData.embed;
+                    if (embedData) {
+                        const embedBuilder = new EmbedBuilder()
+                            .setTitle(embedData.title || 'Réponse')
+                            .setDescription(embedData.description || '')
+                            .setColor(embedData.color || 0x00FF00);
+
+                        if (embedData.timestamp !== false) {
+                            embedBuilder.setTimestamp();
+                        }
+
+                        try {
+                            // RÉPONDRE IMMÉDIATEMENT (avant le timeout de 3s)
+                            const flags = (isActionEmbed ? actionData.ephemeral : actionData.ephemeral) !== false ? 64 : 0; // 64 = Ephemeral
+                            await interaction.reply({ embeds: [embedBuilder], flags });
+                            Logger.info(`✅ [Bridge] Réponse embed custom envoyée pour ${customId}`);
+                            return; // Terminé - on a répondu
+                        } catch (e: any) {
+                            Logger.error(`❌ [Bridge] Erreur réponse embed:`, e.message);
+                        }
+                    }
+                }
+                // Envoyer message si disponible
+                else if (actionData.message || actionData.content) {
+                    Logger.debug(`🔍 [Bridge] Envoi message custom...`);
+                    try {
+                        // RÉPONDRE IMMÉDIATEMENT (avant le timeout de 3s)
+                        const message = (actionData.message || actionData.content || '').replace('{user}', user.username);
+                        const flags = actionData.ephemeral !== false ? 64 : 0; // 64 = Ephemeral
+                        await interaction.reply({ content: message, flags });
+                        Logger.info(`✅ [Bridge] Réponse message custom envoyée pour ${customId}`);
+                        return; // Terminé - on a répondu
+                    } catch (e: any) {
+                        Logger.error(`❌ [Bridge] Erreur réponse message:`, e.message);
+                    }
+                }
+            } else {
+                Logger.debug(`🔍 [Bridge] Pas d'action custom détectée pour ce bouton`);
+            }
+        }
+    }
+
+    // 2. Boutons RPG (court-circuit pour performance)
     if (customId.startsWith('rpg_')) {
         const customFunction = buttonFunctions.get(customId);
         if (customFunction) {
@@ -222,16 +324,26 @@ export class DiscordBridge {
         }
     }
 
-    // Sinon, comportement classique : d'abord le gestionnaire d'interactions existant
-    const wasHandledByHandler = await interactionHandler.handleCustomButton({
-      customId,
-      user: { id: user.id, username: user.username },
-      channelId,
-      messageId,
-    });
+    // Note: Tous les autres boutons (y compris embedv2_ sans customData) sont gérés via le système de persistance
+    // dans interactionHandler.handleCustomButton
 
-    if (wasHandledByHandler) {
-      wasHandled = true;
+    // 3. Comportement classique : d'abord le gestionnaire d'interactions existant
+    // 🔥 SAUTER interactionHandler pour les boutons embedv2_ custom (déjà gérés ci-dessus)
+    const isEmbedV2Custom = customId.startsWith('embedv2_') || customId.startsWith('pb_');
+
+    if (!isEmbedV2Custom) {
+      const wasHandledByHandler = await interactionHandler.handleCustomButton({
+        customId,
+        user: { id: user.id, username: user.username },
+        channelId,
+        messageId,
+      });
+
+      if (wasHandledByHandler) {
+        wasHandled = true;
+      }
+    } else {
+      Logger.debug(`🔄 [Bridge] interactionHandler sauté pour bouton embedv2_/pb_`);
     }
 
     // Puis les fonctions personnalisées génériques
@@ -246,21 +358,39 @@ export class DiscordBridge {
     }
 
     // AUTO-HANDLER: Répondre automatiquement si aucun handler n'a répondu
+    // 🔥 NOUVEAU: Activer l'auto-handler pour TOUS les boutons, y compris embedv2_/pb_
+    // pour éviter les "Unknown interaction"
     if (AUTO_HANDLER_ENABLED && !wasHandled && !interaction.replied && !interaction.deferred) {
       try {
+        // Message de réponse intelligent selon le type de bouton
+        let responseContent = AUTO_RESPONSES.button(customId, user.username);
+
+        // Personnaliser la réponse pour les boutons embedv2_
+        if (customId.startsWith('embedv2_')) {
+          responseContent = `✅ **Bouton embed cliqué !**\n\n🔘 ID: \`${customId}\`\n👤 Par: **${user.username}**\n\n💡 Ce bouton fait partie d'un embed créé avec l'outil \`creer_embed\`. Pour ajouter une action personnalisée, utilisez \`enregistrer_fonction_bouton\`.`;
+        } else if (customId.startsWith('pb_')) {
+          responseContent = `✅ **Bouton persistant cliqué !**\n\n🔘 ID: \`${customId}\`\n👤 Par: **${user.username}**\n\n💾 Ce bouton est persistant et sauvegardé.`;
+        }
+
         await interaction.reply({
-          content: AUTO_RESPONSES.button(customId, user.username),
+          content: responseContent,
           ephemeral: true
         });
         Logger.info(`🤖 [Auto-Handler] Réponse automatique envoyée pour le bouton: ${customId}`);
         wasHandled = true;
       } catch (error: any) {
         Logger.error(`❌ [Auto-Handler] Erreur réponse automatique:`, error.message);
+
+        // Fallback: deferUpdate en cas d'erreur de reply
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.deferUpdate().catch(() => {});
+        }
       }
     }
 
-    // Répondre à l'interaction pour éviter le timeout (si rien n'a été fait)
+    // FALLBACK ABSOLU: Répondre à l'interaction pour éviter le timeout (si rien n'a été fait)
     if (!wasHandled && !interaction.replied && !interaction.deferred) {
+      Logger.warn(`⚠️ [Bridge] Aucune réponse envoyé pour ${customId}, utilisation du fallback deferUpdate`);
       await interaction.deferUpdate().catch(() => {});
     }
   }

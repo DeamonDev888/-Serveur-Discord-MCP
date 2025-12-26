@@ -17,7 +17,9 @@ export class PersistenceManager<T> {
     this.filePath = filePath;
     this.backupPath = `${filePath}.bak`;
     this.tempPath = `${filePath}.tmp`;
+    this.tempPath = `${filePath}.tmp`;
     this.debounceMs = debounceMs;
+    Logger.debug(`🔧 PersistenceManager initialisé sur: ${this.filePath}`);
   }
 
   /**

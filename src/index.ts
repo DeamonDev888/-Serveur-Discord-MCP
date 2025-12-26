@@ -53,24 +53,27 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 
 // ============================================================================
-// IMPORTS DES OUTILS MCP ORGANISÉS PAR CATÉGORIE
+// IMPORTS DES OUTILS MCP UNIFIÉS (STRUCTURE 40 OUTILS)
 // ============================================================================
 
+// Outils unifiés principaux
+import { registerMemberTools } from './tools/members.js';
+import { registerRoleTools } from './tools/roles.js';
+import { registerChannelTools } from './tools/channels.js';
+import { registerInteractionTools } from './tools/interactions.js';
+
+// Outils existants conservés
 import { registerEmbedTools } from './tools/embeds.js';
 import { registerMessageTools } from './tools/messages.js';
-import { registerEmojiThemeTools } from './tools/emojiThemes.js';
+import { registerListImagesTools } from './tools/listImages.js';
 import { registerGameTools } from './tools/games.js';
-
-// Imports des nouveaux outils organisés par catégorie
-import { registerModerationTools } from './tools/registerModeration.js';
-import { registerRolesTools } from './tools/registerRoles.js';
-import { registerChannelsTools } from './tools/registerChannels.js';
-import { registerPollsTools } from './tools/registerPolls.js';
-import { registerInteractionsTools } from './tools/registerInteractions.js';
 import { registerServerTools } from './tools/registerServer.js';
 import { registerWebhooksTools } from './tools/registerWebhooks.js';
 import { registerSystemTools } from './tools/registerSystem.js';
-import { registerLogosTools } from './tools/registerLogos.js';
+import { registerButtonFunctionTools } from './tools/registerButtonFunctions.js';
+import { registerCodePreviewTools } from './tools/codePreview.js';
+import { registerFileUploadTools } from './tools/fileUpload.js';
+import { registerEditEmbedTools } from './tools/editEmbed.js';
 
 // Imports des utilitaires (compilés en JS)
 // Ces imports sont résolus au moment de l'exécution avec cache
@@ -99,20 +102,6 @@ async function loadTools() {
     toolsCache.set('fileUpload', toolsFileUpload);
   } else if (toolsCache.has('fileUpload')) {
     toolsFileUpload = toolsCache.get('fileUpload');
-  }
-
-  if (!toolsPolls && !toolsCache.has('polls')) {
-    toolsPolls = await import('./tools/polls.js');
-    toolsCache.set('polls', toolsPolls);
-  } else if (toolsCache.has('polls')) {
-    toolsPolls = toolsCache.get('polls');
-  }
-
-  if (!toolsEmbedBuilder && !toolsCache.has('embedBuilder')) {
-    toolsEmbedBuilder = await import('./tools/embedBuilder.js');
-    toolsCache.set('embedBuilder', toolsEmbedBuilder);
-  } else if (toolsCache.has('embedBuilder')) {
-    toolsEmbedBuilder = toolsCache.get('embedBuilder');
   }
 }
 
@@ -398,8 +387,8 @@ function applyTheme(themeName: string, customizations: any = {}): any {
   return {
     ...customizations,
     color: customizations.color || theme.color,
-    authorIcon: customizations.authorIcon || theme.emojis[0],
-    footerIcon: customizations.footerIcon || theme.emojis[1],
+    // ⚠️ Ne pas assigner d'emojis à authorIcon/footerIcon - Discord exige des URLs d'images valides
+    // Les emojis sont utilisés uniquement pour les titres et descriptions
   };
 }
 
@@ -659,39 +648,8 @@ function withRateLimit<T extends any[], R>(toolName: string, fn: (...args: T) =>
 // NOTE: Les outils de canaux sont maintenant enregistrés via registerChannelsTools()
 // voir appel à la ligne ~4000
 
-// 4. Envoyer Message Simple - SOLUTION FINALE avec rate limiting
-server.addTool({
-  name: 'envoyer_message',
-  description: 'Envoie un message texte simple',
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal Discord'),
-    content: z.string().describe('Contenu du message'),
-  }),
-  execute: withRateLimit('envoyer_message', async args => {
-    try {
-      if (!botConfig.token || botConfig.token === 'YOUR_BOT_TOKEN') {
-        return '❌ Token Discord non configuré';
-      }
-
-      console.error(`🔍 [envoyer_message] Bridge - envoi vers ${args.channelId}...`);
-      const bridge = DiscordBridge.getInstance(botConfig.token);
-      const client = await bridge.getClient();
-
-      const channel = await client.channels.fetch(args.channelId);
-      if (!channel || !('send' in channel)) {
-        throw new Error('Canal invalide ou inaccessible');
-      }
-
-      const message = await channel.send(args.content);
-      const result = `✅ Message envoyé | ID: ${message.id}`;
-      Logger.info('✅ [envoyer_message]', result);
-      return result;
-    } catch (error: any) {
-      Logger.error('❌ [envoyer_message]', error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  }),
-});
+// REMOVED: // envoyer_message
+// See registerMessageTools() in tools/messages.ts
 
 // ============================================================================
 // FONCTIONS UTILITAIRES POUR EMBEDS AMÉLIORÉS
@@ -1659,470 +1617,35 @@ server.addTool({
   },
 });
 
-// 🎨 Outil pour afficher un thème emoji de cryptomonnaies
-server.addTool({
-  name: 'emoji_theme_crypto',
-  description: '🎨 Afficher un THEME EMOJI des cryptomonnaies (collection décorative avec emojis). Utilise SEULEMENT pour l\'affichage décoratif. Pour afficher une miniature de logo dans un embed, utilise get_thumbnail.',
-  parameters: z.object({
-    category: z.enum(['all', 'top20', 'defi', 'meme', 'stablecoins', 'exchanges']).optional().default('all').describe('Catégorie de cryptos'),
-    search: z.string().optional().describe('Rechercher par symbole ou nom'),
-  }),
-  execute: async (args) => {
-    try {
-      let cryptos = Object.entries(CRYPTO_LOGOS);
+// REMOVED: emoji_theme_crypto, emoji_theme_companies, emoji_theme_services
+// Maintenant remplacé par l'outil unifié list_images() dans registerListImagesTools()
 
-      // Filtrer par catégorie
-      if (args.category !== 'all') {
-        const categories: Record<string, string[]> = {
-          top20: ['BTC', 'ETH', 'XRP', 'USDT', 'BNB', 'SOL', 'USDC', 'ADA', 'DOGE', 'TRX', 'TON', 'LINK', 'MATIC', 'DOT', 'SHIB', 'AVAX', 'LTC', 'BCH', 'UNI', 'ATOM'],
-          defi: ['UNI', 'AAVE', 'MKR', 'COMP', 'SNX', 'CRV', 'SUSHI', 'YFI', 'INCH', 'LDO', 'RPL', 'GRT'],
-          meme: ['DOGE', 'SHIB', 'PEPE', 'FLOKI', 'BONK'],
-          stablecoins: ['USDT', 'USDC', 'DAI', 'BUSD'],
-          exchanges: ['BNB', 'FTT', 'OKB', 'LEO', 'CRO'],
-        };
-        const categorySymbols = categories[args.category] || [];
-        cryptos = cryptos.filter(([symbol]) => categorySymbols.includes(symbol));
-      }
+// REMOVED: // 🎮 show_game_result
+// See registerGameTools() in tools/games.ts
 
-      // Recherche
-      if (args.search) {
-        const searchLower = args.search.toLowerCase();
-        cryptos = cryptos.filter(([symbol, info]) =>
-          symbol.toLowerCase().includes(searchLower) ||
-          info.name.toLowerCase().includes(searchLower)
-        );
-      }
+// REMOVED: // 🎮 create_interactive_quiz
+// See registerGameTools() in tools/games.ts
 
-      const logosList = cryptos.map(([symbol, info]) =>
-        `• **${symbol}** - ${info.name}\n  [Voir le logo](${info.logo})`
-      );
+// REMOVED: // stop_embed_auto_update
+// See registerEmbedTools() in tools/embeds.ts
 
-      return `🪙 **${cryptos.length} logos crypto disponibles:**\n\n${logosList.join('\n\n')}\n\n📌 *Source: cryptologos.cc - PNG et SVG disponibles*`;
-    } catch (error: any) {
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
+// REMOVED: // get_embed_analytics
+// See registerEmbedTools() in tools/embeds.ts
 
-// 🎨 Outil pour afficher un thème emoji d'entreprises
-server.addTool({
-  name: 'emoji_theme_companies',
-  description: '🎨 Afficher un THEME EMOJI des entreprises (collection décorative avec emojis). Utilise SEULEMENT pour l\'affichage décoratif. Pour afficher une miniature de logo dans un embed, utilise get_thumbnail.',
-  parameters: z.object({
-    sector: z.enum(['all', 'technology', 'finance', 'healthcare', 'consumer', 'energy', 'automotive', 'aerospace', 'telecom', 'retail', 'entertainment']).optional().default('all').describe('Secteur d\'activité'),
-    search: z.string().optional().describe('Rechercher par symbole ou nom'),
-  }),
-  execute: async (args) => {
-    try {
-      let companies = Object.entries(COMPANY_LOGOS);
+// REMOVED: // list_auto_update_embeds
+// See registerEmbedTools() in tools/embeds.ts
 
-      // Filtrer par secteur
-      if (args.sector !== 'all') {
-        const sectorMap: Record<string, string> = {
-          technology: 'Technology',
-          finance: 'Finance',
-          healthcare: 'Healthcare',
-          consumer: 'Consumer',
-          energy: 'Energy',
-          automotive: 'Automotive',
-          aerospace: 'Aerospace',
-          telecom: 'Telecom',
-          retail: 'Retail',
-          entertainment: 'Entertainment',
-        };
-        const targetSector = sectorMap[args.sector];
-        companies = companies.filter(([_, info]) => info.sector === targetSector);
-      }
+// REMOVED: // read_messages
+// See registerMessageTools() in tools/messages.ts
 
-      // Recherche
-      if (args.search) {
-        const searchLower = args.search.toLowerCase();
-        companies = companies.filter(([symbol, info]) =>
-          symbol.toLowerCase().includes(searchLower) ||
-          info.name.toLowerCase().includes(searchLower)
-        );
-      }
+// REMOVED: // edit_message
+// See registerMessageTools() in tools/messages.ts
 
-      const logosList = companies.slice(0, 30).map(([symbol, info]) =>
-        `• **${symbol}** - ${info.name} (${info.sector})\n  [Logo](${info.logo})`
-      );
+// REMOVED: // delete_message
+// See registerMessageTools() in tools/messages.ts
 
-      return `📈 **${companies.length} logos entreprises disponibles:**\n\n${logosList.join('\n\n')}\n\n📌 *Source: logo.clearbit.com*`;
-    } catch (error: any) {
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 🎨 Outil pour afficher un thème emoji de services
-server.addTool({
-  name: 'emoji_theme_services',
-  description: '🎨 Afficher un THEME EMOJI des services (réseaux sociaux, cloud, brokers, etc.). Utilise SEULEMENT pour l\'affichage décoratif. Pour afficher une miniature de logo dans un embed, utilise get_thumbnail.',
-  parameters: z.object({
-    category: z.enum(['all', 'social', 'cloud', 'exchange', 'broker', 'index', 'bank', 'payment', 'news']).optional().default('all').describe('Catégorie'),
-    search: z.string().optional().describe('Rechercher par nom'),
-  }),
-  execute: async (args) => {
-    try {
-      let logos = Object.entries(MISC_LOGOS);
-
-      // Filtrer par catégorie
-      if (args.category !== 'all') {
-        const categoryMap: Record<string, string> = {
-          social: 'Social',
-          cloud: 'Cloud',
-          exchange: 'Exchange',
-          broker: 'Broker',
-          index: 'Index',
-          bank: 'Bank',
-          payment: 'Payment',
-          news: 'News',
-        };
-        const targetCategory = categoryMap[args.category];
-        logos = logos.filter(([_, info]) => info.category === targetCategory);
-      }
-
-      // Recherche
-      if (args.search) {
-        const searchLower = args.search.toLowerCase();
-        logos = logos.filter(([key, info]) =>
-          key.toLowerCase().includes(searchLower) ||
-          info.name.toLowerCase().includes(searchLower)
-        );
-      }
-
-      const logosList = logos.map(([key, info]) =>
-        `• **${info.name}** (${info.category})\n  [Logo](${info.logo})`
-      );
-
-      return `🌐 **${logos.length} logos disponibles:**\n\n${logosList.join('\n\n')}\n\n📌 *Source: logo.clearbit.com*`;
-    } catch (error: any) {
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 🔍 Outil universel pour obtenir une miniature (thumbnail) pour embed Discord
-// NOTE: get_thumbnail est maintenant enregistré via registerLogosTools()
-// voir appel à la ligne ~4000
-
-// 🎮 Outil pour afficher un résultat de jeu avec animation
-server.addTool({
-  name: 'show_game_result',
-  description: 'Afficher un résultat de jeu avec animation de réussite/échec et option de recommencer',
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal'),
-    isSuccess: z.boolean().describe('true = réussite, false = échec'),
-    points: z.number().optional().describe('Points gagnés'),
-    badge: z.string().optional().describe('Badge obtenu'),
-    correctAnswer: z.string().optional().describe('Bonne réponse (si échec)'),
-    userAnswer: z.string().optional().describe('Réponse de l\'utilisateur'),
-    animationStyle: z.enum(['confetti', 'fireworks', 'trophy', 'party', 'stars', 'hearts', 'money', 'rocket', 'sad', 'explosion', 'skull', 'rain', 'broken', 'warning']).optional().describe('Style d\'animation'),
-    showRetry: z.boolean().optional().default(true).describe('Afficher bouton recommencer'),
-    retryGameId: z.string().optional().describe('ID du jeu pour recommencer'),
-    theme: z.enum(['cyberpunk', 'minimal', 'gaming', 'corporate', 'sunset', 'ocean']).optional().describe('Thème de l\'embed'),
-  }),
-  execute: async (args) => {
-    try {
-      const client = await ensureDiscordConnection();
-      const channel = await client.channels.fetch(args.channelId);
-
-      if (!channel || !('send' in channel)) {
-        throw new Error('Canal invalide');
-      }
-
-      // Générer le résultat
-      const resultText = generateGameResult(args.isSuccess, {
-        points: args.points,
-        badge: args.badge,
-        correctAnswer: args.correctAnswer,
-        userAnswer: args.userAnswer,
-        animationStyle: args.animationStyle,
-        showRetry: args.showRetry,
-        lang: 'fr',
-      });
-
-      // Créer l'embed
-      const embed = new EmbedBuilder()
-        .setTitle(args.isSuccess ? '🎉 VICTOIRE !' : '😢 DOMMAGE...')
-        .setDescription(resultText)
-        .setColor(args.isSuccess ? 0x00FF00 : 0xFF0000)
-        .setTimestamp();
-
-      // Appliquer le thème si spécifié
-      if (args.theme) {
-        const themeData = EMBED_THEMES[args.theme];
-        if (themeData) {
-          embed.setColor(themeData.color as any);
-        }
-      }
-
-      // Ajouter bouton recommencer si demandé
-      const components: any[] = [];
-      if (args.showRetry) {
-        const row = new ActionRowBuilder<ButtonBuilder>();
-
-        const retryButton = new ButtonBuilder()
-          .setCustomId(`retry_game_${args.retryGameId || Date.now()}`)
-          .setLabel('🔄 Recommencer')
-          .setStyle(ButtonStyle.Primary);
-
-        const closeButton = new ButtonBuilder()
-          .setCustomId(`close_result_${Date.now()}`)
-          .setLabel('❌ Fermer')
-          .setStyle(ButtonStyle.Secondary);
-
-        row.addComponents(retryButton, closeButton);
-
-        if (args.isSuccess) {
-          const nextButton = new ButtonBuilder()
-            .setCustomId(`next_game_${Date.now()}`)
-            .setLabel('➡️ Niveau suivant')
-            .setStyle(ButtonStyle.Success);
-          row.addComponents(nextButton);
-        }
-
-        components.push(row);
-      }
-
-      const message = await channel.send({
-        embeds: [embed],
-        components: components,
-      });
-
-      return `✅ Résultat affiché | ${args.isSuccess ? '🎉 Réussite' : '❌ Échec'} | ID: ${message.id}`;
-    } catch (error: any) {
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 🎮 Outil pour créer un quiz interactif complet
-server.addTool({
-  name: 'create_interactive_quiz',
-  description: 'Créer un quiz interactif avec validation automatique et animations',
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal'),
-    question: z.string().describe('Question du quiz'),
-    options: z.array(z.string()).min(2).max(4).describe('Options de réponse (2-4)'),
-    correctIndex: z.number().min(0).max(3).describe('Index de la bonne réponse (0-3)'),
-    points: z.number().optional().default(10).describe('Points à gagner'),
-    badge: z.string().optional().describe('Badge à obtenir'),
-    timeLimit: z.number().optional().describe('Limite de temps en secondes'),
-    difficulty: z.enum(['easy', 'medium', 'hard', 'expert']).optional().default('medium').describe('Difficulté'),
-    category: z.string().optional().describe('Catégorie du quiz'),
-    theme: z.enum(['cyberpunk', 'minimal', 'gaming', 'corporate', 'sunset', 'ocean']).optional().default('gaming').describe('Thème'),
-    animationStyle: z.enum(['confetti', 'fireworks', 'trophy', 'party', 'stars']).optional().default('confetti').describe('Animation de réussite'),
-  }),
-  execute: async (args) => {
-    try {
-      const client = await ensureDiscordConnection();
-      const channel = await client.channels.fetch(args.channelId);
-
-      if (!channel || !('send' in channel)) {
-        throw new Error('Canal invalide');
-      }
-
-      const quizId = `quiz_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-
-      // Difficulté avec emojis
-      const difficultyEmojis: Record<string, string> = {
-        easy: '🟢 Facile',
-        medium: '🟡 Moyen',
-        hard: '🔴 Difficile',
-        expert: '💀 Expert',
-      };
-
-      // Créer l'embed du quiz
-      const embed = new EmbedBuilder()
-        .setTitle(`🎮 QUIZ ${args.category ? `| ${args.category}` : ''}`)
-        .setDescription(`${VISUAL_SEPARATORS.sparkles}
-
-❓ **${args.question}**
-
-${args.options.map((opt, i) => {
-  const letters = ['🅰️', '🅱️', '©️', '🇩'];
-  return `${letters[i]} ${opt}`;
-}).join('\n')}
-
-${VISUAL_SEPARATORS.line}
-📊 **Difficulté:** ${difficultyEmojis[args.difficulty || 'medium']}
-💰 **Récompense:** ${args.points} points${args.badge ? ` + 🏅 ${args.badge}` : ''}
-${args.timeLimit ? `⏱️ **Temps:** ${args.timeLimit}s` : ''}
-${VISUAL_SEPARATORS.sparkles}`)
-        .setColor(EMBED_THEMES[args.theme || 'gaming'].color as any)
-        .setFooter({ text: '💡 Cliquez sur un bouton pour répondre !' })
-        .setTimestamp();
-
-      // Créer les boutons de réponse
-      const row = new ActionRowBuilder<ButtonBuilder>();
-      const buttonStyles = [ButtonStyle.Primary, ButtonStyle.Success, ButtonStyle.Secondary, ButtonStyle.Danger];
-
-      args.options.forEach((opt, index) => {
-        const letter = String.fromCharCode(65 + index);
-        const button = new ButtonBuilder()
-          .setCustomId(`${quizId}_answer_${index}`)
-          .setLabel(letter)
-          .setStyle(buttonStyles[index % buttonStyles.length]);
-        row.addComponents(button);
-      });
-
-      // Stocker la bonne réponse pour validation ultérieure
-      // (Dans une vraie implémentation, cela serait stocké en base de données)
-      const quizData = {
-        quizId,
-        correctIndex: args.correctIndex,
-        points: args.points,
-        badge: args.badge,
-        animationStyle: args.animationStyle,
-        options: args.options,
-      };
-
-      const message = await channel.send({
-        embeds: [embed],
-        components: [row],
-      });
-
-      return `✅ Quiz créé | ID: ${quizId} | Message: ${message.id}\n📝 Bonne réponse: Option ${args.correctIndex + 1} (${args.options[args.correctIndex]})`;
-    } catch (error: any) {
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// Outil pour supprimer un embed du système d'auto-update
-server.addTool({
-  name: 'stop_embed_auto_update',
-  description: 'Arrêter l\'auto-update d\'un embed',
-  parameters: z.object({
-    embedId: z.string().describe('ID du message embed'),
-  }),
-  execute: async args => {
-    try {
-      if (autoUpdateEmbeds.has(args.embedId)) {
-        autoUpdateEmbeds.delete(args.embedId);
-        return `✅ Auto-update désactivé pour l'embed ${args.embedId}`;
-      } else {
-        return `ℹ️ Aucun auto-update trouvé pour l'embed ${args.embedId}`;
-      }
-    } catch (error: any) {
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 6. Lire Messages
-server.addTool({
-  name: 'read_messages',
-  description: "Lit l'historique des messages",
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal'),
-    limit: z.number().min(1).max(100).default(10).describe('Nombre de messages'),
-  }),
-  execute: async args => {
-    try {
-      const client = await ensureDiscordConnection();
-      const channel = await client.channels.fetch(args.channelId);
-
-      if (!channel || !('messages' in channel)) {
-        throw new Error('Canal invalide ou inaccessible');
-      }
-
-      const messages = await channel.messages.fetch({ limit: args.limit });
-      const list = messages.map(m => `• ${m.author.username}: ${m.content}`).join('\n');
-      return `📖 ${messages.size} messages:\n${list}`;
-    } catch (error: any) {
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 6b. Éditer Message
-server.addTool({
-  name: 'edit_message',
-  description: 'Modifie un message existant',
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal'),
-    messageId: z.string().describe('ID du message à modifier'),
-    newContent: z.string().describe('Nouveau contenu du message'),
-  }),
-  execute: async args => {
-    try {
-      console.error(`✏️ [edit_message] Message: ${args.messageId}`);
-      const client = await ensureDiscordConnection();
-      const channel = await client.channels.fetch(args.channelId);
-
-      if (!channel || !('messages' in channel)) {
-        throw new Error('Canal invalide ou inaccessible');
-      }
-
-      const message = await channel.messages.fetch(args.messageId);
-      await message.edit(args.newContent);
-
-      return `✅ Message modifié | ID: ${args.messageId}`;
-    } catch (error: any) {
-      console.error(`❌ [edit_message]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 6c. Supprimer Message
-server.addTool({
-  name: 'delete_message',
-  description: 'Supprime un message',
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal'),
-    messageId: z.string().describe('ID du message à supprimer'),
-    reason: z.string().optional().describe('Raison de la suppression'),
-  }),
-  execute: async args => {
-    try {
-      console.error(`🗑️ [delete_message] Message: ${args.messageId}`);
-      const client = await ensureDiscordConnection();
-      const channel = await client.channels.fetch(args.channelId);
-
-      if (!channel || !('messages' in channel)) {
-        throw new Error('Canal invalide ou inaccessible');
-      }
-
-      const message = await channel.messages.fetch(args.messageId);
-      await message.delete();
-
-      return `✅ Message supprimé | ID: ${args.messageId}${args.reason ? ` | Raison: ${args.reason}` : ''}`;
-    } catch (error: any) {
-      console.error(`❌ [delete_message]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 7. Ajouter Réaction
-server.addTool({
-  name: 'add_reaction',
-  description: 'Ajoute une réaction emoji',
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal'),
-    messageId: z.string().describe('ID du message'),
-    emoji: z.string().describe('Emoji'),
-  }),
-  execute: async args => {
-    try {
-      const client = await ensureDiscordConnection();
-      const channel = await client.channels.fetch(args.channelId);
-
-      if (!channel || !('messages' in channel)) {
-        throw new Error('Canal invalide ou inaccessible');
-      }
-
-      const message = await channel.messages.fetch(args.messageId);
-      await message.react(args.emoji);
-      return `✅ Réaction ${args.emoji} ajoutée`;
-    } catch (error: any) {
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
+// REMOVED: // add_reaction
+// See registerMessageTools() in tools/messages.ts
 
 // 8. Créer Sondage - maintenant enregistré via registerPollsTools()
 // voir appel à la ligne ~4000
@@ -2140,121 +1663,11 @@ server.addTool({
 // REMOVED: // 12. Lister Canaux
 // See register*Tools() functions
 
-// 13. Code Preview - Version améliorée
-server.addTool({
-  name: 'code_preview',
-  description: 'Affiche du code avec coloration syntaxique et division automatique si trop long',
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal où afficher le code'),
-    code: z.string().describe('Code à afficher avec coloration syntaxique'),
-    language: z.string().describe('Langage de programmation (js, ts, py, bash, etc.)'),
-  }),
-  execute: async args => {
-    try {
-      console.error(
-        `🔍 [code_preview] Langage: ${args.language}, Taille: ${args.code.length} chars`
-      );
-      const client = await ensureDiscordConnection();
-      const channel = await client.channels.fetch(args.channelId);
+// REMOVED: // 13. Code Preview
+// See registerCodePreviewTools() in tools/codePreview.ts
 
-      if (!channel || !('send' in channel)) {
-        throw new Error('Canal invalide ou inaccessible');
-      }
-
-      // Charger les utilitaires
-      await loadTools();
-      const { createCodePreviewMessages, validateLanguage } = toolsCodePreview;
-
-      // Valider le langage
-      if (!validateLanguage(args.language)) {
-        return `❌ Langage non supporté: ${args.language}`;
-      }
-
-      // Créer les messages avec division automatique
-      const messages = createCodePreviewMessages(args.code, args.language);
-      console.error(`📤 [code_preview] ${messages.length} message(s) à envoyer`);
-
-      // Envoyer tous les messages
-      const sentMessages = [];
-      for (const messageContent of messages) {
-        const message = await channel.send(messageContent);
-        sentMessages.push(message.id);
-      }
-
-      return `✅ Code affiché | ${messages.length} message(s) | IDs: ${sentMessages.join(', ')}`;
-    } catch (error: any) {
-      console.error(`❌ [code_preview]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
-
-// 14. Uploader Fichier - Nouvel outil
-server.addTool({
-  name: 'uploader_fichier',
-  description: 'Upload un fichier local vers un canal Discord avec validation',
-  parameters: z.object({
-    channelId: z.string().describe('ID du canal où uploader le fichier'),
-    filePath: z.string().describe('Chemin local du fichier à uploader'),
-    fileName: z.string().optional().describe('Nom personnalisé pour le fichier'),
-    message: z.string().optional().describe('Message accompagnant le fichier'),
-    spoiler: z.boolean().optional().default(false).describe('Marquer comme spoiler (SPOILER)'),
-    description: z.string().optional().describe('Description du fichier'),
-  }),
-  execute: async args => {
-    try {
-      console.error(`📤 [file_upload] Fichier: ${args.filePath}`);
-      const client = await ensureDiscordConnection();
-      const channel = await client.channels.fetch(args.channelId);
-
-      if (!channel || !('send' in channel)) {
-        throw new Error('Canal invalide ou inaccessible');
-      }
-
-      // Charger les utilitaires
-      await loadTools();
-      const { createAttachmentFromFile, createFileUploadEmbed, checkFileSize } = toolsFileUpload;
-
-      // Vérifier la taille du fichier
-      const sizeCheck = await checkFileSize(args.filePath);
-      if (!sizeCheck.valid) {
-        return `❌ ${sizeCheck.error}`;
-      }
-
-      // Créer l'attachment
-      const attachmentResult = await createAttachmentFromFile(
-        args.filePath,
-        args.fileName,
-        args.spoiler
-      );
-
-      if (!attachmentResult.success || !attachmentResult.attachment) {
-        return `❌ ${attachmentResult.error}`;
-      }
-
-      // Créer l'embed d'information
-      const fileName = args.fileName || args.filePath.split(/[/\\]/).pop() || 'fichier';
-      const embed = createFileUploadEmbed(
-        fileName,
-        attachmentResult.size!,
-        args.description,
-        args.spoiler
-      );
-
-      // Envoyer le message avec le fichier
-      const message = await channel.send({
-        content: args.message,
-        embeds: [embed],
-        files: [attachmentResult.attachment],
-      });
-
-      return `✅ Fichier uploadé | Taille: ${(attachmentResult.size! / 1024 / 1024).toFixed(2)} MB | ID: ${message.id}`;
-    } catch (error: any) {
-      console.error(`❌ [file_upload]`, error.message);
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
+// REMOVED: // 14. Uploader Fichier
+// See registerFileUploadTools() in tools/fileUpload.ts
 
 // REMOVED: // 15. Lister Membres
 // See register*Tools() functions
@@ -2355,12 +1768,16 @@ process.on('SIGTERM', async () => {
 
 // Gestion des erreurs non capturées pour éviter les crashes
 process.on('uncaughtException', error => {
+  // Ignorer les erreurs EPIPE (stderr cassé) pour éviter les boucles infinies
+  if ((error as any)?.code === 'EPIPE') return;
   Logger.error('❌ Erreur non capturée:', error);
   Logger.error('Stack trace:', error.stack);
   // Ne pas quitter, laisser le serveur continuer
 });
 
 process.on('unhandledRejection', (reason, promise) => {
+  // Ignorer les erreurs EPIPE (stderr cassé) pour éviter les boucles infinies
+  if ((reason as any)?.code === 'EPIPE') return;
   Logger.error('❌ Promesse rejetée non gérée:', reason);
   Logger.error('Promise:', promise);
   // Ne pas quitter, laisser le serveur continuer
@@ -2500,27 +1917,27 @@ async function logRoleAction(action: string, data: any) {
 }
 
 // ============================================================================
-// DÉMARRAGE
-// ============================================================================
-// ENREGISTREMENT DES OUTILS MCP ORGANISÉS
+// ENREGISTREMENT DES OUTILS MCP UNIFIÉS (40 OUTILS)
 // ============================================================================
 
-// Enregistrer les outils organisés par catégorie
+// Outils unifiés (remplacent plusieurs anciens fichiers)
+registerMemberTools(server);      // 11 outils (membres + modération)
+registerRoleTools(server);        // 5 outils (rôles)
+registerChannelTools(server);     // 5 outils (canaux)
+registerInteractionTools(server); // 3 outils (boutons, menus, sondages)
+
+// Outils existants conservés
 registerEmbedTools(server);
+registerEditEmbedTools(server);  // 🔧 Édition d'embeds (list, get details, update)
 registerMessageTools(server);
-registerEmojiThemeTools(server);
+registerListImagesTools(server);  // Nouvel outil unifié (remplace emoji_theme + get_thumbnail)
 registerGameTools(server);
-
-// Enregistrer les nouveaux outils organisés par catégorie
-registerModerationTools(server);
-registerRolesTools(server);
-registerChannelsTools(server);
-registerPollsTools(server);
-registerInteractionsTools(server);
 registerServerTools(server);
 registerWebhooksTools(server);
 registerSystemTools(server);
-registerLogosTools(server);
+registerButtonFunctionTools(server);
+registerCodePreviewTools(server);
+registerFileUploadTools(server);
 
 // ============================================================================
 // FONCTION PRINCIPALE

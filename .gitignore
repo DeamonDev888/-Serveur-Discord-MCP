@@ -15,6 +15,7 @@ nul
 # Build et dépendances
 node_modules/
 dist/
+dist/data/              # Données runtime persitées (boutons, sondages, etc.)
 build/
 
 # Fichiers temporaires
@@ -48,8 +49,13 @@ README_FINAL.md
 # pnpm-lock.yaml
 
 # Data et fichiers de configuration locale
-data/
+data/                    # Données runtime (boutons, sondages, moderation, etc.)
 config/local.json
+
+# Fichiers de statut runtime
+discord-status.json
+embed-analytics.json
+embed-templates.json
 
 # Certificats et clés
 *.pem

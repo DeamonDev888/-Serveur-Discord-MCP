@@ -44,27 +44,27 @@ export interface OperationResult<T = any> {
 /**
  * Schéma pour envoi de message
  */
-export type SendMessageParams = z.infer<typeof import('./messageManager').SendSchema>;
+// export type SendMessageParams = z.infer<typeof import('./messageManager').SendSchema>;
 
 /**
  * Schéma pour modification de message
  */
-export type EditMessageParams = z.infer<typeof import('./messageManager').EditMessageSchema>;
+// export type EditMessageParams = z.infer<typeof import('./messageManager').EditMessageSchema>;
 
 /**
  * Schéma pour suppression de message
  */
-export type DeleteMessageParams = z.infer<typeof import('./messageManager').DeleteMessageSchema>;
+// export type DeleteMessageParams = z.infer<typeof import('./messageManager').DeleteMessageSchema>;
 
 /**
  * Schéma pour lecture de messages
  */
-export type ReadMessagesParams = z.infer<typeof import('./messageManager').ReadMessagesSchema>;
+// export type ReadMessagesParams = z.infer<typeof import('./messageManager').ReadMessagesSchema>;
 
 /**
  * Schéma pour ajout de réaction
  */
-export type AddReactionParams = z.infer<typeof import('./messageManager').AddReactionSchema>;
+// export type AddReactionParams = z.infer<typeof import('./messageManager').AddReactionSchema>;
 
 // ============================================================================
 // TYPES DES EMbeds
@@ -73,20 +73,20 @@ export type AddReactionParams = z.infer<typeof import('./messageManager').AddRea
 /**
  * Schéma pour création d'embed
  */
-export type CreateEmbedParams = z.infer<typeof import('./embedBuilder').CreateEmbedSchema>;
+// export type CreateEmbedParams = z.infer<typeof import('./embedBuilder').CreateEmbedSchema>;
 
 /**
  * Template d'embed prédéfini
  */
-export type EmbedTemplateName = keyof typeof import('./embedBuilder').EMBED_TEMPLATES;
+// export type EmbedTemplateName = keyof typeof import('./embedBuilder').EMBED_TEMPLATES;
 
 /**
  * Template d'embed avec customisations
  */
-export type EmbedTemplate = {
-  name: string;
-  template: Omit<CreateEmbedParams, 'channelId'>;
-};
+// export type EmbedTemplate = {
+//   name: string;
+//   template: Omit<CreateEmbedParams, 'channelId'>;
+// };
 
 /**
  * Résultat de validation d'embed
@@ -123,7 +123,7 @@ export interface PollResult {
 /**
  * Schéma pour création de sondage
  */
-export type CreatePollParams = z.infer<typeof import('./polls').CreatePollSchema>;
+// export type CreatePollParams = z.infer<typeof import('./polls').CreatePollSchema>;
 
 /**
  * Configuration des boutons de sondage
@@ -356,14 +356,14 @@ export interface ToolConfig {
 /**
  * Code d'erreur
  */
-export type ErrorCode =
-  (typeof import('./documentation').ERROR_CODES)[keyof typeof import('./documentation').ERROR_CODES];
+// export type ErrorCode =
+//   (typeof import('./documentation').ERROR_CODES)[keyof typeof import('./documentation').ERROR_CODES];
 
 /**
  * Erreur formatée
  */
 export interface FormattedError {
-  code: ErrorCode;
+  // code: ErrorCode;
   message: string;
   details?: Record<string, any>;
   timestamp: Date;
@@ -374,7 +374,7 @@ export interface FormattedError {
  * Résultat d'opération avec erreur
  */
 export interface OperationError<T = any> extends OperationResult<T> {
-  code: ErrorCode;
+  // code: ErrorCode;
   details?: Record<string, any>;
 }
 
@@ -490,7 +490,7 @@ export interface UsageMetrics {
   failedRequests: number;
   averageResponseTime: number;
   toolUsage: Record<string, number>;
-  errorCounts: Record<ErrorCode, number>;
+  // errorCounts: Record<ErrorCode, number>;
 }
 
 // ============================================================================
@@ -505,12 +505,12 @@ export interface UsageMetrics {
 // ============================================================================
 
 // Aliases pour les types courants
-export type Embed = CreateEmbedParams;
-export type Poll = CreatePollParams;
-export type Message = SendMessageParams;
-export type File = FileUploadParams;
-export type Code = CodePreviewParams;
-export type Component = InteractionParams;
+// export type Embed = CreateEmbedParams;
+// export type Poll = CreatePollParams;
+// export type Message = SendMessageParams;
+// export type File = FileUploadParams;
+// export type Code = CodePreviewParams;
+// export type Component = InteractionParams;
 
 // ============================================================================
 // NOTES D'UTILISATION

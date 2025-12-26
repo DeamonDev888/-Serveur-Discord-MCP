@@ -21,6 +21,9 @@ export enum LogLevel {
   ERROR = 'ERROR',
 }
 
+// Flag pour éviter les boucles infinies d'erreur
+let isLoggingError = false;
+
 class Logger {
   private static logToFile(level: LogLevel, message: string, ...args: any[]) {
     const timestamp = new Date().toISOString();
@@ -30,24 +33,34 @@ class Logger {
     try {
       fs.appendFileSync(LOG_FILE, logLine);
     } catch (err) {
-      process.stderr.write(`[LOGGER ERROR] Impossible d'écrire dans le fichier de log: ${err}\n`);
+      // Ne pas écrire sur stderr pour éviter les boucles EPIPE
     }
   }
 
   private static logToStderr(level: LogLevel, message: string, ...args: any[]) {
-    const timestamp = new Date().toLocaleTimeString();
-    const color = this.getColor(level);
-    const reset = '\x1b[0m';
-    
-    const formattedMessage = `[${timestamp}] ${color}[${level}]${reset} ${message}`;
-    
-    if (args.length > 0) {
-      process.stderr.write(`${formattedMessage}\n`);
-      for (const arg of args) {
-        process.stderr.write(`${JSON.stringify(arg, null, 2)}\n`);
+    // Éviter les boucles infinies si stderr est cassé
+    if (isLoggingError) return;
+
+    try {
+      const timestamp = new Date().toLocaleTimeString();
+      const color = this.getColor(level);
+      const reset = '\x1b[0m';
+
+      const formattedMessage = `[${timestamp}] ${color}[${level}]${reset} ${message}`;
+
+      if (args.length > 0) {
+        process.stderr.write(`${formattedMessage}\n`);
+        for (const arg of args) {
+          process.stderr.write(`${JSON.stringify(arg, null, 2)}\n`);
+        }
+      } else {
+        process.stderr.write(`${formattedMessage}\n`);
       }
-    } else {
-      process.stderr.write(`${formattedMessage}\n`);
+    } catch (err) {
+      // stderr est cassé (EPIPE), marquer pour éviter les boucles
+      if ((err as any)?.code === 'EPIPE') {
+        isLoggingError = true;
+      }
     }
   }
 
