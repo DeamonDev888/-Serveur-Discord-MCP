@@ -328,23 +328,30 @@ export class InteractionHandler {
     }
 
     // Vérifier si le bouton a expiré
-    const createdAt = new Date(button.createdAt);
-    const now = new Date();
-    const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+    // 🔥 Les boutons avec custom_id personnalisé (qui ne commencent pas par embedv2_) n'expirent jamais
+    const isCustomIdButton = !customId.startsWith('embedv2_') && !customId.startsWith('pb_');
 
-    if (hoursDiff > 24) {
-      Logger.info('⏰ Bouton expiré (TTL 24h)');
-      this.buttons.delete(customId);
-      await saveCustomButtons(this.buttons);
+    if (!isCustomIdButton) {
+      const createdAt = new Date(button.createdAt);
+      const now = new Date();
+      const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
 
-      this.sendToDiscord({
-        action: 'button_expired',
-        channelId,
-        messageId,
-        customId,
-        label: button.label,
-      });
-      return true;
+      if (hoursDiff > 24) {
+        Logger.info('⏰ Bouton expiré (TTL 24h)');
+        this.buttons.delete(customId);
+        await saveCustomButtons(this.buttons);
+
+        this.sendToDiscord({
+          action: 'button_expired',
+          channelId,
+          messageId,
+          customId,
+          label: button.label,
+        });
+        return true;
+      }
+    } else {
+      Logger.debug(`🔒 Bouton avec custom_id personnalisé (${customId}) - pas d'expiration`);
     }
 
     // Exécuter l'action du bouton

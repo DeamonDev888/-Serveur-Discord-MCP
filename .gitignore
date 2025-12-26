@@ -49,9 +49,8 @@ README_FINAL.md
 # pnpm-lock.yaml
 
 # Data et fichiers de configuration locale
-data/                    # Données runtime (boutons, sondages, moderation, etc.)
-config/local.json
-
+data/                  
+data
 # Fichiers de statut runtime
 discord-status.json
 embed-analytics.json

@@ -1703,21 +1703,21 @@ const SIMPLEICONS_LOGOS: Record<string, { name: string; category: string; logo: 
 // ============================================================================
 
 const THEME_IMAGES: Record<string, { name: string; logo: string }> = {
-  // Thème Cyberpunk - Images futuristes/tech (CDN fiables)
+  // Thème Cyberpunk - Images futuristes/tech optimisées pour Discord
   CYBERPUNK_AUTHOR: { name: 'Cyberpunk Author Icon', logo: 'https://cdn.simpleicons.org/matrix/FF00FF' },
-  CYBERPUNK_THUMBNAIL: { name: 'Cyberpunk Thumbnail', logo: 'https://cdn.simpleicons.org/codingninjas/00FFFF' },
+  CYBERPUNK_THUMBNAIL: { name: 'Cyberpunk Thumbnail', logo: 'https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=200&h=200&fit=crop' },
   CYBERPUNK_IMAGE: { name: 'Cyberpunk Image', logo: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&h=300&fit=crop' },
   CYBERPUNK_FOOTER: { name: 'Cyberpunk Footer Icon', logo: 'https://cdn.simpleicons.org/hackaday/FF00FF' },
 
-  // Thème Gaming - Icônes jeux (SimpleIcons CDN)
+  // Thème Gaming - Images gaming optimisées pour Discord (Unsplash)
   GAMING_AUTHOR: { name: 'Gaming Author Icon', logo: 'https://cdn.simpleicons.org/steam/7289DA' },
-  GAMING_THUMBNAIL: { name: 'Gaming Thumbnail', logo: 'https://cdn.simpleicons.org/epicgames/7289DA' },
-  GAMING_IMAGE: { name: 'Gaming Image', logo: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=600&h=300&fit=crop' },
+  GAMING_THUMBNAIL: { name: 'Gaming Thumbnail', logo: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=200&h=200&fit=crop' },
+  GAMING_IMAGE: { name: 'Gaming Image', logo: 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=600&h=300&fit=crop' },
   GAMING_FOOTER: { name: 'Gaming Footer Icon', logo: 'https://cdn.simpleicons.org/xbox/107C10' },
 
-  // Thème Corporate - Icônes business (SimpleIcons CDN)
+  // Thème Corporate - Images business optimisées pour Discord
   CORPORATE_AUTHOR: { name: 'Corporate Author Icon', logo: 'https://cdn.simpleicons.org/linkedin/0066CC' },
-  CORPORATE_THUMBNAIL: { name: 'Corporate Thumbnail', logo: 'https://cdn.simpleicons.org/slack/4A154B' },
+  CORPORATE_THUMBNAIL: { name: 'Corporate Thumbnail', logo: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=200&h=200&fit=crop' },
   CORPORATE_IMAGE: { name: 'Corporate Image', logo: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&h=300&fit=crop' },
   CORPORATE_FOOTER: { name: 'Corporate Footer Icon', logo: 'https://cdn.simpleicons.org/microsoftteams/6264A7' },
 
@@ -1733,9 +1733,9 @@ const THEME_IMAGES: Record<string, { name: string; logo: string }> = {
   OCEAN_IMAGE: { name: 'Ocean Image', logo: 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=600&h=300&fit=crop' },
   OCEAN_FOOTER: { name: 'Ocean Footer Icon', logo: 'https://cdn.simpleicons.org/nodered/00CED1' },
 
-  // Thème Minimal - Design épuré (SimpleIcons)
+  // Thème Minimal - Design épuré optimisé pour Discord
   MINIMAL_AUTHOR: { name: 'Minimal Author Icon', logo: 'https://cdn.simpleicons.org/abstract/2C2C2C' },
-  MINIMAL_THUMBNAIL: { name: 'Minimal Thumbnail', logo: 'https://cdn.simpleicons.org/figma/2C2C2C' },
+  MINIMAL_THUMBNAIL: { name: 'Minimal Thumbnail', logo: 'https://images.unsplash.com/photo-1506459225017-dcafdc4d81e6?w=200&h=200&fit=crop' },
   MINIMAL_FOOTER: { name: 'Minimal Footer Icon', logo: 'https://cdn.simpleicons.org/framer/2C2C2C' },
 
   // Thème Noël - Festif (SimpleIcons + Unsplash)

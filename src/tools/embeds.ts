@@ -1571,6 +1571,7 @@ export function registerEmbedTools(server: FastMCP) {
         action: z.enum(['none', 'refresh', 'link', 'custom', 'delete', 'edit', 'role', 'modal']).default('none'),
         value: z.string().optional().describe('URL pour action link'),
         roleId: z.string().optional().describe('ID du rôle pour action role (toggle)'),
+        custom_id: z.string().describe('🔒 OBLIGATOIRE - ID personnalisé unique pour le bouton (ex: "noel_2024_surprise", "btn_refresh_1"). Cet ID fixe garantit que le bouton fonctionnera toujours même après modification de l\'embed.'),
         persistent: z.boolean().optional().default(false).describe('Si true, le bouton est sauvegardé dans dist/data/ et hooké aux handlers persistants'),
         customData: z.object({
           message: z.string().optional(),
@@ -1585,6 +1586,7 @@ export function registerEmbedTools(server: FastMCP) {
         }).optional(),
       })).max(5).optional().describe('Boutons intégrés dans l\'embed avec actions configurables'),
       selectMenus: z.array(z.object({
+        custom_id: z.string().describe('🔒 OBLIGATOIRE - ID personnalisé unique pour le menu (ex: "menu_select_crypto", "menu_choose_role"). Cet ID fixe garantit que le menu fonctionnera toujours même après modification de l\'embed.'),
         type: z.enum(['string', 'user', 'role', 'channel', 'mentionable']).default('string'),
         placeholder: z.string().optional(),
         minValues: z.number().optional().default(1),
@@ -2099,11 +2101,14 @@ export function registerEmbedTools(server: FastMCP) {
           for (let index = 0; index < args.buttons.length; index++) {
             const btn = args.buttons[index];
             // Créer un ID unique pour le bouton
-            // Si persistant: pb_<messageId>_<index>
-            // Si standard: embedv2_<embedId>_<action>_<timestamp>_<random>
-            const buttonId = btn.persistent
-              ? `pb_TEMP_${index}_${Date.now()}` // TEMP sera remplacé par le vrai messageId après envoi
-              : `embedv2_${embedId}_${btn.action}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+            // 1. Si custom_id fourni → utilise l'ID fixe personnalisé
+            // 2. Si persistant: pb_<messageId>_<index>
+            // 3. Si standard: embedv2_<embedId>_<action>_<timestamp>_<random>
+            const buttonId = btn.custom_id
+              ? btn.custom_id // ID personnalisé fixe
+              : btn.persistent
+                ? `pb_TEMP_${index}_${Date.now()}` // TEMP sera remplacé par le vrai messageId après envoi
+                : `embedv2_${embedId}_${btn.action}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
 
             const button = new ButtonBuilder()
               .setLabel(btn.label);
@@ -2180,9 +2185,14 @@ export function registerEmbedTools(server: FastMCP) {
         if (args.selectMenus && args.selectMenus.length > 0) {
           for (let menuIndex = 0; menuIndex < args.selectMenus.length; menuIndex++) {
             const menu = args.selectMenus[menuIndex];
-            const menuId = menu.persistent
-              ? `pm_TEMP_${menuIndex}_${Date.now()}`
-              : `embedv2_menu_${embedId}_${menu.action}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+            // 1. Si custom_id fourni → utilise l'ID fixe personnalisé (OBLIGATOIRE)
+            // 2. Si persistant: pm_<messageId>_<index>
+            // 3. Si standard: embedv2_menu_<embedId>_<action>_<timestamp>_<random>
+            const menuId = menu.custom_id
+              ? menu.custom_id // ID personnalisé fixe (OBLIGATOIRE)
+              : menu.persistent
+                ? `pm_TEMP_${menuIndex}_${Date.now()}`
+                : `embedv2_menu_${embedId}_${menu.action}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
 
             // Créer le menu selon le type
             let selectMenu: any;
@@ -2286,29 +2296,29 @@ export function registerEmbedTools(server: FastMCP) {
         if (args.buttons && args.buttons.length > 0) {
           console.log(`[EMBEDS] Mise à jour des messageId pour ${args.buttons.length} bouton(s)`);
 
-          // Récupérer les vrais buttonIds depuis les composants envoyés
-          if (components.length > 0) {
-            const buttonRow = components[0];
-            if (buttonRow && buttonRow.components) {
-              console.log(`[EMBEDS] Composants trouvés: ${buttonRow.components.length} bouton(s)`);
-              const buttonsMap = await loadCustomButtons();
-              for (const buttonComponent of buttonRow.components) {
-                const buttonId = buttonComponent.customId;
-                console.log(`[EMBEDS] Traitement du bouton: ${buttonId}`);
-                const buttonData = buttonsMap.get(buttonId);
-                if (buttonData) {
-                  buttonData.messageId = message.id;
-                  buttonsMap.set(buttonId, buttonData);
-                  console.log(`[EMBEDS] messageId mis à jour pour ${buttonId}`);
-                } else {
-                  console.error(`[EMBEDS] ERREUR: Bouton ${buttonId} non trouvé dans la persistance!`);
-                }
+          // Charger les boutons depuis la persistance
+          const buttonsMap = await loadCustomButtons();
+
+          // Mettre à jour le messageId pour chaque bouton créé
+          for (const btn of args.buttons) {
+            // Récupérer l'ID du bouton (soit custom_id, soit l'ID généré)
+            const buttonId = btn.custom_id || buttonIds[args.buttons.indexOf(btn)];
+            if (buttonId) {
+              const buttonData = buttonsMap.get(buttonId);
+              if (buttonData) {
+                buttonData.messageId = message.id;
+                buttonsMap.set(buttonId, buttonData);
+                console.log(`[EMBEDS] messageId mis à jour pour ${buttonId} -> ${message.id}`);
+              } else {
+                console.error(`[EMBEDS] ERREUR: Bouton ${buttonId} non trouvé dans la persistance!`);
               }
-              await saveCustomButtons(buttonsMap);
-              await interactionHandler.refreshButtons(); 
-              console.log(`[EMBEDS] Sauvegarde finalisée`);
             }
           }
+
+          // Sauvegarder les modifications
+          await saveCustomButtons(buttonsMap);
+          await interactionHandler.refreshButtons();
+          console.log(`[EMBEDS] Sauvegarde finalisée`);
         }
 
         // Mettre à jour les messageId des menus persistants
