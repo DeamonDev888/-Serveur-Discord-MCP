@@ -1,9 +1,12 @@
 import { promises as fs } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import Logger from './logger.js';
 
-// Configuration
-const DATA_DIR = join(process.cwd(), 'data');
+// Configuration : chemin absolu vers le dossier data (indépendant de process.cwd())
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const DATA_DIR = join(__dirname, '../../data');
 const MENUS_FILE = join(DATA_DIR, 'menus.json');
 
 // Interface pour les menus déroulants personnalisés

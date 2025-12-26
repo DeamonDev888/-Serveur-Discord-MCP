@@ -25,14 +25,39 @@ import {
   STEAM_LOGOS,
   DEVOPS_LOGOS,
   ESPORT_LOGOS,
-  // Vraies images Unsplash
+} from '../data/logos.js';
+
+// Vraies images Unsplash - Collection complète
+import {
+  ABSTRACT_IMAGES,
   ANIME_IMAGES,
+  ANIMALS_IMAGES,
+  ARCHITECTURE_IMAGES,
+  ART_IMAGES,
+  BUSINESS_IMAGES,
   CYBERPUNK_IMAGES,
   DEVOPS_IMAGES,
-  NATURE_IMAGES,
   ESPORT_IMAGES,
+  FASHION_IMAGES,
+  FOOD_IMAGES,
+  NATURE_IMAGES,
+  NEON_IMAGES,
+  NIGHT_IMAGES,
+  PEOPLE_IMAGES,
+  SPACE_IMAGES,
+  SPORTS_IMAGES,
+  TECHNOLOGY_IMAGES,
+  TRAVEL_IMAGES,
+  VINTAGE_IMAGES,
+  WALLPAPER_IMAGES,
+  TECH_AI_IMAGES,
+  DEVELOPMENT_IMAGES,
+  SCIENCE_IMAGES,
+  FINANCE_IMAGES,
+  GAMING_IMAGES,
+  LIFESTYLE_IMAGES,
   REAL_IMAGES,
-} from '../data/logos.js';
+} from '../data/realImages.js';
 
 // ============================================================================
 // CONFIGURATION PICSUM PHOTOS (Gratuit, sans clé API)
@@ -146,10 +171,32 @@ const ListImagesSchema = z.object({
   ]).optional().describe('Symbole(s) à rechercher (ex: "BTC" ou ["BTC", "ETH", "AAPL"]). Si vide, liste tous les logos de la catégorie.'),
   category: z.enum([
     'all', 'crypto', 'companies', 'services', 'ai', 'dev', 'finance',
-    // NOUVELLES CATÉGORIES
+    // NOUVELLES CATÉGORIES LOGOS
     'pokemon', 'anime', 'steam', 'devops', 'esport', 'videogame', 'party', 'simpleicons', 'themes',
-    // VRAIES IMAGES UNSPLASH (photos HD, wallpapers)
-    'anime_images', 'cyberpunk', 'devops_images', 'nature', 'esport_images', 'real_images'
+    // VRAIES IMAGES UNSPLASH - Collection complète (photos HD, wallpapers)
+    // Abstrait & Art
+    'abstract', 'art',
+    // Culture & Style de vie
+    'anime_images', 'animals', 'architecture', 'business', 'fashion', 'people', 'food', 'travel',
+    // Tech & Cyberpunk
+    'cyberpunk', 'devops_images', 'technology', 'neon', 'night',
+    // Nature & Espaces
+    'nature', 'space', 'sports',
+    // Gaming
+    'esport_images', 'gaming',
+    // Vintage & Wallpaper
+    'vintage', 'wallpaper',
+    // NOUVELLES CATÉGORIES (2024)
+    // Tech AI & Development
+    'tech_ai', 'development',
+    // Sciences
+    'science',
+    // Finance & Business
+    'finance_images',
+    // Lifestyle
+    'lifestyle',
+    // Toutes les images
+    'real_images'
   ]).optional().default('all').describe('Catégorie de logos ou images'),
   sector: z.enum(['all', 'technology', 'finance', 'healthcare', 'consumer', 'energy', 'automotive', 'aerospace', 'telecom', 'retail', 'entertainment']).optional().default('all').describe('Secteur (pour companies uniquement)'),
   subcategory: z.enum([
@@ -165,7 +212,7 @@ const ListImagesSchema = z.object({
   format: z.enum(['list', 'compact', 'urls', 'json', 'discord']).optional().default('discord').describe('Format de sortie'),
   limit: z.number().optional().default(20).describe('Nombre maximum d\'images à retourner (Picsum = illimité)'),
   // NOUVEAU : choix entre logo, photo réelle, ou image stylisée
-  mode: z.enum(['logo', 'photo', 'gif']).optional().default('photo').describe('logo = logos classiques (base locale), photo = images HD (Picsum), gif = images stylisées avec blur (Picsum)')
+  mode: z.enum(['auto', 'logo', 'photo', 'gif', 'real']).optional().default('auto').describe('auto = détecte automatiquement (recommandé), logo = logos classiques (base locale), photo = images HD (Picsum), gif = images stylisées avec blur (Picsum), real = vraies images Unsplash thématiques (cyberpunk, anime, etc.)')
 });
 
 // ============================================================================
@@ -765,6 +812,516 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     })));
   }
 
+  // === NOUVELLES COLLECTIONS UNSPLASH ===
+
+  // Abstract Images - Forms, Colors, Textures
+  if (category === 'all' || category === 'abstract') {
+    let abstractImages = Object.entries(ABSTRACT_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      abstractImages = abstractImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...abstractImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'abstract_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // Animals Images - Wildlife, Pets, Nature
+  if (category === 'all' || category === 'animals') {
+    let animalsImages = Object.entries(ANIMALS_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      animalsImages = animalsImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...animalsImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'animal_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // Architecture Images - Buildings, Cities, Structures
+  if (category === 'all' || category === 'architecture') {
+    let architectureImages = Object.entries(ARCHITECTURE_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      architectureImages = architectureImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...architectureImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'architecture_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // Art Images - Paintings, Sculptures, Creative
+  if (category === 'all' || category === 'art') {
+    let artImages = Object.entries(ART_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      artImages = artImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...artImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'art_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // Business Images - Office, Meeting, Startup
+  if (category === 'all' || category === 'business') {
+    let businessImages = Object.entries(BUSINESS_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      businessImages = businessImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...businessImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'business_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // Fashion Images - Style, Clothing, Trends
+  if (category === 'all' || category === 'fashion') {
+    let fashionImages = Object.entries(FASHION_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      fashionImages = fashionImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...fashionImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'fashion_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // Food Images - Cuisine, Dishes, Drinks
+  if (category === 'all' || category === 'food') {
+    let foodImages = Object.entries(FOOD_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      foodImages = foodImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...foodImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'food_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // Neon Images - Lights, Signs, Night City
+  if (category === 'all' || category === 'neon') {
+    let neonImages = Object.entries(NEON_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      neonImages = neonImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...neonImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'neon_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // Night Images - Dark, Evening, Moon
+  if (category === 'all' || category === 'night') {
+    let nightImages = Object.entries(NIGHT_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      nightImages = nightImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...nightImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'night_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // People Images - Portrait, Lifestyle, Culture
+  if (category === 'all' || category === 'people') {
+    let peopleImages = Object.entries(PEOPLE_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      peopleImages = peopleImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...peopleImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'people_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // Space Images - Universe, Planets, Cosmos
+  if (category === 'all' || category === 'space') {
+    let spaceImages = Object.entries(SPACE_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      spaceImages = spaceImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...spaceImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'space_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // Sports Images - Competition, Action, Fitness
+  if (category === 'all' || category === 'sports') {
+    let sportsImages = Object.entries(SPORTS_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      sportsImages = sportsImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...sportsImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'sport_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // Technology Images - Innovation, Digital, Modern
+  if (category === 'all' || category === 'technology') {
+    let techImages = Object.entries(TECHNOLOGY_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      techImages = techImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...techImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'technology_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // Travel Images - Adventure, Places, Culture
+  if (category === 'all' || category === 'travel') {
+    let travelImages = Object.entries(TRAVEL_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      travelImages = travelImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...travelImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'travel_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // Vintage Images - Retro, Classic, Nostalgia
+  if (category === 'all' || category === 'vintage') {
+    let vintageImages = Object.entries(VINTAGE_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      vintageImages = vintageImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...vintageImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'vintage_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // Wallpaper Images - Desktop, Mobile, Background
+  if (category === 'all' || category === 'wallpaper') {
+    let wallpaperImages = Object.entries(WALLPAPER_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      wallpaperImages = wallpaperImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...wallpaperImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'wallpaper_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // === NOUVELLES COLLECTIONS 2024 ===
+
+  // Tech AI Images - MCP, Claude Code, N8N, Agent, Gemini, Grok
+  if (category === 'all' || category === 'tech_ai') {
+    let techAiImages = Object.entries(TECH_AI_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      techAiImages = techAiImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...techAiImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'tech_ai_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // Development Images - JavaScript, Python, Code, Programming
+  if (category === 'all' || category === 'development') {
+    let devImages = Object.entries(DEVELOPMENT_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      devImages = devImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...devImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'development_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // Science Images - Math, Physics, Biology, Neuroscience, Archaeology
+  if (category === 'all' || category === 'science') {
+    let scienceImages = Object.entries(SCIENCE_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      scienceImages = scienceImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...scienceImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'science_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // Finance Images - Stock Market, Financial Report, Calendar
+  if (category === 'all' || category === 'finance_images') {
+    let financeImages = Object.entries(FINANCE_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      financeImages = financeImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...financeImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'finance_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // Gaming Images - GTA 5, Minecraft, Video Games
+  if (category === 'all' || category === 'gaming') {
+    let gamingImages = Object.entries(GAMING_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      gamingImages = gamingImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...gamingImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'gaming_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
+  // Lifestyle Images - Party, Humor, Coffee, Bretzel, etc.
+  if (category === 'all' || category === 'lifestyle') {
+    let lifestyleImages = Object.entries(LIFESTYLE_IMAGES);
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      lifestyleImages = lifestyleImages.filter(([key, info]) =>
+        key.toLowerCase().includes(searchLower) ||
+        info.name.toLowerCase().includes(searchLower) ||
+        info.category?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    results.push(...lifestyleImages.map(([symbol, info]) => ({
+      symbol,
+      name: info.name,
+      url: info.image,
+      type: 'lifestyle_image',
+      mode: 'photo',
+      source: 'Unsplash',
+    })));
+  }
+
   // Real Images - All Unsplash images combined
   if (category === 'real_images') {
     let realImages = Object.entries(REAL_IMAGES);
@@ -835,25 +1392,59 @@ function formatResults(results: Array<{ symbol: string; name: string; url: strin
 export function registerListImagesTools(server: FastMCP): void {
   server.addTool({
     name: 'list_images',
-    description: `🖼️ Liste/Récupère les URLs d'images (logos, photos HD, ou images stylisées) pour crypto, entreprises, services.
-    SOURCES GRATUITES (sans API key):
-    • Logos: Coingecko (crypto), SimpleIcons (entreprises), base locale (services)
-    • Photos: Picsum Photos (images HD aléatoires avec seed)
-    • GIFs: Picsum avec blur (effets stylisés)
+    description: `🖼️ Liste/Récupère les URLs d'images pour les embeds Discord
 
-    USAGE:
-    • Un symbole: list_images({symbols: "BTC"}) → retourne le logo
-    • Photo HD: list_images({symbols: "AAPL", mode: "photo"}) → grande photo Picsum
-    • Image stylisée: list_images({symbols: "BTC", mode: "gif"}) → image avec blur
-    • Liste photos: list_images({category: "crypto", mode: "photo", limit: 10}) → 10 photos
-    • Format Discord: list_images({symbols: "BTC", format: "discord"}) → optimisé pour Discord
-    • Recherche: list_images({search: "bitcoin"}) → recherche par nom`,
+    🎯 MODE AUTO (recommandé): Détecte automatiquement la meilleure source
+    • Cyberpunk/Anime/Nature → Vraies photos Unsplash HD thématiques
+    • Symboles (BTC, AAPL) → Logos de la base locale
+    • Categories classiques → Logos statiques
+
+    📚 SOURCES DISPONIBLES:
+    • Logos: Coingecko (crypto), SimpleIcons (entreprises), base locale (services)
+    • Photos HD: Unsplash (cyberpunk, anime, nature, esport, devops)
+    • Photos aléatoires: Picsum Photos (avec seed pour la reproductibilité)
+    • GIFs stylisés: Picsum avec blur (effets visuels)
+
+    💡 EXEMPLES D'USAGE:
+    • Mode AUTO (recommandé):
+      - list_images({category: "cyberpunk"}) → Vraies photos cyberpunk Unsplash
+      - list_images({symbols: "BTC"}) → Logo Bitcoin
+      - list_images({category: "crypto", limit: 10}) → Top 10 cryptos
+
+    • Mode REAL (vraies photos thématiques):
+      - list_images({category: "cyberpunk", mode: "real"}) → Photos cyberpunk HD
+      - list_images({category: "anime_images", mode: "real"}) → Photos anime/style japonais
+      - list_images({category: "nature", mode: "real"}) → Photos nature/paysages
+
+    • Mode LOGO (logos statiques):
+      - list_images({symbols: "BTC", mode: "logo"}) → Logo Bitcoin Coingecko
+      - list_images({symbols: "AAPL", mode: "logo"}) → Logo Apple SimpleIcons
+
+    • Mode PHOTO (photos aléatoires Picsum):
+      - list_images({symbols: "BTC", mode: "photo"}) → Photo aléatoire avec seed BTC
+      - list_images({category: "crypto", mode: "photo", limit: 5}) → 5 photos aléatoires
+
+    • Mode GIF (effets stylisés):
+      - list_images({symbols: "BTC", mode: "gif"}) → Image avec blur (effet GIF)
+
+    🏷️ CATÉGORIES THÉMATIQUES (photos Unsplash HD):
+    • cyberpunk - Villes futuristes, néon, cyber-culture
+    • anime_images - Style japonais, action, fantasy
+    • nature - Paysages, montagnes, forêts
+    • esport_images - Gaming, compétition, setup
+    • devops_images - Infrastructure, cloud, code
+    • real_images - Toutes les photos Unsplash
+
+    🔍 RECHERCHE:
+    • list_images({search: "bitcoin"}) → Recherche par nom
+    • list_images({category: "cyberpunk", search: "neon"}) → Filtre les résultats`,
     parameters: ListImagesSchema,
     execute: async (args) => {
       try {
         // Récupérer les paramètres
-        const mode = args.mode || 'photo';
+        let mode = args.mode || 'auto';
         const limit = args.limit || 20;
+        const category = args.category || 'all';
 
         // Normaliser symbols en tableau
         let symbols: string[] = [];
@@ -866,7 +1457,63 @@ export function registerListImagesTools(server: FastMCP): void {
         }
 
         // ============================================================================
-        // MODE LOGO: Utilise la base de données statique
+        // CATÉGORIES D'IMAGES THÉMATIQUES UNSPLASH (vraies images HD)
+        // Ces catégories utilisent TOUJOURS les vraies images Unsplash
+        // ============================================================================
+        const THEMATIC_CATEGORIES = [
+          // Collections existantes
+          'anime_images', 'cyberpunk', 'devops_images', 'nature',
+          'esport_images', 'real_images',
+          // Nouvelles collections
+          'abstract', 'animals', 'architecture', 'art', 'business',
+          'fashion', 'food', 'neon', 'night', 'people', 'space',
+          'sports', 'technology', 'travel', 'vintage', 'wallpaper',
+          // NOUVELLES CATÉGORIES 2024
+          'tech_ai', 'development', 'science', 'finance_images',
+          'gaming', 'lifestyle'
+        ];
+
+        // ============================================================================
+        // MODE AUTO: Détection automatique de la meilleure source
+        // ============================================================================
+        if (mode === 'auto') {
+          // Si c'est une catégorie thématique, utiliser les vraies images Unsplash
+          if (THEMATIC_CATEGORIES.includes(category)) {
+            mode = 'real';
+          }
+          // Si des symboles spécifiques sont demandés, utiliser les logos
+          else if (symbols.length > 0) {
+            mode = 'logo';
+          }
+          // Sinon, utiliser les logos pour les catégories classiques
+          else {
+            mode = 'logo';
+          }
+        }
+
+        // ============================================================================
+        // MODE REAL: Vraies images Unsplash thématiques (cyberpunk, anime, etc.)
+        // ============================================================================
+        if (mode === 'real') {
+          const results = getAllImages(
+            category,
+            args.sector || 'all',
+            args.subcategory || 'all',
+            args.search || '',
+            limit,
+            'photo'  // Utilise les vraies images Unsplash
+          );
+
+          if (results.length === 0) {
+            const categoryList = THEMATIC_CATEGORIES.join(', ');
+            return `❌ Aucune image trouvée pour la catégorie "${category}"\n\n💡 Catégories disponibles: ${categoryList}`;
+          }
+
+          return formatResults(results, args.format || 'list', null, 'photo');
+        }
+
+        // ============================================================================
+        // MODE LOGO: Utilise la base de données statique (logos)
         // ============================================================================
         if (mode === 'logo') {
           // Si des symboles spécifiques sont demandés
@@ -886,7 +1533,7 @@ export function registerListImagesTools(server: FastMCP): void {
             }).filter(r => r !== null);
 
             if (results.length === 0) {
-              return `❌ Aucun logo trouvé pour: ${symbols.join(', ')}`;
+              return `❌ Aucun logo trouvé pour: ${symbols.join(', ')}\n\n💡 Astuce: Utilisez mode: "photo" pour des images aléatoires ou mode: "real" pour des images thématiques.`;
             }
 
             const singleSymbol = symbols.length === 1 ? symbols[0] : null;
@@ -895,11 +1542,11 @@ export function registerListImagesTools(server: FastMCP): void {
 
           // Lister tous les logos selon les filtres
           const results = getAllImages(
-            args.category || 'all',
+            category,
             args.sector || 'all',
             args.subcategory || 'all',
             args.search || '',
-            args.limit || 50,
+            limit,
             'logo'
           );
 
@@ -911,9 +1558,15 @@ export function registerListImagesTools(server: FastMCP): void {
         }
 
         // ============================================================================
-        // MODE PHOTO: Picsum Photos (gratuit, sans API key)
+        // MODE PHOTO: Picsum Photos (gratuit, sans API key) - images aléatoires
         // ============================================================================
         if (mode === 'photo') {
+          // AVERTISSEMENT si c'est une catégorie thématique
+          if (THEMATIC_CATEGORIES.includes(category)) {
+            const catName = category.replace('_', ' ');
+            return `⚠️ ATTENTION: Vous utilisez mode: "photo" pour la catégorie "${catName}"\n\n💡 Les images seront ALEATOIRES (Picsum), pas thématiques !\n\n✅ Solution: Utilisez mode: "auto" ou mode: "real" pour les vraies images Unsplash thématiques.`;
+          }
+
           let results: Array<{ symbol: string; name: string; url: string; type: string; mode: string }> = [];
           const seedBase = Date.now(); // Seed pour variation
 
@@ -954,13 +1607,13 @@ export function registerListImagesTools(server: FastMCP): void {
           type PicsumConfig = { width: number; height: number; blur?: number; grayscale?: boolean };
           const defaultConfig: PicsumConfig = { width: 800, height: 400 };
           let config: PicsumConfig = defaultConfig;
-          if (args.category && args.category !== 'all') {
-            config = CATEGORY_TO_QUERY[args.category] || defaultConfig;
+          if (category && category !== 'all' && CATEGORY_TO_QUERY[category]) {
+            config = CATEGORY_TO_QUERY[category] || defaultConfig;
           }
 
           // Générer plusieurs photos avec des seeds différents
           for (let i = 0; i < limit; i++) {
-            const seed = `${args.category || 'all'}_${seedBase + i}`;
+            const seed = `${category || 'all'}_${seedBase + i}`;
             let picsumUrl = `${PICSUM_BASE_URL}/seed/${seed}/${config.width}/${config.height}`;
             const params: string[] = [];
             if (config.grayscale) params.push('grayscale');
@@ -1014,13 +1667,13 @@ export function registerListImagesTools(server: FastMCP): void {
 
           // Si pas de symboles spécifiques, utiliser catégorie
           let config = { width: 600, height: 300, blur: 2 };
-          if (args.category && args.category !== 'all') {
-            config = CATEGORY_TO_GIF[args.category] || config;
+          if (category && category !== 'all' && CATEGORY_TO_GIF[category]) {
+            config = CATEGORY_TO_GIF[category] || config;
           }
 
           // Générer plusieurs images avec des seeds différents
           for (let i = 0; i < limit; i++) {
-            const seed = `${args.category || 'gif'}_${seedBase + i}`;
+            const seed = `${category || 'gif'}_${seedBase + i}`;
             const picsumUrl = `${PICSUM_BASE_URL}/seed/${seed}/${config.width}/${config.height}?blur=${config.blur}`;
 
             gifResults.push({
@@ -1036,7 +1689,7 @@ export function registerListImagesTools(server: FastMCP): void {
         }
 
         // Mode inconnu
-        return `❌ Mode inconnu: ${mode}. Utilisez 'logo', 'photo' ou 'gif'.`;
+        return `❌ Mode inconnu: ${mode}. Utilisez 'auto', 'logo', 'photo', 'real' ou 'gif'.`;
 
       } catch (error: any) {
         return `❌ Erreur: ${error.message}`;

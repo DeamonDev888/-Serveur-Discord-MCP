@@ -1,32 +1,28 @@
 /**
- * 💾 GESTIONNAIRE DE PERSISTANCE UNIFIÉ (dist/)
+ * 💾 GESTIONNAIRE DE PERSISTANCE UNIFIÉ (data/)
  * =============================================
- * Toute la persistance va dans dist/data/ qui est gitignore
+ * Toute la persistance va dans data/ qui est gitignore
  *
  * Avantages:
  * - Données runtime ignorées par git
  * - Clean git repo
- * - Données recréées au build si nécessaire
+ * - Données SURVIVENT au build (contrairement à dist/data/)
  */
 
 import { promises as fs } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
 
-// Point de racine - soit dist/ en production, soit racine en dev
-const getRootDir = () => {
-  // Si on est dans dist/, utiliser la racine du projet
-  const currentDir = process.cwd();
-  if (currentDir.includes('dist')) {
-    return currentDir;
-  }
-  return join(process.cwd(), 'dist');
-};
+// Point de racine - chemin absolu basé sur le fichier source (indépendant de process.cwd())
+// Utilise data/ à la racine du projet serveur_discord (pas dist/data/)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-const DATA_DIR = join(getRootDir(), 'data');
+const DATA_DIR = join(__dirname, '../../data');
 
 // ============================================================================
 // INITIALISATION DU RÉPERTOIRE
