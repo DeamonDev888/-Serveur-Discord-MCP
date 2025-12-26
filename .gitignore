@@ -50,7 +50,8 @@ README_FINAL.md
 
 # Data et fichiers de configuration locale
 data/                  
-data
+data    
+serveur_discord\data
 # Fichiers de statut runtime
 discord-status.json
 embed-analytics.json
