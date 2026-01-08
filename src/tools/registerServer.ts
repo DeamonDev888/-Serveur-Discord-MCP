@@ -98,7 +98,7 @@ export function registerServerTools(server: FastMCP): void {
     parameters: ListMembersSchema,
     execute: async args => {
       try {
-        console.error(`👥 [list_members] Guild: ${args.guildId || 'auto'}, Limit: ${args.limit}`);
+        Logger.error(`👥 [list_members] Guild: ${args.guildId || 'auto'}, Limit: ${args.limit}`);
         const client = await ensureDiscordConnection();
         const guildId = args.guildId || client.guilds.cache.first()?.id;
 
@@ -127,7 +127,7 @@ export function registerServerTools(server: FastMCP): void {
     parameters: GetUserInfoSchema,
     execute: async args => {
       try {
-        console.error(`👤 [get_user_info] User: ${args.userId}`);
+        Logger.error(`👤 [get_user_info] User: ${args.userId}`);
         const client = await ensureDiscordConnection();
         const user = await client.users.fetch(args.userId);
 
@@ -150,7 +150,7 @@ export function registerServerTools(server: FastMCP): void {
 📖 Display Name: ${user.displayName}
 🎨 Avatar: ${user.avatarURL() || 'N/A'}${memberInfo}`;
       } catch (error: any) {
-        console.error(`❌ [get_user_info]`, error.message);
+        Logger.error(`❌ [get_user_info]`, error.message);
         return `❌ Erreur: ${error.message}`;
       }
     },

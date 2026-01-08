@@ -16,6 +16,46 @@ import * as fs from 'fs';
 import { DiscordBridge } from './discord-bridge.js';
 import Logger from './utils/logger.js';
 
+
+// ============================================================================
+// 🛡️ PROTECTION DU PROTOCOLE MCP & GESTION DES ERREURS
+// ============================================================================
+
+// 1. Redirection de STDOUT vers STDERR
+// Le protocole MCP utilise stdout pour la communication JSON-RPC.
+// Si une librairie (comme discord.js) écrit sur stdout via console.log, cela corrompt le message JSON.
+// Nous monkeys-patchons console.log pour rediriger ces sorties vers notre Logger (qui écrit sur stderr).
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
+
+console.log = (...args) => {
+  // Logger.info utilise process.stderr, donc c'est sûr pour le protocole MCP.
+  // Le préfixe [STDOUT-REDIRECT] permet d'identifier l'origine du log.
+  Logger.info('[STDOUT-REDIRECT]', ...args);
+};
+
+console.error = (...args) => {
+  Logger.error('[STDERR-REDIRECT]', ...args);
+};
+
+// 2. Gestionnaires d'erreurs globaux
+// Pour éviter que le processus ne crashe silencieusement sur une exception non gérée,
+// ce qui causerait une erreur "EOF" immédiate côté client MCP.
+process.on('uncaughtException', (error) => {
+  Logger.error('🔥 CRITIQUE: Exception non gérée (Uncaught Exception):', error);
+  // En production, on pourrait vouloir quitter, mais en dev/debug on essaie de survivre
+  // pour voir les logs.
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  Logger.error('🔥 CRITIQUE: Promesse rejetée non gérée (Unhandled Rejection):', reason);
+});
+
+// ============================================================================
+
+
+
+
 // Imports des utilitaires de logos
 import {
   getUniversalLogo,
@@ -105,11 +145,8 @@ async function loadTools() {
   }
 }
 
-// IMPORTANT: Ne PAS utiliser console.log car cela corrupt le protocole MCP sur stdout !
-// Redirigeons console.log vers Logger.info pour que les logs aillent sur stderr/fichier sans casser MCP.
-console.log = (...args: any[]) => {
-  Logger.info('[STDOUT REDIRECT]', ...args);
-};
+// Logger.info est d├⌐j├á s├╗r car il utilise process.stderr.write dans utils/logger.ts
+
 
 // Charger les variables d'environnement avec chemin robuste
 const __filename = fileURLToPath(import.meta.url);
@@ -152,14 +189,14 @@ const botConfig = {
 };
 
 // Debug: Afficher les variables d'environnement au démarrage
-// console.error('🔍 Debug ENV:');
+// Logger.error('🔍 Debug ENV:');
 const tokenPreview =
   botConfig.token && botConfig.token !== 'YOUR_BOT_TOKEN'
     ? `${botConfig.token.substring(0, 5)}...${botConfig.token.substring(botConfig.token.length - 5)}`
     : 'NON DÉFINI/DEFAULT';
-// console.error(`  Token Status: ${tokenPreview}`);
-// console.error('  DISCORD_BOT_TOKEN:', process.env.DISCORD_BOT_TOKEN ? '✅ Présent' : '❌ Absent');
-// console.error('  NODE_ENV:', process.env.NODE_ENV);
+// Logger.error(`  Token Status: ${tokenPreview}`);
+// Logger.error('  DISCORD_BOT_TOKEN:', process.env.DISCORD_BOT_TOKEN ? '✅ Présent' : '❌ Absent');
+// Logger.error('  NODE_ENV:', process.env.NODE_ENV);
 
 // Initialisation du serveur MCP
 const server = new FastMCP({
@@ -213,14 +250,14 @@ async function updateEmbed(embedId: string): Promise<void> {
   if (!embedInfo) return;
 
   try {
-    console.log(`🔄 [Auto-Update] Mise à jour embed ${embedId} (${embedInfo.updateCount + 1})`);
+    Logger.info(`🔄 [Auto-Update] Mise à jour embed ${embedId} (${embedInfo.updateCount + 1})`);
 
     // Récupérer le client
     const client = await ensureDiscordConnection();
     const channel = await client.channels.fetch(embedInfo.channelId);
 
     if (!channel || !('messages' in channel)) {
-      console.error(`❌ [Auto-Update] Canal ${embedInfo.channelId} invalide`);
+      Logger.error(`❌ [Auto-Update] Canal ${embedInfo.channelId} invalide`);
       autoUpdateEmbeds.delete(embedId);
       return;
     }
@@ -229,7 +266,7 @@ async function updateEmbed(embedId: string): Promise<void> {
     const message = await channel.messages.fetch(embedInfo.messageId);
 
     if (!message) {
-      console.error(`❌ [Auto-Update] Message ${embedInfo.messageId} introuvable`);
+      Logger.error(`❌ [Auto-Update] Message ${embedInfo.messageId} introuvable`);
       autoUpdateEmbeds.delete(embedId);
       return;
     }
@@ -311,10 +348,10 @@ async function updateEmbed(embedId: string): Promise<void> {
     embedInfo.lastUpdate = Date.now();
     embedInfo.updateCount++;
 
-    console.log(`✅ [Auto-Update] Embed ${embedId} mis à jour (${embedInfo.updateCount} fois)`);
+    Logger.info(`✅ [Auto-Update] Embed ${embedId} mis à jour (${embedInfo.updateCount} fois)`);
 
   } catch (error) {
-    console.error(`❌ [Auto-Update] Erreur pour ${embedId}:`, error);
+    Logger.error(`❌ [Auto-Update] Erreur pour ${embedId}:`, error);
   }
 }
 
@@ -439,7 +476,7 @@ function getEmbedAnalytics(embedId: string): any {
 function generateAnalyticsReport(embedId: string): string {
   const analytics = getEmbedAnalytics(embedId);
   const reactions = Array.from(analytics.reactions.entries())
-    .map(([btn, count]) => `  • ${btn}: ${count} clics`)
+    .map((item: any) => `  • ${item[0]}: ${item[1]} clics`)
     .join('\n');
 
   return `📊 **Analytics Embed ${embedId}**
@@ -481,9 +518,9 @@ async function loadAnalytics(): Promise<void> {
       });
     });
 
-    console.log(`📊 Analytics chargées: ${Object.keys(data).length} embeds`);
+    Logger.info(`📊 Analytics chargées: ${Object.keys(data).length} embeds`);
   } catch (e) {
-    console.log('📊 Aucune analytics sauvegardée trouvée');
+    Logger.info('📊 Aucune analytics sauvegardée trouvée');
   }
 }
 
@@ -494,7 +531,7 @@ setTimeout(startAutoUpdate, 1000);
 setInterval(saveAnalytics, 5 * 60 * 1000);
 
 // Charger les analytics au démarrage (délayé pour éviter erreur top-level await)
-setTimeout(() => loadAnalytics().catch(console.error), 500);
+setTimeout(() => loadAnalytics().catch(Logger.error), 500);
 
 
 
@@ -1146,7 +1183,7 @@ server.addTool({
   }),
   execute: async args => {
     try {
-      console.error(`🚀 [creer_embed] Titre: ${args.title || 'N/A'}`);
+      Logger.error(`🚀 [creer_embed] Titre: ${args.title || 'N/A'}`);
       const client = await ensureDiscordConnection();
       const channel = await client.channels.fetch(args.channelId);
 
@@ -1433,8 +1470,8 @@ server.addTool({
 
       // Sauvegarder comme template si demandé
       if (args.saveAsTemplate) {
+        Logger.info(`💾 Template '${args.saveAsTemplate}' sauvegardé`);
         await saveTemplate(args.saveAsTemplate, embed.data);
-        console.log(`💾 Template '${args.saveAsTemplate}' sauvegardé`);
       }
 
       // Générer un ID unique pour l'embed
@@ -1540,7 +1577,7 @@ server.addTool({
           source: args.autoUpdate.source,
           updateCount: 0,
         });
-        console.log(`🔄 Auto-update activé pour embed ${message.id}: ${args.autoUpdate.interval}s`);
+        Logger.info(`🔄 Auto-update activé pour embed ${message.id}: ${args.autoUpdate.interval}s`);
       }
 
       // Construire la réponse
@@ -1561,7 +1598,7 @@ server.addTool({
 
       return response;
     } catch (error: any) {
-      console.error(`❌ [creer_embed]`, error.message);
+      Logger.error(`❌ [creer_embed]`, error.message);
       return `❌ Erreur: ${error.message}`;
     }
   },
@@ -1572,50 +1609,17 @@ server.addTool({
 // ============================================================================
 
 // Outil pour voir les analytics d'un embed
-server.addTool({
-  name: 'get_embed_analytics',
-  description: 'Obtenir les analytics d\'un embed spécifique',
-  parameters: z.object({
-    embedId: z.string().describe('ID du message embed'),
-  }),
-  execute: async args => {
-    try {
-      const report = generateAnalyticsReport(args.embedId);
-      return report;
-    } catch (error: any) {
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
+// REMOVED: get_embed_analytics -> See registerEmbedTools() in tools/embeds.ts
+
 
 // Outil pour voir tous les embeds avec auto-update
-server.addTool({
-  name: 'list_auto_update_embeds',
-  description: 'Lister tous les embeds avec auto-update actif',
-  parameters: z.object({}),
-  execute: async () => {
-    try {
-      const embeds = Array.from(autoUpdateEmbeds.entries()).map(([id, info]) => {
-        const timeSinceUpdate = Date.now() - info.lastUpdate;
-        const nextUpdateIn = Math.max(0, (info.interval * 1000) - timeSinceUpdate);
-        return `• ${id}
-  📅 Créé: ${new Date(info.lastUpdate).toLocaleString('fr-FR')}
-  🔄 Intervalle: ${info.interval}s
-  ⏭️ Prochaine MAJ: ${Math.ceil(nextUpdateIn / 1000)}s
-  📊 MAJ effectuées: ${info.updateCount}
-  💬 Canal: ${info.channelId}`;
-      });
+// REMOVED: list_auto_update_embeds -> See registerEmbedTools() in tools/embeds.ts
 
-      if (embeds.length === 0) {
-        return 'ℹ️ Aucun embed avec auto-update actif';
-      }
 
-      return `🔄 **${embeds.length} embed(s) avec auto-update:**\n\n${embeds.join('\n\n')}`;
-    } catch (error: any) {
-      return `❌ Erreur: ${error.message}`;
-    }
-  },
-});
+// REMOVED: creer_embed -> See registerEmbedTools() in tools/embeds.ts
+// REMOVED: get_embed_analytics -> See registerEmbedTools() in tools/embeds.ts
+// REMOVED: list_auto_update_embeds -> See registerEmbedTools() in tools/embeds.ts
+
 
 // REMOVED: emoji_theme_crypto, emoji_theme_companies, emoji_theme_services
 // Maintenant remplacé par l'outil unifié list_images() dans registerListImagesTools()
@@ -1728,7 +1732,7 @@ server.addTool({
 // ============================================================================
 
 async function cleanup() {
-  console.error('\n🧹 Nettoyage...');
+  Logger.error('\n🧹 Nettoyage...');
   try {
     // Nettoyer le timer de sauvegarde
     if (saveTimeout) {
@@ -1754,13 +1758,13 @@ async function cleanup() {
 }
 
 process.on('SIGINT', async () => {
-  console.error('\nSignal SIGINT reçu');
+  Logger.error('\nSignal SIGINT reçu');
   await cleanup();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
-  console.error('\nSignal SIGTERM reçu');
+  Logger.error('\nSignal SIGTERM reçu');
   Logger.warn('\nSignal SIGTERM reçu');
   await cleanup();
   process.exit(0);
@@ -1786,7 +1790,7 @@ process.on('unhandledRejection', (reason, promise) => {
 // Limite de mémoire pour éviter les freezes
 const MEMORY_LIMIT = 512 * 1024 * 1024; // 512 MB
 if (process.memoryUsage().heapUsed > MEMORY_LIMIT) {
-  console.error('⚠️ Limite de mémoire atteinte:', process.memoryUsage());
+  Logger.error('⚠️ Limite de mémoire atteinte:', process.memoryUsage());
   // Forcer le garbage collection si disponible
   if (global.gc) {
     global.gc();
@@ -1809,75 +1813,75 @@ import { interactionHandler } from './utils/interactionHandler.js';
 function handleDiscordMessage(message: any) {
   switch (message.id) {
     case 'poll_interaction':
-      console.error(
+      Logger.error(
         `🎯 [Poll Interaction] ${message.data.action} par ${message.data.user.username}`
       );
       interactionHandler.handlePollInteraction(message.data);
       break;
 
     case 'custom_button_interaction':
-      console.error(
+      Logger.error(
         `🔘 [Custom Button] ${message.data.customId} par ${message.data.user.username}`
       );
       interactionHandler.handleCustomButton(message.data);
       break;
 
     case 'select_menu':
-      console.error(`📋 [Select Menu] ${message.data.customId} par ${message.data.user.username}`);
+      Logger.error(`📋 [Select Menu] ${message.data.customId} par ${message.data.user.username}`);
       interactionHandler.handleSelectMenu(message.data);
       break;
 
     case 'modal_submit':
-      console.error(`📝 [Modal Submit] ${message.data.customId} par ${message.data.user.username}`);
+      Logger.error(`📝 [Modal Submit] ${message.data.customId} par ${message.data.user.username}`);
       interactionHandler.handleModalSubmit(message.data);
       break;
 
     case 'guild_member_add':
-      console.error(
+      Logger.error(
         `👋 [Member Add] ${message.data.member.username} sur ${message.data.guildName}`
       );
       handleWelcomeMessage(message.data);
       break;
 
     case 'guild_member_remove':
-      console.error(
+      Logger.error(
         `👋 [Member Remove] ${message.data.member.username} de ${message.data.guildName}`
       );
       handleGoodbyeMessage(message.data);
       break;
 
     case 'message_delete':
-      console.error(`🗑️ [Message Delete] dans ${message.data.channelId}`);
+      Logger.error(`🗑️ [Message Delete] dans ${message.data.channelId}`);
       logMessageAction('delete', message.data);
       break;
 
     case 'message_update':
-      console.error(`✏️ [Message Update] dans ${message.data.channelId}`);
+      Logger.error(`✏️ [Message Update] dans ${message.data.channelId}`);
       logMessageAction('update', message.data);
       break;
 
     case 'channel_create':
-      console.error(`📝 [Channel Create] ${message.data.channelName}`);
+      Logger.error(`📝 [Channel Create] ${message.data.channelName}`);
       logChannelAction('create', message.data);
       break;
 
     case 'channel_delete':
-      console.error(`🗑️ [Channel Delete] ${message.data.channelName}`);
+      Logger.error(`🗑️ [Channel Delete] ${message.data.channelName}`);
       logChannelAction('delete', message.data);
       break;
 
     case 'role_create':
-      console.error(`🎭 [Role Create] ${message.data.roleName}`);
+      Logger.error(`🎭 [Role Create] ${message.data.roleName}`);
       logRoleAction('create', message.data);
       break;
 
     case 'role_delete':
-      console.error(`🗑️ [Role Delete] ${message.data.roleName}`);
+      Logger.error(`🗑️ [Role Delete] ${message.data.roleName}`);
       logRoleAction('delete', message.data);
       break;
 
     default:
-      console.error(`ℹ️ [Discord Message] ${message.id}:`, message.data);
+      Logger.error(`ℹ️ [Discord Message] ${message.id}:`, message.data);
   }
 }
 
@@ -1887,7 +1891,7 @@ async function handleWelcomeMessage(data: any) {
   // - Vérifier la config du serveur
   // - Envoyer un message de bienvenue
   // - Donner un rôle automatique
-  console.error(`✅ Logique de bienvenue à implémenter pour ${data.member.username}`);
+  Logger.error(`✅ Logique de bienvenue à implémenter pour ${data.member.username}`);
 }
 
 // Gérer les messages d'au revoir
@@ -1895,25 +1899,25 @@ async function handleGoodbyeMessage(data: any) {
   // TODO: Implémenter la logique d'au revoir
   // - Vérifier la config du serveur
   // - Envoyer un message d'au revoir
-  console.error(`✅ Logique d'au revoir à implémenter pour ${data.member.username}`);
+  Logger.error(`✅ Logique d'au revoir à implémenter pour ${data.member.username}`);
 }
 
 // Logger les actions sur les messages
 async function logMessageAction(action: string, data: any) {
   // TODO: Implémenter le logging des messages
-  console.error(`✅ Logging ${action} pour message ${data.messageId}`);
+  Logger.error(`✅ Logging ${action} pour message ${data.messageId}`);
 }
 
 // Logger les actions sur les canaux
 async function logChannelAction(action: string, data: any) {
   // TODO: Implémenter le logging des canaux
-  console.error(`✅ Logging ${action} pour canal ${data.channelName}`);
+  Logger.error(`✅ Logging ${action} pour canal ${data.channelName}`);
 }
 
 // Logger les actions sur les rôles
 async function logRoleAction(action: string, data: any) {
   // TODO: Implémenter le logging des rôles
-  console.error(`✅ Logging ${action} pour rôle ${data.roleName}`);
+  Logger.error(`✅ Logging ${action} pour rôle ${data.roleName}`);
 }
 
 // ============================================================================
@@ -1944,34 +1948,38 @@ registerFileUploadTools(server);
 // ============================================================================
 
 async function main() {
-  Logger.info('🚀 Démarrage Discord MCP v2.0...\n');
+  Logger.info('🚀 Préparation Discord MCP v2.1.2...');
 
   try {
-    // Démarrer le serveur MCP
-    await server.start();
-    Logger.info('✅ Serveur MCP démarré\n');
-
-    // Initialiser la connexion Discord
+    // 1. Initialiser la connexion Discord AVANT de démarrer le serveur MCP
+    // Cela permet aux outils d'avoir un client prêt immédiatement
     try {
+      Logger.info('🔗 Connexion à Discord...');
       await ensureDiscordConnection();
-      Logger.info('✅ Connexion Discord établie\n');
+      Logger.info('✅ Client Discord prêt');
     } catch (error) {
-      Logger.warn('⚠️ Discord non connecté (continuation possible):', (error as Error).message);
+      Logger.warn('⚠️ Échec connexion Discord initiale (sera réessayé au premier appel):', (error as Error).message);
     }
 
     Logger.info('📊 Status:');
     Logger.info(`   • Nom: discord-mcp-server`);
-    Logger.info(`   • Version: 2.0.0`);
-    Logger.info(
-      `   • Outils: 88 (messages, embeds, fichiers, sondages, webhooks, membres, interactions, modération, rôles, canaux, serveur, système, logos)`
-    );
+    Logger.info(`   • Version: 2.1.2`);
+    Logger.info(`   • Outils: 88 enregistrés`);
     Logger.info(`   • Environment: ${botConfig.environment}`);
+
+    // 2. Démarrer le serveur MCP (Ceci est bloquant en mode STDIO)
+    Logger.info('🚀 Démarrage du serveur MCP (STDIO)...');
+    await server.start();
+    
+    // Si on arrive ici, c'est que le serveur s'est arrêté proprement
+    Logger.info('👋 Serveur MCP arrêté');
   } catch (error) {
-    Logger.error('❌ Erreur fatal:', error);
+    Logger.error('❌ Erreur fatale au démarrage:', error);
     await cleanup();
     process.exit(1);
   }
 }
+
 
 main();
 // NOTE: Les outils suivants étaient dupliqués après main() et sont maintenant enregistrés via register*Tools():

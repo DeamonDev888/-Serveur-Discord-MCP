@@ -276,26 +276,39 @@ function generateMentionErrorMessage(validation: ReturnType<typeof validateDisco
 }
 
 function replaceVariables(text: string, variables: Record<string, string> = {}): string {
-  let result = text;
+  if (!text) return '';
+  let result = String(text);
 
-  const autoVars = {
-    '{timestamp}': new Date().toLocaleString('fr-FR'),
-    '{date}': new Date().toLocaleDateString('fr-FR'),
-    '{time}': new Date().toLocaleTimeString('fr-FR'),
-    '{year}': new Date().getFullYear().toString(),
-    '{month}': (new Date().getMonth() + 1).toString(),
-    '{day}': new Date().getDate().toString(),
-    '{weekday}': new Date().toLocaleDateString('fr-FR', { weekday: 'long' }),
+  // Variables de date/heure automatiques
+  const now = new Date();
+  const autoVars: Record<string, string> = {
+    '{timestamp}': now.toLocaleString('fr-FR'),
+    '{date}': now.toLocaleDateString('fr-FR'),
+    '{time}': now.toLocaleTimeString('fr-FR'),
+    '{year}': now.getFullYear().toString(),
+    '{month}': (now.getMonth() + 1).toString(),
+    '{day}': now.getDate().toString(),
+    '{weekday}': now.toLocaleDateString('fr-FR', { weekday: 'long' }),
   };
 
-  Object.entries(autoVars).forEach(([key, value]) => {
-    result = result.replace(new RegExp(key, 'g'), value);
-  });
+  // Remplacements automatiques
+  for (const [key, value] of Object.entries(autoVars)) {
+    result = result.split(key).join(value);
+  }
 
-  Object.entries(variables).forEach(([key, value]) => {
-    result = result.replace(new RegExp(`{${key}}`, 'g'), value);
-  });
+  // Remplacements personnalisés
+  if (variables && typeof variables === 'object') {
+    for (const [key, value] of Object.entries(variables)) {
+      if (key && value !== undefined) {
+        result = result.split(`{${key}}`).join(String(value));
+      }
+    }
+  }
 
+  // Support des retours à la ligne littéraux (anti-corruption)
+  result = result.split('\\n').join('\n');
+
+  // Gestion des spoilers
   result = result.replace(/{spoiler:([^}]+)}/g, '|| $1 ||');
 
   return result;
@@ -481,29 +494,9 @@ function applyLayout(fields: any[], layout: any): any[] {
 function generateVisualEffectsDescription(effects: any): string {
   if (!effects) return '';
 
-  let description = '';
-
-  if (effects.animations && effects.animations.length > 0) {
-    description += `✨ Animations: ${effects.animations.join(', ')}\n`;
-  }
-
-  if (effects.particles) {
-    description += `✨ Particules activées\n`;
-  }
-
-  if (effects.transitions) {
-    description += `✨ Transitions fluides\n`;
-  }
-
-  if (effects.hoverEffects && effects.hoverEffects.length > 0) {
-    description += `✨ Effets hover: ${effects.hoverEffects.join(', ')}\n`;
-  }
-
-  if (effects.intensity && effects.intensity !== 'medium') {
-    description += `✨ Intensité: ${effects.intensity}\n`;
-  }
-
-  return description.trim();
+  // N'afficher que si explicitement demandé ou en mode debug
+  // Sinon cela crée du texte parasite dans Discord qui ne supporte pas ces effets
+  return ''; 
 }
 
 // ============================================================================
@@ -741,6 +734,20 @@ function buildButtonActionFromCreerEmbed(btn: any): any {
       }
       return { type: 'message', content: 'Rôle non configuré', ephemeral: true };
 
+    case 'message':
+      return {
+        type: 'message',
+        content: btn.customData?.message || btn.value || `${btn.label} cliqué !`,
+        ephemeral: btn.customData?.ephemeral !== false,
+      };
+
+    case 'embed':
+      return {
+        type: 'embed',
+        embed: btn.customData?.embed,
+        ephemeral: btn.customData?.ephemeral !== false,
+      };
+
     case 'custom':
       if (btn.customData?.embed) {
         return {
@@ -751,7 +758,7 @@ function buildButtonActionFromCreerEmbed(btn: any): any {
       }
       return {
         type: 'message',
-        content: btn.customData?.message || `${btn.label} cliqué !`,
+        content: btn.customData?.message || btn.value || `${btn.label} cliqué !`,
         ephemeral: btn.customData?.ephemeral !== false,
       };
 
@@ -1323,7 +1330,7 @@ function generateTypeScriptCode(args: any): string {
   code.push(`    components: ${buttons.length > 0 ? 'components' : 'undefined'},`);
   code.push(`  });`);
   code.push(`  `);
-  code.push(`  console.log(\`✅ Embed créé | ID: \${message.id}\`);`);
+  code.push(`  Logger.info(\`✅ Embed créé | ID: \${message.id}\`);`);
   code.push(`  return message;`);
   code.push(`}`);
   code.push(``);
@@ -1488,10 +1495,10 @@ function generateTypeScriptCode(args: any): string {
 // ============================================================================
 
 export function registerEmbedTools(server: FastMCP) {
-  console.log('[EMBEDS] === DÉBUT ENREGISTREMENT DES OUTILS EMBEDS ===');
+  Logger.info('[EMBEDS] === DÉBUT ENREGISTREMENT DES OUTILS EMBEDS ===');
 
   // 1. Créer Embed
-  console.log('[EMBEDS] Ajout de l\'outil creer_embed...');
+  Logger.info('[EMBEDS] Ajout de l\'outil creer_embed...');
   server.addTool({
     name: 'creer_embed',
     description: `🎯 ULTRA-INTUITIF - Créer un embed Discord en 3 étapes SIMPLES !
@@ -1568,7 +1575,7 @@ export function registerEmbedTools(server: FastMCP) {
         label: z.string(),
         style: z.enum(['Primary', 'Secondary', 'Success', 'Danger']).default('Primary'),
         emoji: z.string().optional(),
-        action: z.enum(['none', 'refresh', 'link', 'custom', 'delete', 'edit', 'role', 'modal']).default('none'),
+        action: z.enum(['none', 'refresh', 'link', 'custom', 'delete', 'edit', 'role', 'modal', 'message', 'embed']).default('none'),
         value: z.string().optional().describe('URL pour action link'),
         roleId: z.string().optional().describe('ID du rôle pour action role (toggle)'),
         custom_id: z.string().describe('🔒 OBLIGATOIRE - ID personnalisé unique pour le bouton (ex: "noel_2024_surprise", "btn_refresh_1"). Cet ID fixe garantit que le bouton fonctionnera toujours même après modification de l\'embed.'),
@@ -1647,13 +1654,6 @@ export function registerEmbedTools(server: FastMCP) {
         spacing: z.enum(['compact', 'normal', 'spacious']).optional().default('normal').describe('Espacement'),
         alignment: z.enum(['left', 'center', 'right']).optional().default('left').describe('Alignement'),
       }).optional().describe('Système de mise en page'),
-      visualEffects: z.object({
-        animations: z.array(z.enum(['fade_in', 'slide_up', 'pulse', 'glow', 'bounce', 'shimmer'])).optional().describe('Animations CSS'),
-        particles: z.boolean().optional().default(false).describe('Activer les particules'),
-        transitions: z.boolean().optional().default(true).describe('Transitions fluides'),
-        hoverEffects: z.array(z.enum(['scale', 'rotate', 'glow', 'shadow', 'color_shift'])).optional().describe('Effets au survol'),
-        intensity: z.enum(['low', 'medium', 'high']).optional().default('medium').describe('Intensité des effets'),
-      }).optional().describe('Effets visuels et animations'),
       cryptoLogo: z.object({
         symbol: z.string().describe('Symbole crypto (BTC, ETH, SOL, etc.) - utilise list_images() en interne'),
         position: z.enum(['thumbnail', 'author', 'footer', 'image']).optional().default('thumbnail').describe('Position: thumbnail (haut-droite), author (haut-gauche), image (bas), footer (bas-gauche)'),
@@ -1666,17 +1666,14 @@ export function registerEmbedTools(server: FastMCP) {
         value: z.string().optional().describe('Valeur/Prix'),
         showLogo: z.boolean().optional().default(true).describe('Afficher le logo'),
       })).optional().describe('Liste de cryptos avec logos'),
-      visualDesign: z.object({
-        separator: z.enum(['line', 'dots', 'stars', 'arrows', 'wave', 'sparkles', 'fire', 'diamonds']).optional().default('line').describe('Style de séparateur'),
-        badge: z.enum(['hot', 'new', 'trending', 'vip', 'verified', 'premium', 'live', 'beta']).optional().describe('Badge visuel'),
-        headerStyle: z.enum(['minimal', 'boxed', 'banner', 'neon']).optional().default('minimal').describe('Style de l\'en-tête'),
-        showBorders: z.boolean().optional().default(false).describe('Afficher des bordures ASCII'),
-      }).optional().describe('Options de design visuel'),
       strictValidation: z.boolean().optional().default(true).describe('Validation stricte 1024 chars'),
       generateCode: z.boolean().optional().default(false).describe('Génère le code TypeScript complet au lieu d\'envoyer l\'embed sur Discord'),
       includeHandler: z.boolean().optional().default(true).describe('Inclut le code de gestion des boutons dans la génération (si generateCode=true)'),
     }),
     execute: async (args) => {
+      Logger.error(`🔥 [DEBUG] creer_embed execute called for channel ${args.channelId}`);
+      Logger.debug(`🔍 [TRACE] args keys: ${Object.keys(args).join(', ')}`);
+
       // ============================================================================
       // 🎯 SYSTÈME D'AIDE INTUITIF POUR AGENTS AVEC PERTE DE MÉMOIRE
       // ============================================================================
@@ -1696,7 +1693,7 @@ export function registerEmbedTools(server: FastMCP) {
       // Afficher le guide interactif si demandé (mode debug)
       if (process.env.EMBED_DEBUG === 'true') {
         const guide = embedHelper.INTERACTIVE_GUIDE.generateGuide(args);
-        console.log('\n' + guide.join('\n'));
+        Logger.info('\n' + guide.join('\n'));
       }
 
       // Si erreurs critiques, afficher l'aide et arrêter
@@ -1706,9 +1703,9 @@ export function registerEmbedTools(server: FastMCP) {
 
       // Afficher les conseils même si valide
       if (validation.warnings.length > 0 || validation.tips.length > 0) {
-        console.log('\n📝 Conseils pour améliorer votre embed:');
-        validation.warnings.forEach(w => console.log(`   ⚠️ ${w}`));
-        validation.tips.forEach(t => console.log(`   💡 ${t}`));
+        Logger.info('\n📝 Conseils pour améliorer votre embed:');
+        validation.warnings.forEach((w: string) => Logger.info(`   ⚠️ ${w}`));
+        validation.tips.forEach((t: string) => Logger.info(`   💡 ${t}`));
       }
 
       // ============================================================================
@@ -1721,10 +1718,10 @@ export function registerEmbedTools(server: FastMCP) {
       // ============================================================================
       // MODE NORMAL (ENVOI SUR DISCORD)
       // ============================================================================
-      console.log('[EMBEDS] 🚀 DÉBUT EXECUTION creer_embed');
-      console.log('[EMBEDS] Args reçus:', JSON.stringify(args, null, 2));
+      Logger.info('[EMBEDS] 🚀 DÉBUT EXECUTION creer_embed');
+      Logger.info('[EMBEDS] Args reçus:', JSON.stringify(args, null, 2));
       try {
-        console.error(`🚀 [creer_embed] Titre: ${args.title || 'N/A'}`);
+        Logger.error(`🚀 [creer_embed] Titre: ${args.title || 'N/A'}`);
         const client = await ensureDiscordConnection();
         const channel = await client.channels.fetch(args.channelId);
 
@@ -1752,33 +1749,6 @@ export function registerEmbedTools(server: FastMCP) {
         let titlePrefix = '';
         let descriptionPrefix = '';
         let descriptionSuffix = '';
-
-        if (args.visualDesign) {
-          if (args.visualDesign.badge) {
-            titlePrefix = `${VISUAL_BADGES[args.visualDesign.badge]} `;
-          }
-
-          const separator = VISUAL_SEPARATORS[args.visualDesign.separator || 'line'];
-          switch (args.visualDesign.headerStyle) {
-            case 'boxed':
-              descriptionPrefix = `\`\`\`\n╔══════════════════════════════════╗\n║ \`\`\``;
-              descriptionSuffix = `\`\`\`\n╚══════════════════════════════════╝\n\`\`\``;
-              break;
-            case 'banner':
-              descriptionPrefix = `${separator}\n`;
-              descriptionSuffix = `\n${separator}`;
-              break;
-            case 'neon':
-              descriptionPrefix = `✨━━━━━━━━━✨\n`;
-              descriptionSuffix = `\n✨━━━━━━━━━✨`;
-              break;
-          }
-
-          if (args.visualDesign.showBorders) {
-            descriptionPrefix = `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n┃ `;
-            descriptionSuffix = ` ┃\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`;
-          }
-        }
 
         // ============================================================================
         // VALIDATION DES MENTIONS DISCORD
@@ -2026,17 +1996,6 @@ export function registerEmbedTools(server: FastMCP) {
             : replaceVariables(field.value, args.variables),
         }));
 
-        if (args.visualEffects) {
-          const effectsDesc = generateVisualEffectsDescription(args.visualEffects);
-          if (effectsDesc) {
-            processedFields.push({
-              name: '🌟 Effets Visuels',
-              value: effectsDesc,
-              inline: false,
-            });
-          }
-        }
-
         if (args.cryptoList && args.cryptoList.length > 0) {
           const cryptoLines = args.cryptoList.map((crypto, index) => {
             const cryptoInfo = getCryptoInfo(crypto.symbol);
@@ -2077,7 +2036,7 @@ export function registerEmbedTools(server: FastMCP) {
 
         if (args.saveAsTemplate) {
           await saveTemplate(args.saveAsTemplate, embed.data);
-          console.log(`💾 Template '${args.saveAsTemplate}' sauvegardé`);
+          Logger.info(`💾 Template '${args.saveAsTemplate}' sauvegardé`);
         }
 
         const embedId = `embed_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -2141,7 +2100,7 @@ export function registerEmbedTools(server: FastMCP) {
                 createdAt: new Date().toISOString(),
               };
               await upsertPersistentButton(persistentBtn);
-              console.log(`[EMBEDS] 🔒 Bouton persistant créé: ${buttonId} → ${btn.label}`);
+              Logger.info(`[EMBEDS] 🔒 Bouton persistant créé: ${buttonId} → ${btn.label}`);
             }
 
             // Bouton STANDARD → Sauvegarder dans l'ancien système (compatibilité)
@@ -2176,7 +2135,7 @@ export function registerEmbedTools(server: FastMCP) {
 
           const persistentCount = args.buttons.filter(b => b.persistent).length;
           const standardCount = args.buttons.length - persistentCount;
-          console.log(`[EMBEDS] ${args.buttons.length} bouton(s) créé(s): ${persistentCount} persistant(s), ${standardCount} standard(s)`);
+          Logger.info(`[EMBEDS] ${args.buttons.length} bouton(s) créé(s): ${persistentCount} persistant(s), ${standardCount} standard(s)`);
 
           components.push(row);
         }
@@ -2245,13 +2204,13 @@ export function registerEmbedTools(server: FastMCP) {
                 createdAt: new Date().toISOString(),
               };
               await upsertPersistentMenu(persistentMenu);
-              console.log(`[EMBEDS] 🔒 Menu persistant créé: ${menuId} → ${menu.action}`);
+              Logger.info(`[EMBEDS] 🔒 Menu persistant créé: ${menuId} → ${menu.action}`);
             }
           }
 
           const menuPersistentCount = args.selectMenus.filter(m => m.persistent).length;
           const menuStandardCount = args.selectMenus.length - menuPersistentCount;
-          console.log(`[EMBEDS] ${args.selectMenus.length} menu(s) créé(s): ${menuPersistentCount} persistant(s), ${menuStandardCount} standard(s)`);
+          Logger.info(`[EMBEDS] ${args.selectMenus.length} menu(s) créé(s): ${menuPersistentCount} persistant(s), ${menuStandardCount} standard(s)`);
         }
 
         if (args.adaptiveLinks && args.adaptiveLinks.length > 0) {
@@ -2290,11 +2249,11 @@ export function registerEmbedTools(server: FastMCP) {
           files: attachmentFiles,
         });
 
-        console.log(`[EMBEDS] Message envoyé avec ID: ${message.id}`);
+        Logger.info(`[EMBEDS] Message envoyé avec ID: ${message.id}`);
 
         // Mettre à jour les messageId des boutons embed
         if (args.buttons && args.buttons.length > 0) {
-          console.log(`[EMBEDS] Mise à jour des messageId pour ${args.buttons.length} bouton(s)`);
+          Logger.info(`[EMBEDS] Mise à jour des messageId pour ${args.buttons.length} bouton(s)`);
 
           // Charger les boutons depuis la persistance
           const buttonsMap = await loadCustomButtons();
@@ -2308,9 +2267,9 @@ export function registerEmbedTools(server: FastMCP) {
               if (buttonData) {
                 buttonData.messageId = message.id;
                 buttonsMap.set(buttonId, buttonData);
-                console.log(`[EMBEDS] messageId mis à jour pour ${buttonId} -> ${message.id}`);
+                Logger.info(`[EMBEDS] messageId mis à jour pour ${buttonId} -> ${message.id}`);
               } else {
-                console.error(`[EMBEDS] ERREUR: Bouton ${buttonId} non trouvé dans la persistance!`);
+                Logger.error(`[EMBEDS] ERREUR: Bouton ${buttonId} non trouvé dans la persistance!`);
               }
             }
           }
@@ -2318,12 +2277,12 @@ export function registerEmbedTools(server: FastMCP) {
           // Sauvegarder les modifications
           await saveCustomButtons(buttonsMap);
           await interactionHandler.refreshButtons();
-          console.log(`[EMBEDS] Sauvegarde finalisée`);
+          Logger.info(`[EMBEDS] Sauvegarde finalisée`);
         }
 
         // Mettre à jour les messageId des menus persistants
         if (args.selectMenus && args.selectMenus.length > 0) {
-          console.log(`[EMBEDS] Mise à jour des messageId pour ${args.selectMenus.length} menu(s) persistant(s)`);
+          Logger.info(`[EMBEDS] Mise à jour des messageId pour ${args.selectMenus.length} menu(s) persistant(s)`);
 
           const { loadPersistentMenus, savePersistentMenus, upsertPersistentMenu } = await import('../utils/distPersistence.js');
 
@@ -2341,7 +2300,7 @@ export function registerEmbedTools(server: FastMCP) {
               // Supprimer l'ancienne entrée avec TEMP
               allMenus.delete(menuId);
 
-              console.log(`[EMBEDS] Menu persistant mis à jour: ${menuId} → ${newMenuId}`);
+              Logger.info(`[EMBEDS] Menu persistant mis à jour: ${menuId} → ${newMenuId}`);
             }
           }
         }
@@ -2369,7 +2328,7 @@ export function registerEmbedTools(server: FastMCP) {
 
         return `✅ Embed créé | ID: ${message.id} | EmbedId: ${embedId}${args.autoUpdate?.enabled ? ' | Auto-update: ON' : ''}${args.saveAsTemplate ? ` | Template: ${args.saveAsTemplate}` : ''}`;
       } catch (error: any) {
-        console.error(`❌ [creer_embed]`, error.message);
+        Logger.error(`❌ [creer_embed]`, error.message);
         return `❌ Erreur: ${error.message}`;
       }
     },
@@ -2442,5 +2401,5 @@ export function registerEmbedTools(server: FastMCP) {
     },
   });
 
-  console.log('[EMBEDS] === FIN ENREGISTREMENT DES OUTILS EMBEDS ===');
+  Logger.info('[EMBEDS] === FIN ENREGISTREMENT DES OUTILS EMBEDS ===');
 }

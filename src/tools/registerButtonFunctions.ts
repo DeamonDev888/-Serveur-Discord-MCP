@@ -82,7 +82,7 @@ export function registerButtonFunctionTools(server: FastMCP) {
                 try {
                   ${functionCode}
                 } catch (e) {
-                  console.error('Erreur dans fonction bouton:', e);
+                  Logger.error('Erreur dans fonction bouton:', e);
                   await ctx.reply('❌ Erreur: ' + e.message, true);
                 }
               })();
@@ -269,7 +269,7 @@ await ctx.sendMessage('📢 Notification envoyée!');
                 try {
                   ${functionCode}
                 } catch (e) {
-                  console.error('Erreur dans fonction bouton:', e);
+                  Logger.error('Erreur dans fonction bouton:', e);
                   await ctx.reply('❌ Erreur: ' + e.message, true);
                 }
               })();

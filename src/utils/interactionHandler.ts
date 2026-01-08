@@ -1110,8 +1110,11 @@ export class InteractionHandler {
         data,
         timestamp: Date.now(),
       };
-      process.stdout.write(JSON.stringify(message) + '\n');
-      Logger.debug(`📤 Commande envoyée à Discord: ${data.action}`);
+      
+      // ⚠️ DÉSACTIVÉ pour éviter de polluer stdout dans le mode MCP
+      // process.stdout.write(JSON.stringify(message) + '\n');
+      
+      Logger.debug(`📤 Commande INTERNE (désactivée sur stdout): ${data.action}`);
     } catch (error) {
       Logger.error('❌ Erreur envoi commande Discord:', error);
     }

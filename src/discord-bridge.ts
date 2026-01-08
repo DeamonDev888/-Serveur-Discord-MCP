@@ -45,12 +45,14 @@ export class DiscordBridge {
 
   static getInstance(token: string): DiscordBridge {
     if (!DiscordBridge.instance) {
+      Logger.debug('🔍 [TRACE] Creating new DiscordBridge instance');
       DiscordBridge.instance = new DiscordBridge(token);
     }
     return DiscordBridge.instance;
   }
 
   async getClient(): Promise<Client> {
+    Logger.debug('🔍 [TRACE] getClient called');
     if (this.client && this.client.isReady()) {
       Logger.debug('🚀 [Bridge] Client déjà prêt - utilisation immédiate');
       return this.client;
@@ -94,7 +96,7 @@ export class DiscordBridge {
         reject(new Error('Timeout de connexion Discord (20s)'));
       }, 20000);
 
-      this.client!.once('clientReady', () => {
+      this.client!.once('ready', () => {
         clearTimeout(timeout);
         this.isConnected = true;
         Logger.info(`✅ [Bridge] Connecté: ${this.client!.user!.tag}`);

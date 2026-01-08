@@ -1,3 +1,4 @@
+import Logger from '../utils/logger.js';
 import { Client, GatewayIntentBits } from 'discord.js';
 import { config } from 'dotenv';
 
@@ -29,7 +30,7 @@ const handleCommand = async (command: any): Promise<void> => {
     switch (command.action) {
       case 'connect':
         await client.login(command.token);
-        console.log('✅ Bot Discord connecté avec succès');
+        Logger.info('✅ Bot Discord connecté avec succès');
 
         // Envoyer confirmation au MCP
         process.stdout.write(
@@ -99,7 +100,7 @@ const handleCommand = async (command: any): Promise<void> => {
       );
     }
   } catch (error) {
-    console.error("❌ Erreur lors de l'exécution de la commande:", error);
+    Logger.error("❌ Erreur lors de l'exécution de la commande:", error);
 
     // Envoyer l'erreur au MCP
     if (command.requestId) {
@@ -153,15 +154,15 @@ async function readMessages(args: any): Promise<void> {
 
   const messages = await channel.messages.fetch({ limit });
 
-  console.log(`# 📜 Messages récents (${messages.size})`);
+  Logger.info(`# 📜 Messages récents (${messages.size})`);
   messages.forEach((msg, index) => {
-    console.log(
+    Logger.info(
       `${index + 1}. **${msg.author.username}** - <t:${Math.floor(msg.createdTimestamp / 1000)}:R>`
     );
-    console.log(`   ${msg.content}\n`);
+    Logger.info(`   ${msg.content}\n`);
   });
 
-  console.log(`Messages lus du canal ${channelId}: ${messages.size} messages`);
+  Logger.info(`Messages lus du canal ${channelId}: ${messages.size} messages`);
 }
 
 async function listMembers(args: any): Promise<void> {
@@ -172,7 +173,7 @@ async function listMembers(args: any): Promise<void> {
   }
 
   const members = await guild.members.fetch({ limit });
-  console.log(`Membres listés pour le serveur ${guild.name}: ${members.size} membres`);
+  Logger.info(`Membres listés pour le serveur ${guild.name}: ${members.size} membres`);
 }
 
 async function getServerInfo(args: any): Promise<void> {
@@ -181,7 +182,7 @@ async function getServerInfo(args: any): Promise<void> {
     throw new Error('Serveur non trouvé');
   }
 
-  console.log(`Informations du serveur ${guild.name} - ${guild.memberCount} membres`);
+  Logger.info(`Informations du serveur ${guild.name} - ${guild.memberCount} membres`);
 }
 
 async function addReaction(args: any): Promise<void> {
@@ -193,7 +194,7 @@ async function addReaction(args: any): Promise<void> {
 
   const message = await channel.messages.fetch(messageId);
   await message.react(emoji);
-  console.log(`Réaction ${emoji} ajoutée au message ${messageId}`);
+  Logger.info(`Réaction ${emoji} ajoutée au message ${messageId}`);
 }
 
 // ===============================
@@ -237,7 +238,7 @@ async function updatePollMessage(command: any): Promise<void> {
     .setTimestamp();
 
   await message.edit({ embeds: [embed] });
-  console.log(`✅ Message sondage mis à jour (${poll.totalVotes} votes)`);
+  Logger.info(`✅ Message sondage mis à jour (${poll.totalVotes} votes)`);
 }
 
 // Terminer un sondage
@@ -282,7 +283,7 @@ async function endPollMessage(command: any): Promise<void> {
     .setTimestamp();
 
   await message.edit({ embeds: [embed], components: [] });
-  console.log(`✅ Sondage terminé. Gagnant: ${winner}`);
+  Logger.info(`✅ Sondage terminé. Gagnant: ${winner}`);
 }
 
 // Afficher les résultats d'un sondage
@@ -332,7 +333,7 @@ async function showPollResultsMessage(command: any): Promise<void> {
     .setTimestamp();
 
   await channel.send({ embeds: [embed] });
-  console.log(`✅ Résultats envoyés pour le sondage ${poll.id}`);
+  Logger.info(`✅ Résultats envoyés pour le sondage ${poll.id}`);
 }
 
 // Lecteur stdin pour les commandes du MCP
@@ -347,7 +348,7 @@ process.stdin.on('data', data => {
           handleCommand(message.data);
         }
       } catch (error) {
-        console.error('Erreur de parsing du message MCP:', error);
+        Logger.error('Erreur de parsing du message MCP:', error);
       }
     }
   });
@@ -355,7 +356,7 @@ process.stdin.on('data', data => {
 
 // Gestion du client Discord
 client.on('ready', () => {
-  console.log(`Bot Discord prêt: ${client.user?.tag}`);
+  Logger.info(`Bot Discord prêt: ${client.user?.tag}`);
 });
 
 client.on('messageCreate', message => {
@@ -396,7 +397,7 @@ client.on('interactionCreate', async interaction => {
       await handleModalSubmit(interaction);
     }
   } catch (error) {
-    console.error("Erreur lors du traitement de l'interaction:", error);
+    Logger.error("Erreur lors du traitement de l'interaction:", error);
 
     const replyable = interaction as any;
     if (replyable.replied || replyable.deferred) {
@@ -435,7 +436,7 @@ async function handleButtonInteraction(interaction: any) {
     return;
   }
 
-  console.log(`Bouton inconnu cliqué: ${customId}`);
+  Logger.info(`Bouton inconnu cliqué: ${customId}`);
 }
 
 // Gestionnaire des sélections de menus
@@ -443,7 +444,7 @@ async function handleSelectMenuInteraction(interaction: any) {
   const customId = interaction.customId;
   const values = interaction.values;
 
-  console.log(`Menu sélectionné: ${customId} avec valeurs:`, values);
+  Logger.info(`Menu sélectionné: ${customId} avec valeurs:`, values);
 
   // Envoyer au MCP pour traitement
   process.stdout.write(
@@ -482,7 +483,7 @@ async function handleModalSubmit(interaction: any) {
     }
   }
 
-  console.log(`Modal soumis: ${customId}`, fields);
+  Logger.info(`Modal soumis: ${customId}`, fields);
 
   // Envoyer au MCP pour traitement
   process.stdout.write(
@@ -510,7 +511,7 @@ async function handlePollButton(interaction: any) {
   const pollId = parts[1];
   const action = parts[2];
 
-  console.log(`Action sondage: ${action} pour le sondage ${pollId}`);
+  Logger.info(`Action sondage: ${action} pour le sondage ${pollId}`);
 
   // Envoyer au MCP pour traitement
   process.stdout.write(
@@ -535,7 +536,7 @@ async function handlePollButton(interaction: any) {
 async function handleCustomButton(interaction: any) {
   const customId = interaction.customId;
 
-  console.log(`Bouton personnalisé cliqué: ${customId}`);
+  Logger.info(`Bouton personnalisé cliqué: ${customId}`);
 
   // Envoyer au MCP pour traitement
   process.stdout.write(
@@ -559,7 +560,7 @@ async function handleCustomButton(interaction: any) {
 async function handleGiveawayButton(interaction: any) {
   const customId = interaction.customId;
 
-  console.log(`Action giveaway: ${customId}`);
+  Logger.info(`Action giveaway: ${customId}`);
 
   // Envoyer au MCP pour traitement
   process.stdout.write(
@@ -585,7 +586,7 @@ async function handleGiveawayButton(interaction: any) {
 
 // Nouveau membre
 client.on('guildMemberAdd', async member => {
-  console.log(`Nouveau membre: ${member.user.username} sur ${member.guild.name}`);
+  Logger.info(`Nouveau membre: ${member.user.username} sur ${member.guild.name}`);
 
   // Envoyer au MCP
   process.stdout.write(
@@ -608,7 +609,7 @@ client.on('guildMemberAdd', async member => {
 
 // Membre parti
 client.on('guildMemberRemove', async member => {
-  console.log(`Membre parti: ${member.user.username} de ${member.guild.name}`);
+  Logger.info(`Membre parti: ${member.user.username} de ${member.guild.name}`);
 
   // Envoyer au MCP
   process.stdout.write(
@@ -632,7 +633,7 @@ client.on('guildMemberRemove', async member => {
 client.on('messageDelete', async message => {
   if (message.author?.bot) return;
 
-  console.log(`Message supprimé dans ${message.channelId}`);
+  Logger.info(`Message supprimé dans ${message.channelId}`);
 
   // Envoyer au MCP
   process.stdout.write(
@@ -658,7 +659,7 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
   if (newMessage.author?.bot) return;
   if (oldMessage.content === newMessage.content) return;
 
-  console.log(`Message modifié dans ${newMessage.channelId}`);
+  Logger.info(`Message modifié dans ${newMessage.channelId}`);
 
   // Envoyer au MCP
   process.stdout.write(
@@ -683,7 +684,7 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
 client.on('channelCreate', async channel => {
   const channelName = (channel as any).name || 'Unknown';
   const guildName = (channel as any).guild?.name || 'Unknown';
-  console.log(`Canal créé: ${channelName} (${channel.type})`);
+  Logger.info(`Canal créé: ${channelName} (${channel.type})`);
 
   // Envoyer au MCP
   process.stdout.write(
@@ -705,7 +706,7 @@ client.on('channelCreate', async channel => {
 client.on('channelDelete', async channel => {
   const channelName = (channel as any).name || 'Unknown';
   const guildName = (channel as any).guild?.name || 'Unknown';
-  console.log(`Canal supprimé: ${channelName} (${channel.type})`);
+  Logger.info(`Canal supprimé: ${channelName} (${channel.type})`);
 
   // Envoyer au MCP
   process.stdout.write(
@@ -725,7 +726,7 @@ client.on('channelDelete', async channel => {
 
 // Rôle créé
 client.on('roleCreate', async role => {
-  console.log(`Rôle créé: ${role.name}`);
+  Logger.info(`Rôle créé: ${role.name}`);
 
   // Envoyer au MCP
   process.stdout.write(
@@ -746,7 +747,7 @@ client.on('roleCreate', async role => {
 
 // Rôle supprimé
 client.on('roleDelete', async role => {
-  console.log(`Rôle supprimé: ${role.name}`);
+  Logger.info(`Rôle supprimé: ${role.name}`);
 
   // Envoyer au MCP
   process.stdout.write(
@@ -764,18 +765,19 @@ client.on('roleDelete', async role => {
 });
 
 client.on('error', error => {
-  console.error('Erreur client Discord:', error);
+  Logger.error('Erreur client Discord:', error);
 });
 
 process.on('unhandledRejection', error => {
-  console.error('Uncaught Promise Rejection:', error);
+  Logger.error('Uncaught Promise Rejection:', error);
 });
 
 process.on('SIGINT', () => {
-  console.log('\n🛑 Arrêt du processus Discord...');
+  Logger.info('\n🛑 Arrêt du processus Discord...');
   client.destroy();
   process.exit(0);
 });
 
 // Démarrage automatique
-console.log('🔗 Processus Discord prêt à recevoir les commandes');
+Logger.info('🔗 Processus Discord prêt à recevoir les commandes');
+

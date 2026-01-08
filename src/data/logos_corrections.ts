@@ -1,3 +1,4 @@
+import Logger from '../utils/logger.js';
 // ============================================================================
 // CORRECTIONS DES LOGOS - URLS MISES À JOUR
 // ============================================================================
@@ -255,18 +256,19 @@ export {
   DOMAIN_SUMMARY,
 };
 
-console.log('CORRECTIONS PRÊTES À APPLIQUER');
-console.log(`Coingecko fixes: ${Object.keys(COINGECKO_FIXES).length}`);
-console.log(`SimpleIcons fixes: ${Object.keys(SIMPLEICONS_FIXES).length}`);
-console.log(`Clearbit alternatives: ${Object.keys(CLEARBIT_ALTERNATIVES).length}`);
-console.log(`MISC fixes: ${Object.keys(MISC_FIXES).length}`);
-console.log('---');
-console.log('NOUVELLES SOURCES AJOUTÉES:');
-console.log(`Pokémon sources: ${Object.keys(POKEMON_SOURCES).length}`);
-console.log(`Anime sources: ${Object.keys(ANIME_SOURCES).length}`);
-console.log(`Steam sources: ${Object.keys(STEAM_SOURCES).length}`);
-console.log(`DevOps sources: ${Object.keys(DEVOPS_SOURCES).length}`);
-console.log(`ESport sources: ${Object.keys(ESPORT_SOURCES).length}`);
-console.log('---');
-console.log(`Domaines totaux: ${Object.keys(DOMAIN_SUMMARY).length}`);
-console.log('Domaines nouvellement ajoutés: raw.githubusercontent.com, img.pokemondb.net, cdn.cloudflare.steamstatic.com, cdn.jsdelivr.net, unpkg.com, img.icons8.com');
+Logger.info('CORRECTIONS PRÊTES À APPLIQUER');
+Logger.info(`Coingecko fixes: ${Object.keys(COINGECKO_FIXES).length}`);
+Logger.info(`SimpleIcons fixes: ${Object.keys(SIMPLEICONS_FIXES).length}`);
+Logger.info(`Clearbit alternatives: ${Object.keys(CLEARBIT_ALTERNATIVES).length}`);
+Logger.info(`MISC fixes: ${Object.keys(MISC_FIXES).length}`);
+Logger.info('---');
+Logger.info('NOUVELLES SOURCES AJOUTÉES:');
+Logger.info(`Pokémon sources: ${Object.keys(POKEMON_SOURCES).length}`);
+Logger.info(`Anime sources: ${Object.keys(ANIME_SOURCES).length}`);
+Logger.info(`Steam sources: ${Object.keys(STEAM_SOURCES).length}`);
+Logger.info(`DevOps sources: ${Object.keys(DEVOPS_SOURCES).length}`);
+Logger.info(`ESport sources: ${Object.keys(ESPORT_SOURCES).length}`);
+Logger.info('---');
+Logger.info(`Domaines totaux: ${Object.keys(DOMAIN_SUMMARY).length}`);
+Logger.info('Domaines nouvellement ajoutés: raw.githubusercontent.com, img.pokemondb.net, cdn.cloudflare.steamstatic.com, cdn.jsdelivr.net, unpkg.com, img.icons8.com');
+

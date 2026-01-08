@@ -186,6 +186,20 @@ function buildButtonAction(btn: any): any {
       }
       return { type: 'message', content: 'Rôle non configuré', ephemeral: true };
 
+    case 'message':
+      return {
+        type: 'message',
+        content: btn.customData?.message || btn.value || `${btn.label} cliqué !`,
+        ephemeral: btn.customData?.ephemeral !== false,
+      };
+
+    case 'embed':
+      return {
+        type: 'embed',
+        embed: btn.customData?.embed,
+        ephemeral: btn.customData?.ephemeral !== false,
+      };
+
     case 'custom':
       if (btn.customData?.embed) {
         return {
@@ -196,7 +210,7 @@ function buildButtonAction(btn: any): any {
       }
       return {
         type: 'message',
-        content: btn.customData?.message || `${btn.label} cliqué !`,
+        content: btn.customData?.message || btn.value || `${btn.label} cliqué !`,
         ephemeral: btn.customData?.ephemeral !== false,
       };
 
@@ -268,7 +282,7 @@ function buildMenuAction(menu: any): any {
 }
 
 export function registerEditEmbedTools(server: FastMCP) {
-  console.log('[EDIT_EMBED] === DÉBUT ENREGISTREMENT DES OUTILS D\'ÉDITION D\'EMBEDS ===');
+  Logger.info('[EDIT_EMBED] === DÉBUT ENREGISTREMENT DES OUTILS D\'ÉDITION D\'EMBEDS ===');
 
   // ============================================================================
   // 1. LISTE DES EMBEDS D'UN CHANNEL
@@ -514,9 +528,10 @@ ${JSON.stringify(details, null, 2)}
         label: z.string(),
         style: z.enum(['Primary', 'Secondary', 'Success', 'Danger']),
         emoji: z.string().optional(),
-        action: z.enum(['none', 'refresh', 'link', 'custom', 'delete', 'edit', 'role', 'modal']),
+        action: z.enum(['none', 'refresh', 'link', 'custom', 'delete', 'edit', 'role', 'modal', 'message', 'embed']),
         value: z.string().optional(),
         roleId: z.string().optional(),
+        custom_id: z.string().optional().describe('🔒 ID personnalisé (fortement recommandé)'),
         persistent: z.boolean().optional().default(false).describe('Si true, le bouton est sauvegardé et hooké aux handlers persistants'),
         customData: z.object({
           message: z.string().optional(),
@@ -529,6 +544,7 @@ ${JSON.stringify(details, null, 2)}
         }).optional(),
       })).max(5).optional().describe('Nouveaux boutons (remplace les existants si fourni)'),
       selectMenus: z.array(z.object({
+        custom_id: z.string().optional().describe('🔒 ID personnalisé (fortement recommandé)'),
         type: z.enum(['string', 'user', 'role', 'channel', 'mentionable']).default('string'),
         placeholder: z.string().optional(),
         minValues: z.number().optional().default(1),
@@ -689,7 +705,7 @@ ${JSON.stringify(details, null, 2)}
         // Author
         if (args.authorName || args.authorIcon) {
           embedData.author = {
-            name: args.authorName || embedData.author?.name,
+            name: args.authorName || embedData.author?.name || 'Auteur',
             icon_url: args.authorIcon || embedData.author?.icon_url,
             url: args.authorUrl || embedData.author?.url,
           };
@@ -702,7 +718,7 @@ ${JSON.stringify(details, null, 2)}
         // Footer
         if (args.footerText || args.footerIcon) {
           embedData.footer = {
-            text: args.footerText || embedData.footer?.text,
+            text: args.footerText || embedData.footer?.text || ' ',
             icon_url: args.footerIcon || embedData.footer?.icon_url,
           };
         }
@@ -719,18 +735,18 @@ ${JSON.stringify(details, null, 2)}
           embedData.fields = [];
         } else if (args.fields) {
           embedData.fields = args.fields.map(f => ({
-            name: f.name,
-            value: f.value,
-            inline: f.inline,
+            name: f.name || '',
+            value: f.value || '',
+            inline: f.inline || false,
           }));
         } else if (args.appendFields) {
           const currentFields = embedData.fields || [];
           embedData.fields = [
             ...currentFields,
             ...args.appendFields.map(f => ({
-              name: f.name,
-              value: f.value,
-              inline: f.inline,
+              name: f.name || '',
+              value: f.value || '',
+              inline: f.inline || false,
             }))
           ];
         }
@@ -755,12 +771,14 @@ ${JSON.stringify(details, null, 2)}
           for (let i = 0; i < args.buttons.length; i++) {
             const btn = args.buttons[i];
 
-            // Créer un ID unique pour le bouton
-            // Si persistant: pb_<messageId>_<index>
-            // Si temporaire: embed_<timestamp>_<action>_<random>
-            const buttonId = btn.persistent
+            // Validation stricte de custom_id selon recommandation utilisateur
+            if (!btn.custom_id && btn.action !== 'link') {
+              throw new Error(`❌ Le paramètre 'custom_id' est OBLIGATOIRE pour le bouton "${btn.label}" (action: ${btn.action}).`);
+            }
+
+            const buttonId = btn.custom_id || (btn.persistent
               ? `pb_${args.messageId}_${i}`
-              : `embed_${Date.now()}_${btn.action}_${Math.random().toString(36).substr(2, 5)}`;
+              : `embed_${Date.now()}_${btn.action}_${Math.random().toString(36).substr(2, 5)}`);
 
             const button = new ButtonBuilder()
               .setCustomId(buttonId)
@@ -913,5 +931,5 @@ ${JSON.stringify(details, null, 2)}
     },
   });
 
-  console.log('[EDIT_EMBED] === FIN ENREGISTREMENT DES OUTILS D\'ÉDITION D\'EMBEDS ===');
+  Logger.info('[EDIT_EMBED] === FIN ENREGISTREMENT DES OUTILS D\'ÉDITION D\'EMBEDS ===');
 }

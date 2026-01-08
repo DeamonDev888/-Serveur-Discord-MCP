@@ -92,13 +92,13 @@ export async function updateEmbed(embedId: string, getClient: () => any): Promis
   if (!embedInfo) return;
 
   try {
-    console.log(`🔄 [Auto-Update] Mise à jour embed ${embedId} (${embedInfo.updateCount + 1})`);
+    Logger.info(`🔄 [Auto-Update] Mise à jour embed ${embedId} (${embedInfo.updateCount + 1})`);
 
     const client = await getClient();
     const channel = await client.channels.fetch(embedInfo.channelId);
 
     if (!channel || !('messages' in channel)) {
-      console.error(`❌ [Auto-Update] Canal ${embedInfo.channelId} invalide`);
+      Logger.error(`❌ [Auto-Update] Canal ${embedInfo.channelId} invalide`);
       autoUpdateEmbeds.delete(embedId);
       return;
     }
@@ -106,7 +106,7 @@ export async function updateEmbed(embedId: string, getClient: () => any): Promis
     const message = await channel.messages.fetch(embedInfo.messageId);
 
     if (!message) {
-      console.error(`❌ [Auto-Update] Message ${embedInfo.messageId} introuvable`);
+      Logger.error(`❌ [Auto-Update] Message ${embedInfo.messageId} introuvable`);
       autoUpdateEmbeds.delete(embedId);
       return;
     }
@@ -183,10 +183,10 @@ export async function updateEmbed(embedId: string, getClient: () => any): Promis
     embedInfo.lastUpdate = Date.now();
     embedInfo.updateCount++;
 
-    console.log(`✅ [Auto-Update] Embed ${embedId} mis à jour (${embedInfo.updateCount} fois)`);
+    Logger.info(`✅ [Auto-Update] Embed ${embedId} mis à jour (${embedInfo.updateCount} fois)`);
 
   } catch (error) {
-    console.error(`❌ [Auto-Update] Erreur pour ${embedId}:`, error);
+    Logger.error(`❌ [Auto-Update] Erreur pour ${embedId}:`, error);
   }
 }
 
@@ -285,9 +285,9 @@ export async function loadAnalytics(): Promise<void> {
       });
     });
 
-    console.log(`📊 Analytics chargées: ${Object.keys(data).length} embeds`);
+    Logger.info(`📊 Analytics chargées: ${Object.keys(data).length} embeds`);
   } catch (e) {
-    console.log('📊 Aucune analytics sauvegardée trouvée');
+    Logger.info('📊 Aucune analytics sauvegardée trouvée');
   }
 }
 
@@ -295,4 +295,4 @@ export async function loadAnalytics(): Promise<void> {
 setInterval(saveAnalytics, 5 * 60 * 1000);
 
 // Charger les analytics au démarrage
-setTimeout(() => loadAnalytics().catch(console.error), 500);
+setTimeout(() => loadAnalytics().catch(Logger.error), 500);

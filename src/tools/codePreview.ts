@@ -158,17 +158,17 @@ Lignes: ${lineCount}
   const totalWithHeader = baseHeader.length + totalCodeLength;
 
   // DEBUG: Afficher les informations de calcul
-  console.log('[CODE_PREVIEW] DEBUG - Longueur du code:', code.length);
-  console.log('[CODE_PREVIEW] DEBUG - Longueur après formatage:', formattedContent.length);
-  console.log('[CODE_PREVIEW] DEBUG - maxTotalLength:', maxTotalLength);
-  console.log('[CODE_PREVIEW] DEBUG - baseHeader.length:', baseHeader.length);
-  console.log('[CODE_PREVIEW] DEBUG - codeBlockStart:', JSON.stringify(codeBlockStart));
-  console.log('[CODE_PREVIEW] DEBUG - codeBlockEnd:', JSON.stringify(codeBlockEnd));
-  console.log('[CODE_PREVIEW] DEBUG - totalWithHeader:', totalWithHeader);
-  console.log('[CODE_PREVIEW] DEBUG - totalWithHeader <= maxTotalLength?', totalWithHeader <= maxTotalLength);
+  Logger.info('[CODE_PREVIEW] DEBUG - Longueur du code:', code.length);
+  Logger.info('[CODE_PREVIEW] DEBUG - Longueur après formatage:', formattedContent.length);
+  Logger.info('[CODE_PREVIEW] DEBUG - maxTotalLength:', maxTotalLength);
+  Logger.info('[CODE_PREVIEW] DEBUG - baseHeader.length:', baseHeader.length);
+  Logger.info('[CODE_PREVIEW] DEBUG - codeBlockStart:', JSON.stringify(codeBlockStart));
+  Logger.info('[CODE_PREVIEW] DEBUG - codeBlockEnd:', JSON.stringify(codeBlockEnd));
+  Logger.info('[CODE_PREVIEW] DEBUG - totalWithHeader:', totalWithHeader);
+  Logger.info('[CODE_PREVIEW] DEBUG - totalWithHeader <= maxTotalLength?', totalWithHeader <= maxTotalLength);
   // DEBUG: Afficher le message complet qui sera envoyé
   const fullMessage = `${baseHeader}${codeBlockStart}${formattedContent}${codeBlockEnd}`;
-  console.log('[CODE_PREVIEW] DEBUG - Message complet:', JSON.stringify(fullMessage));
+  Logger.info('[CODE_PREVIEW] DEBUG - Message complet:', JSON.stringify(fullMessage));
 
   // Si le contenu tient dans un seul message
   if (totalWithHeader <= maxTotalLength) {
@@ -289,7 +289,7 @@ export function registerCodePreviewTools(server: FastMCP) {
     }),
     execute: async (args) => {
       try {
-        console.error(
+        Logger.error(
           `🔍 [code_preview] Langage: ${args.language}, Taille: ${args.code.length} chars`
         );
         const client = await ensureDiscordConnection();
@@ -306,7 +306,7 @@ export function registerCodePreviewTools(server: FastMCP) {
 
         // Créer les messages avec division automatique
         const messages = createCodePreviewMessages(args.code, args.language);
-        console.error(`📤 [code_preview] ${messages.length} message(s) à envoyer`);
+        Logger.error(`📤 [code_preview] ${messages.length} message(s) à envoyer`);
 
         // Envoyer tous les messages
         const sentMessages = [];
@@ -317,7 +317,7 @@ export function registerCodePreviewTools(server: FastMCP) {
 
         return `✅ Code affiché | ${messages.length} message(s) | IDs: ${sentMessages.join(', ')}`;
       } catch (error: any) {
-        console.error(`❌ [code_preview]`, error.message);
+        Logger.error(`❌ [code_preview]`, error.message);
         return `❌ Erreur: ${error.message}`;
       }
     },

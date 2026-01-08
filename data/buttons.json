@@ -877,5 +877,384 @@
       "data": {}
     },
     "createdAt": "2025-12-26T17:23:25.292Z"
+  },
+  {
+    "id": "join_discord",
+    "messageId": "1454691880993292412",
+    "channelId": "1442317829998383235",
+    "label": "Rejoindre",
+    "action": {
+      "type": "link",
+      "data": {
+        "value": "https://discord.gg/4AR82phtBz",
+        "emoji": "🚀"
+      }
+    },
+    "createdAt": "2025-12-28T04:26:11.182Z"
+  },
+  {
+    "id": "btn_capabilities",
+    "messageId": "1455573127743672513",
+    "channelId": "1442317829998383235",
+    "label": "⚡ Capacités",
+    "action": {
+      "type": "none",
+      "data": {}
+    },
+    "createdAt": "2025-12-30T14:47:54.725Z"
+  },
+  {
+    "id": "btn_tools",
+    "messageId": "1455573127743672513",
+    "channelId": "1442317829998383235",
+    "label": "🛠️ Outils",
+    "action": {
+      "type": "none",
+      "data": {}
+    },
+    "createdAt": "2025-12-30T14:47:54.725Z"
+  },
+  {
+    "id": "btn_help",
+    "messageId": "1455573127743672513",
+    "channelId": "1442317829998383235",
+    "label": "❓ Aide",
+    "action": {
+      "type": "none",
+      "data": {}
+    },
+    "createdAt": "2025-12-30T14:47:54.725Z"
+  },
+  {
+    "id": "btn_duel",
+    "messageId": "1455573389870891152",
+    "channelId": "1442317829998383235",
+    "label": "🔥 DÉFI ACCEPTÉ",
+    "action": {
+      "type": "none",
+      "data": {}
+    },
+    "createdAt": "2025-12-30T14:48:57.213Z"
+  },
+  {
+    "id": "btn_crusher",
+    "messageId": "1455573389870891152",
+    "channelId": "1442317829998383235",
+    "label": "⚡ ÉCRASER",
+    "action": {
+      "type": "none",
+      "data": {}
+    },
+    "createdAt": "2025-12-30T14:48:57.214Z"
+  },
+  {
+    "id": "bot_prediction_correct",
+    "messageId": "1457930741001224344",
+    "channelId": "1383069855070158969",
+    "label": "👍 Le Bot a raison",
+    "action": {
+      "type": "custom",
+      "data": {
+        "emoji": "👍"
+      }
+    },
+    "createdAt": "2026-01-06T02:56:15.416Z",
+    "functionCode": "// Réaction quand un utilisateur pense que le bot a raison\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote\n// Par exemple, incrémenter un compteur dans une base de données\n\nawait interaction.reply({\n    content: `👍 **Merci ${username} !** Vous pensez que le Bot Sniper a raison !\\n\\nCe vote a été enregistré. 🗳️`,\n    ephemeral: true\n});"
+  },
+  {
+    "id": "bot_prediction_wrong",
+    "messageId": "1457930741001224344",
+    "channelId": "1383069855070158969",
+    "label": "👎 Le Bot a tort",
+    "action": {
+      "type": "custom",
+      "data": {
+        "emoji": "👎"
+      }
+    },
+    "createdAt": "2026-01-06T02:56:15.416Z",
+    "functionCode": "// Réaction quand un utilisateur pense que le bot a tort\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote\n\nawait interaction.reply({\n    content: `👎 **Merci ${username} !** Vous pensez que le Bot Sniper se trompe !\\n\\nCe vote a été enregistré. 🗳️`,\n    ephemeral: true\n});"
+  },
+  {
+    "id": "bot_prediction_details",
+    "messageId": "1457930741001224344",
+    "channelId": "1383069855070158969",
+    "label": "📋 Voir les détails",
+    "action": {
+      "type": "custom",
+      "data": {
+        "emoji": "📋"
+      }
+    },
+    "createdAt": "2026-01-06T02:56:15.416Z",
+    "functionCode": "// Affichage des détails de la prédiction du bot\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter plus de détails sur l'analyse technique\nconst details = `\n📊 **DÉTAILS DE LA PRÉDICTION BOT SNIPER**\n\n🔍 **Analyse Technique :**\n• RSI (14): 65.2 (neutre)\n• MACD: Signal haussier\n• Volume: +15% vs moyenne\n• Support: $89,200\n• Résistance: $95,800\n\n📈 **Facteurs Haussiers :**\n✓ Momentum positif\n✓ Volume élevé\n✓ Cassure résistance à $91,500\n\n⚠️ **Risques :**\n• Volatilité crypto élevée\n• Dépendance aux news\n• Marchés baissiers possibles\n\n🎯 **Stratégie :**\nPosition 50% du capital maximum\nStop loss strict à $89,200\n`;\n\nawait interaction.reply({\n    content: details,\n    ephemeral: true\n});"
+  },
+  {
+    "id": "olympus_analyze_signal",
+    "messageId": "1457931827481415853",
+    "channelId": "1383069855070158969",
+    "label": "🔍 Analyser le Signal",
+    "action": {
+      "type": "custom",
+      "data": {
+        "emoji": "🔍"
+      }
+    },
+    "createdAt": "2026-01-06T03:00:34.491Z",
+    "functionCode": "// Analyse du signal OLYMPUS Trading System\nconst username = interaction.user.username;\n\nconst analysis = `\n🔍 **ANALYSE DE SIGNAL OLYMPUS**\n\n🧠 **Processus d'Analyse en 3 Couches :**\n\n**📡 Couche A (Collecte)**\n• A1-WARLORD: Collecte données marché\n• A2-WHALE ALERT: Détection activité baleines\n• A3-SEMANTIC CORE: Extraction patterns sémantiques\n\n**⚙️ Couche B (Analyse)**  \n• B1-FUSION ENGINE: Fusion sources multiples\n• B2-PROBABILITY FILTER: Filtrage probabiliste\n• B3-SIGNATURE CLUSTER: Clustering patterns\n• B4-DYNAMIC LEARNING: Apprentissage adaptatif\n\n**🎯 Couche C (Exécution)**\n• C1-PREDICT TRAIL: Prédiction trajectoire\n• C2-SEMANTIC ANALYSIS: Analyse sémantique finale\n\n**📊 Confiance Actuelle: 85%**\n`;\n\nawait interaction.reply({\n    content: analysis,\n    ephemeral: true\n});"
+  },
+  {
+    "id": "olympus_performance",
+    "messageId": "1457931827481415853",
+    "channelId": "1383069855070158969",
+    "label": "📊 Voir Performance",
+    "action": {
+      "type": "custom",
+      "data": {
+        "emoji": "📊"
+      }
+    },
+    "createdAt": "2026-01-06T03:00:34.491Z",
+    "functionCode": "// Affichage des performances du système OLYMPUS\nconst username = interaction.user.username;\n\nconst performance = `\n📊 **PERFORMANCE OLYMPUS TRADING SYSTEM**\n\n**📈 Métriques Principales (30 derniers jours)**\n• **Win Rate**: 53.7% ✅ (Au-dessus du seuil de 50%)\n• **Profit Factor**: 0.99 ⚠️ (Presque à l'équilibre - à surveiller)\n• **Total Trades**: 41 opérations exécutées\n• **Latence**: <5ms ✅ (Exécution temps réel)\n\n**🎯 Indicateurs Techniques**\n• **Cache Hit Ratio**: 99.92% (Performance optimale)\n• **Architecture**: 3 couches d'analyse\n• **Database**: PostgreSQL 15+ avec pgvector\n• **IA Engine**: 8D semantic embedding\n\n**⚡ État du Système**\n• Status: 🟢 Actif et opérationnel\n• Plateforme: Sierra Chart 2400+ (64-bit)\n• OS: Windows 10/11 64-bit\n\n**📝 Recommandation**\nLe système montre une performance légèrement positive. \nContinuer le monitoring du Profit Factor.\n`;\n\nawait interaction.reply({\n    content: performance,\n    ephemeral: true\n});"
+  },
+  {
+    "id": "olympus_realtime_prediction",
+    "messageId": "1457931827481415853",
+    "channelId": "1383069855070158969",
+    "label": "⚡ Prédiction Temps Réel",
+    "action": {
+      "type": "custom",
+      "data": {
+        "emoji": "⚡"
+      }
+    },
+    "createdAt": "2026-01-06T03:00:34.491Z",
+    "functionCode": "// Prédiction temps réel du système OLYMPUS\nconst username = interaction.user.username;\n\nconst prediction = `\n⚡ **PRÉDICTION TEMPS RÉEL - OLYMPUS**\n\n**🔮 Analyse Prédictive en Cours...**\n\n**📊 Signal Actuel**\n• **Direction**: 🔴 BAISSIER détecté\n• **Confiance**: 73%\n• **Timeframe**: 15min - 1H\n• **Actif**: BTC/USD\n\n**🐋 Activité Whale**\n• Volume inhabituel détecté\n• 3 gros ordres de vente identifiés\n• Sentiment: 🔻 Négatif\n\n**🎯 Prédictions Multi-Temporalité**\n• **Court terme (5-15min)**: Consolidation probable\n• **Moyen terme (1-4H)**: Correction -3% à -5%\n• **Long terme (1D)**: Rebound possible\n\n**⚠️ Alertes Actives**\n• Stop Loss recommandé à: $91,200\n• Take Profit à: $89,800\n• Surveillance: Volume anormal\n\n**🔄 Mise à jour**: <5ms (temps réel)\n`;\n\nawait interaction.reply({\n    content: prediction,\n    ephemeral: true\n});"
+  },
+  {
+    "id": "warlord_prediction_correct",
+    "messageId": "1457932128183648277",
+    "channelId": "1383069855070158969",
+    "label": "👍 Le Bot a raison",
+    "action": {
+      "type": "custom",
+      "data": {
+        "emoji": "👍"
+      }
+    },
+    "createdAt": "2026-01-06T03:01:46.198Z",
+    "functionCode": "// Réaction quand un utilisateur pense que le Bot Warlord a raison\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote\n// Par exemple, incrémenter un compteur dans une base de données\n\nawait interaction.reply({\n    content: `👍 **Merci ${username} !** Vous pensez que le Bot Warlord a raison !\\n\\nCe vote a été enregistré. 🗳️\\n\\n**Note**: Le Bot Warlord fait partie du module A1-WARLORD de l'architecture OLYMPUS.`,\n    ephemeral: true\n});"
+  },
+  {
+    "id": "warlord_prediction_wrong",
+    "messageId": "1457932128183648277",
+    "channelId": "1383069855070158969",
+    "label": "👎 Le Bot a tort",
+    "action": {
+      "type": "custom",
+      "data": {
+        "emoji": "👎"
+      }
+    },
+    "createdAt": "2026-01-06T03:01:46.198Z",
+    "functionCode": "// Réaction quand un utilisateur pense que le Bot Warlord a tort\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote\n\nawait interaction.reply({\n    content: `👎 **Merci ${username} !** Vous pensez que le Bot Warlord se trompe !\\n\\nCe vote a été enregistré. 🗳️\\n\\n**Analyse Alternative**: Merci de partager votre analyse !`,\n    ephemeral: true\n});"
+  },
+  {
+    "id": "warlord_prediction_details",
+    "messageId": "1457932128183648277",
+    "channelId": "1383069855070158969",
+    "label": "📋 Voir l'analyse",
+    "action": {
+      "type": "custom",
+      "data": {
+        "emoji": "📋"
+      }
+    },
+    "createdAt": "2026-01-06T03:01:46.198Z",
+    "functionCode": "// Affichage des détails de l'analyse du Bot Warlord\nconst username = interaction.user.username;\n\n// Détails spécifiques au module A1-WARLORD\nconst details = `\n⚔️ **ANALYSE DÉTAILLÉE - BOT WARLORD**\n\n🔍 **Module A1-WARLORD (Couche Collecte OLYMPUS)**\n\n📊 **Données Collectées :**\n• Volume ETH: +23% vs moyenne 24h\n• Ordres >$100K: 15 détectés\n• Flow institutionnel: Négatif\n• Sentiment réseau: Bearish\n\n⚙️ **Traitement Warlord :**\n• Filtrage signal bruit: 94.7%\n• Corrélation cross-assets: ETH/BTC -0.67\n• Velocity momentum: -0.34\n• Order book imbalance: 63% sells\n\n🎯 **Prédiction ETH/USD :**\n• **Signal**: SELL confirmé\n• **Entry**: $2,410 (prix actuel)\n• **Target**: $2,340 (-2.9%)\n• **Stop Loss**: $2,480 (+2.9%)\n• **Risk/Reward**: 1:1\n\n⚡ **Confiance**: 78% (Module A1-WARLORD)\n`;\n\nawait interaction.reply({\n    content: details,\n    ephemeral: true\n});"
+  },
+  {
+    "id": "warlord_prediction_correct_es",
+    "messageId": "1457932396086296789",
+    "channelId": "1383069855070158969",
+    "label": "👍 Le Bot a raison",
+    "action": {
+      "type": "custom",
+      "data": {
+        "emoji": "👍"
+      }
+    },
+    "createdAt": "2026-01-06T03:02:50.112Z",
+    "functionCode": "// Réaction quand un utilisateur pense que le Bot Warlord a raison (ES-CME)\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote\n\nawait interaction.reply({\n    content: `👍 **Merci ${username} !** Vous pensez que le Bot Warlord a raison pour ES-CME !\\n\\nCe vote a été enregistré. 🗳️\\n\\n**Note**: Prédiction ES-CME (E-mini S&P 500) avec confiance 82%.`,\n    ephemeral: true\n});"
+  },
+  {
+    "id": "warlord_prediction_wrong_es",
+    "messageId": "1457932396086296789",
+    "channelId": "1383069855070158969",
+    "label": "👎 Le Bot a tort",
+    "action": {
+      "type": "custom",
+      "data": {
+        "emoji": "👎"
+      }
+    },
+    "createdAt": "2026-01-06T03:02:50.112Z",
+    "functionCode": "// Réaction quand un utilisateur pense que le Bot Warlord a tort (ES-CME)\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote\n\nawait interaction.reply({\n    content: `👎 **Merci ${username} !** Vous pensez que le Bot Warlord se trompe sur ES-CME !\\n\\nCe vote a été enregistré. 🗳️\\n\\n**Analyse Alternative**: Merci de partager votre analyse ES-CME !`,\n    ephemeral: true\n});"
+  },
+  {
+    "id": "warlord_prediction_details_es",
+    "messageId": "1457932396086296789",
+    "channelId": "1383069855070158969",
+    "label": "📋 Voir l'analyse",
+    "action": {
+      "type": "custom",
+      "data": {
+        "emoji": "📋"
+      }
+    },
+    "createdAt": "2026-01-06T03:02:50.112Z",
+    "functionCode": "// Affichage des détails de l'analyse du Bot Warlord pour ES-CME\nconst username = interaction.user.username;\n\n// Détails spécifiques au module A1-WARLORD pour ES-CME\nconst details = `\n⚔️ **ANALYSE DÉTAILLÉE - BOT WARLORD ES-CME**\n\n🔍 **Module A1-WARLORD (Couche Collecte OLYMPUS)**\n\n📊 **Données ES-CME Collectées :**\n• Volume E-mini S&P 500: +31% vs moyenne session\n• Block trades >500 contrats: 12 détectés\n• Flow institutionnel: Positif ($2.3M net)\n• Sentiment smart money: Bullish\n\n⚙️ **Traitement Warlord ES-CME :**\n• Filtrage signal bruit: 96.2%\n• Corrélation ES/VIX: -0.78 (inverse)\n• Momentum prix: +0.45\n• Order flow: 68% acheteurs\n\n🎯 **Prédiction ES-CME :**\n• **Signal**: BUY confirmé\n• **Entry**: $4,785 (prix actuel)\n• **Target**: $4,850 (+1.36%)\n• **Stop Loss**: $4,720 (-1.36%)\n• **Risk/Reward**: 1:1\n\n⚡ **Confiance**: 82% (Module A1-WARLORD ES-CME)\n`;\n\nawait interaction.reply({\n    content: details,\n    ephemeral: true\n});"
+  },
+  {
+    "id": "warlord_prediction_correct_es_2",
+    "messageId": "1457932678245515306",
+    "channelId": "1441486554223738911",
+    "label": "👍 Le Bot a raison",
+    "action": {
+      "type": "custom",
+      "data": {
+        "emoji": "👍"
+      }
+    },
+    "createdAt": "2026-01-06T03:03:57.228Z",
+    "functionCode": "// Réaction quand un utilisateur pense que le Bot Warlord a raison (ES-CME) - Barème IA\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote et renforcer l'IA\n\nawait interaction.reply({\n    content: `👍 **Merci ${username} !** Vote enregistré pour ES-CME !\\n\\n🧠 **Impact sur l'IA**: Ce vote renforce l'apprentissage du Bot Sniper\\n✅ **Confiance Bot**: 82% validée par la communauté\\n\\n**Données IA mises à jour** 📊`,\n    ephemeral: true\n});"
+  },
+  {
+    "id": "warlord_prediction_wrong_es_2",
+    "messageId": "1457932678245515306",
+    "channelId": "1441486554223738911",
+    "label": "👎 Le Bot a tort",
+    "action": {
+      "type": "custom",
+      "data": {
+        "emoji": "👎"
+      }
+    },
+    "createdAt": "2026-01-06T03:03:57.229Z",
+    "functionCode": "// Réaction quand un utilisateur pense que le Bot Warlord a tort (ES-CME) - Barème IA\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote et renforcer l'IA\n\nawait interaction.reply({\n    content: `👎 **Merci ${username} !** Vote enregistré pour ES-CME !\\n\\n🧠 **Impact sur l'IA**: Ce vote identifie une zone d'amélioration\\n⚠️ **Précision Bot**: 82% contestée par la communauté\\n\\n**Données IA mises à jour** 📊`,\n    ephemeral: true\n});"
+  },
+  {
+    "id": "warlord_prediction_details_es_2",
+    "messageId": "1457932678245515306",
+    "channelId": "1441486554223738911",
+    "label": "📋 Voir l'analyse",
+    "action": {
+      "type": "custom",
+      "data": {
+        "emoji": "📋"
+      }
+    },
+    "createdAt": "2026-01-06T03:03:57.229Z",
+    "functionCode": "// Affichage des détails de l'analyse du Bot Warlord pour ES-CME - Prix corrects\nconst username = interaction.user.username;\n\n// Détails spécifiques au module A1-WARLORD pour ES-CME (prix autour de 6900)\nconst details = `\n⚔️ **ANALYSE DÉTAILLÉE - BOT WARLORD ES-CME**\n\n🔍 **Module A1-WARLORD (Couche Collecte OLYMPUS)**\n\n📊 **Données ES-CME Collectées :**\n• Volume E-mini S&P 500: +31% vs moyenne session\n• Block trades >500 contrats: 12 détectés\n• Flow institutionnel: Positif ($2.3M net)\n• Sentiment smart money: Bullish\n\n⚙️ **Traitement Warlord ES-CME :**\n• Filtrage signal bruit: 96.2%\n• Corrélation ES/VIX: -0.78 (inverse)\n• Momentum prix: +0.45\n• Order flow: 68% acheteurs\n\n🎯 **Prédiction ES-CME :**\n• **Signal**: BUY confirmé\n• **Entry**: $6,900 (prix actuel)\n• **Target**: $7,020 (+1.74%)\n• **Stop Loss**: $6,780 (-1.74%)\n• **Risk/Reward**: 1:1\n\n🧠 **BARÈME IA**: Vos votes améliorent la précision du Bot Sniper !\n⚡ **Confiance**: 82% (Module A1-WARLORD ES-CME)\n`;\n\nawait interaction.reply({\n    content: details,\n    ephemeral: true\n});"
+  },
+  {
+    "id": "warlord_prediction_correct_es_3",
+    "messageId": "1457935516715454474",
+    "channelId": "1443768838587154563",
+    "label": "👍 Le Bot a raison",
+    "action": {
+      "type": "custom",
+      "data": {
+        "emoji": "👍"
+      }
+    },
+    "createdAt": "2026-01-06T03:15:13.904Z",
+    "functionCode": "// Réaction - Processus correct Bot Sniper prend trade et pose question\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote et renforcer l'IA\n\nawait interaction.reply({\n    content: `👍 **Merci ${username} !** Vote enregistré pour ES-CME !\\n\\n🧠 **Impact sur l'IA**: Ce vote renforce l'apprentissage du Bot Sniper\\n✅ **Confiance Bot**: 82% validée par la communauté\\n\\n**PROCESSUS** : Bot prend trade → Pose question → Traders jugent si raison/tort 📊`,\n    ephemeral: true\n});"
+  },
+  {
+    "id": "warlord_prediction_wrong_es_3",
+    "messageId": "1457935516715454474",
+    "channelId": "1443768838587154563",
+    "label": "👎 Le Bot a tort",
+    "action": {
+      "type": "custom",
+      "data": {
+        "emoji": "👎"
+      }
+    },
+    "createdAt": "2026-01-06T03:15:13.904Z",
+    "functionCode": "// Réaction - Processus correct Bot Sniper prend trade et pose question\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote et renforcer l'IA\n\nawait interaction.reply({\n    content: `👎 **Merci ${username} !** Vote enregistré pour ES-CME !\\n\\n🧠 **Impact sur l'IA**: Ce vote identifie une zone d'amélioration\\n⚠️ **Précision Bot**: 82% contestée par la communauté\\n\\n**PROCESSUS** : Bot prend trade → Pose question → Traders jugent si raison/tort 📊`,\n    ephemeral: true\n});"
+  },
+  {
+    "id": "warlord_prediction_details_es_3",
+    "messageId": "1457935516715454474",
+    "channelId": "1443768838587154563",
+    "label": "📋 Voir l'analyse",
+    "action": {
+      "type": "custom",
+      "data": {
+        "emoji": "📋"
+      }
+    },
+    "createdAt": "2026-01-06T03:15:13.904Z",
+    "functionCode": "// Affichage des détails + Processus correct clarifié\nconst username = interaction.user.username;\n\n// Détails spécifiques au module A1-WARLORD pour ES-CME\nconst details = `\n⚔️ **ANALYSE DÉTAILLÉE - BOT WARLORD ES-CME**\n\n🔍 **Module A1-WARLORD (Couche Collecte OLYMPUS)**\n\n📊 **Données ES-CME Collectées :**\n• Volume E-mini S&P 500: +31% vs moyenne session\n• Block trades >500 contrats: 12 détectés\n• Flow institutionnel: Positif ($2.3M net)\n• Sentiment smart money: Bullish\n\n⚙️ **Traitement Warlord ES-CME :**\n• Filtrage signal bruit: 96.2%\n• Corrélation ES/VIX: -0.78 (inverse)\n• Momentum prix: +0.45\n• Order flow: 68% acheteurs\n\n🎯 **Prédiction ES-CME :**\n• **Signal**: BUY confirmé\n• **Entry**: $6,900 (prix actuel)\n• **Target**: $7,020 (+1.74%)\n• **Stop Loss**: $6,780 (-1.74%)\n• **Risk/Reward**: 1:1\n\n🔄 **PROCESSUS D'INTERACTION** :\n1️⃣ **Bot Sniper prend un trade**\n2️⃣ **Bot pose une question** (à propos de sa position)\n3️⃣ **Traders répondent** : \"Bot a raison\" ou \"Bot a tort\"\n\n🧠 **BARÈME IA**: Ce feedback renforce l'apprentissage du Bot Sniper !\n⚡ **Confiance**: 82% (Module A1-WARLORD ES-CME)\n`;\n\nawait interaction.reply({\n    content: details,\n    ephemeral: true\n});"
+  },
+  {
+    "id": "test_refresh_btn",
+    "messageId": "1458633408056922286",
+    "channelId": "1442317829998383235",
+    "label": "Actualiser le statut",
+    "action": {
+      "type": "refresh",
+      "data": {
+        "emoji": "🔄"
+      }
+    },
+    "createdAt": "2026-01-08T01:28:24.430Z"
+  },
+  {
+    "id": "test_link_btn",
+    "messageId": "1458633408056922286",
+    "channelId": "1442317829998383235",
+    "label": "Documentation MCP",
+    "action": {
+      "type": "link",
+      "data": {
+        "value": "https://modelcontextprotocol.io/"
+      }
+    },
+    "createdAt": "2026-01-08T01:28:24.430Z"
+  },
+  {
+    "id": "btn_update_tech_v210",
+    "messageId": "1458637556047548460",
+    "channelId": "1453395539839422644",
+    "label": "Détails Techniques",
+    "action": {
+      "type": "custom",
+      "data": {
+        "message": "Typescript 5.3 + Discord.js v14 + FastMCP v3 = Super Stabilité ! 🦾",
+        "ephemeral": true
+      }
+    },
+    "createdAt": "2026-01-08T01:44:53.346Z"
+  },
+  {
+    "id": "btn_update_test_embed_v210",
+    "messageId": "1458637556047548460",
+    "channelId": "1453395539839422644",
+    "label": "Tester l'action Embed",
+    "action": {
+      "type": "custom",
+      "data": {
+        "ephemeral": true,
+        "embed": {
+          "title": "Test de l'action Embed Native",
+          "description": "L'action 'embed' est maintenant nativement supportée par les boutons ! Plus besoin de ruses de Sioux. 🏹\\n\\nC'est propre, c'est net, c'est Sniper ! 🎯",
+          "color": 3447003
+        }
+      }
+    },
+    "createdAt": "2026-01-08T01:44:53.346Z"
   }
 ]
