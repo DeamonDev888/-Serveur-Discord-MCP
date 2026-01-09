@@ -7,6 +7,8 @@ import type { FastMCP } from 'fastmcp';
 import Logger from '../utils/logger.js';
 import { registerButtonFunction } from '../discord-bridge.js';
 import { addCustomButton, loadCustomButtons } from '../utils/buttonPersistence.js';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // ============================================================================
 // ENREGISTREMENT DES OUTILS
@@ -74,6 +76,16 @@ export function registerButtonFunctionTools(server: FastMCP) {
                   return await channel.messages.fetch(context.messageId);
                 }
               },
+              // SAUVEGARDE DE VOTE/DONNÉES
+              saveVote: async (voteType: string, details: string = '') => {
+                 const { VoteManager } = await import('../utils/voteManager.js');
+                 await VoteManager.saveVote(voteType, context.user, context.channelId, details);
+              },
+               getVoteCounts: async () => {
+                   const { VoteManager } = await import('../utils/voteManager.js');
+                   return await VoteManager.getVoteCounts();
+               }
+
             };
 
             // Exécuter le code personnalisé avec accès au contexte
@@ -133,11 +145,12 @@ ${functionName ? `📝 Nom: ${functionName}` : ''}
 - \`ctx.update(data)\`: Modifier le message
 - \`ctx.sendMessage(content)\`: Envoyer un message
 - \`ctx.getMessage()\`: Récupérer le message original
+- \`ctx.saveVote(type, details)\`: Sauvegarder un vote dans votes_sentinel.csv
 
 Exemple de code:
 \`\`\`javascript
-await ctx.reply('🎉 Bouton cliqué par ' + ctx.user.username);
-await ctx.sendMessage('📢 Notification envoyée!');
+await ctx.saveVote('VALID', 'User comment');
+await ctx.reply('Vote enregistré !');
 \`\`\``;
 
       } catch (error: any) {
@@ -262,6 +275,21 @@ await ctx.sendMessage('📢 Notification envoyée!');
                   return await channel.messages.fetch(context.messageId);
                 }
               },
+              // SAUVEGARDE DE VOTE/DONNÉES
+              saveVote: async (voteType: string, details: string = '') => {
+                 try {
+                    const voteFile = path.join(process.cwd(), 'votes_sentinel.csv');
+                    // Ensure file exists with header
+                    if (!fs.existsSync(voteFile)) {
+                        fs.writeFileSync(voteFile, 'timestamp,vote_type,user,user_id,channel_id,details\n');
+                    }
+                    const line = `${new Date().toISOString()},${voteType},${context.user.username},${context.user.id},${context.channelId},"${details}"\n`;
+                    fs.appendFileSync(voteFile, line);
+                    Logger.info(`🗳️ Vote enregistré: ${voteType} par ${context.user.username}`);
+                 } catch (err: any) {
+                    Logger.error('Echec sauvegarde vote:', err);
+                 }
+              }
             };
 
             const asyncFunction = new Function('ctx', `

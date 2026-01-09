@@ -1256,5 +1256,71 @@
       }
     },
     "createdAt": "2026-01-08T01:44:53.346Z"
+  },
+  {
+    "id": "sentinel_vote_correct",
+    "messageId": "1458997641387184168",
+    "channelId": "1421701551080345710",
+    "label": "👍 👍 Le Bot a raison",
+    "action": {
+      "type": "custom",
+      "data": {
+        "message": "✅ **Vote enregistré : CONFIRMATION**\n*L'algorithme de conviction a été renforcé.*",
+        "ephemeral": true
+      }
+    },
+    "createdAt": "2026-01-09T01:35:44.165Z"
+  },
+  {
+    "id": "sentinel_vote_incorrect",
+    "messageId": "1458997641387184168",
+    "channelId": "1421701551080345710",
+    "label": "👎 👎 Le Bot a tort",
+    "action": {
+      "type": "custom",
+      "data": {
+        "message": "❌ **Vote enregistré : DIVERGENCE**\n*Les paramètres de sensibilité seront recalibrés.*",
+        "ephemeral": true
+      }
+    },
+    "createdAt": "2026-01-09T01:35:44.165Z"
+  },
+  {
+    "id": "sentinel_view_details",
+    "messageId": "1458997641387184168",
+    "channelId": "1421701551080345710",
+    "label": "📋 📋 Voir l'analyse",
+    "action": {
+      "type": "custom",
+      "data": {
+        "message": "📊 **Détails de l'analyse**\n\n• **Modèle:** GPT-4 Turbo + Bert-Large-Financial\n• **Latence:** 420ms\n• **Corrélation:** 0.85 (S&P500)",
+        "ephemeral": true
+      }
+    },
+    "createdAt": "2026-01-09T01:35:44.165Z"
+  },
+  {
+    "id": "sentinel_vote_valid_public",
+    "messageId": "1459006141013954571",
+    "channelId": "unknown",
+    "label": "Vote Validation Sentinel",
+    "action": {
+      "type": "custom",
+      "data": {}
+    },
+    "functionCode": "\n                        // 1. Répondre immédiatement pour éviter le timeout (loading...)\n                        await ctx.deferReply(false); // false = public\n\n                        // 2. Traitement (Sauvegarde)\n                        try {\n                            await ctx.saveVote('VALIDATION', 'User validated analysis');\n                            const counts = await ctx.getVoteCounts();\n                            // 3. Confirmation finale\n                            await ctx.followUp('✅ **Vote VALIDÉ** - Merci ! (👍 ' + counts.valid + ' / 👎 ' + counts.invalid + ')', false);\n                        } catch (err) {\n                            await ctx.followUp('❌ Erreur: ' + err.message, true);\n                        }\n                    ",
+    "createdAt": "2026-01-09T01:43:32.636Z"
+  },
+  {
+    "id": "sentinel_vote_invalid_public",
+    "messageId": "1459006141013954571",
+    "channelId": "unknown",
+    "label": "Vote Rejet Sentinel",
+    "action": {
+      "type": "custom",
+      "data": {}
+    },
+    "functionCode": "\n                        await ctx.deferReply(false);\n                        try {\n                            await ctx.saveVote('REJECTION', 'User rejected analysis');\n                            const counts = await ctx.getVoteCounts();\n                            await ctx.followUp('⚠️ **Vote REJETÉ** - Feedback enregistré. (👍 ' + counts.valid + ' / 👎 ' + counts.invalid + ')', false);\n                        } catch (err) {\n                            await ctx.followUp('❌ Erreur: ' + err.message, true);\n                        }\n                    ",
+    "createdAt": "2026-01-09T01:43:32.649Z"
   }
 ]

@@ -1631,7 +1631,7 @@ export function registerEmbedTools(server: FastMCP) {
         start: z.string().describe('Couleur de début (#RRGGBB)'),
         end: z.string().describe('Couleur de fin (#RRGGBB)'),
       }).optional().describe('Dégradé de couleurs'),
-      theme: z.enum(['basic', 'data_report', 'status_update', 'product_showcase', 'leaderboard', 'tech_announcement', 'social_feed', 'dashboard', 'noel', 'minimal']).optional().describe('Thème prédéfini (EXEMPLES À PERSONNALISER - voir EXEMPLES_THEMES_EMBED.md)'),
+      theme: z.enum(['basic', 'data_report', 'status_update', 'product_showcase', 'leaderboard', 'tech_announcement', 'social_feed', 'dashboard', 'noel', 'minimal', 'cyberpunk', 'gaming', 'corporate', 'sunset', 'ocean']).optional().describe('Thème prédéfini (EXEMPLES À PERSONNALISER - voir EXEMPLES_THEMES_EMBED.md)'),
       enableAnalytics: z.boolean().optional().default(true).describe('Activer le tracking analytics'),
       charts: z.array(z.object({
         type: z.enum(['line', 'bar', 'pie', 'sparkline', 'area']).describe('Type de graphique'),

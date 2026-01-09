@@ -1,5 +1,8 @@
 import { Client, GatewayIntentBits, InteractionType, ButtonStyle, EmbedBuilder, ActionRowBuilder, ButtonBuilder } from 'discord.js';
 import Logger from './utils/logger.js';
+import * as fs from 'fs';
+import * as path from 'path';
+
 import { interactionHandler } from './utils/interactionHandler.js';
 
 // ============================================================================
@@ -123,10 +126,10 @@ export class DiscordBridge {
     });
   }
 
-  /**
-   * Recharger les fonctions personnalisées depuis la persistance
-   */
-  private async rehydrateButtonFunctions(): Promise<void> {
+
+
+    // Recharger les fonctions personnalisées depuis la persistance
+    private async rehydrateButtonFunctions(): Promise<void> {
     try {
         const { loadCustomButtons } = await import('./utils/buttonPersistence.js');
         const buttons = await loadCustomButtons();
@@ -135,13 +138,85 @@ export class DiscordBridge {
         for (const [id, button] of buttons.entries()) {
             if (button.functionCode) {
                 const func = async (interaction: any, buttonData: any) => {
-                    const { EmbedBuilder, ButtonStyle, ActionRowBuilder, ButtonBuilder } = await import('discord.js');
-                    // Recréer le contexte pour eval
-                    const executionContext = `(async () => { ${button.functionCode} })()`;
+                    // Reconstruire le contexte (ctx) identique à celui de registerButtonFunctions
+                    const context = {
+                        channelId: interaction.channelId,
+                        messageId: interaction.message.id,
+                        user: interaction.user,
+                        customId: interaction.customId
+                    };
+
+                    const ctx = {
+                        interaction,
+                        channelId: context.channelId,
+                        messageId: context.messageId,
+                        user: context.user,
+                        buttonId: context.customId,
+                        client: interaction.client,
+                        // Fonctions utilitaires
+                        reply: async (content: string, ephemeral: boolean = true) => {
+                            if (!interaction.replied && !interaction.deferred) {
+                                await interaction.reply({ content, ephemeral });
+                            }
+                        },
+                        update: async (data: any) => {
+                            if (!interaction.replied && !interaction.deferred) {
+                                await interaction.update(data);
+                            }
+                        },
+                        deferReply: async (ephemeral: boolean = true) => {
+                            if (!interaction.deferred) {
+                                await interaction.deferReply({ ephemeral });
+                            }
+                        },
+                        followUp: async (content: string, ephemeral: boolean = true) => {
+                            await interaction.followUp({ content, ephemeral });
+                        },
+                        sendMessage: async (content: string) => {
+                            const channel = await interaction.client.channels.fetch(context.channelId);
+                            if (channel && 'send' in channel) {
+                                await channel.send(content);
+                            }
+                        },
+                        getMessage: async () => {
+                            const channel = await interaction.client.channels.fetch(context.channelId);
+                            if (channel && 'messages' in channel) {
+                                return await channel.messages.fetch(context.messageId);
+                            }
+                        },
+                        // SAUVEGARDE DE VOTE/DONNÉES
+                        saveVote: async (voteType: string, details: string = '') => {
+                            const { VoteManager } = await import('./utils/voteManager.js');
+                            await VoteManager.saveVote(voteType, context.user, context.channelId, details);
+                        },
+                        getVoteCounts: async () => {
+                            const { VoteManager } = await import('./utils/voteManager.js');
+                            return await VoteManager.getVoteCounts();
+                        }
+
+
+                    };
+
+                    // Exécuter le code avec le contexte
+                    const asyncFunction = new Function('ctx', `
+                        return (async () => {
+                            try {
+                                ${button.functionCode}
+                            } catch (e) {
+                                throw e;
+                            }
+                        })();
+                    `);
+
                     try {
-                        await eval(executionContext);
-                    } catch (e) {
+                        await asyncFunction(ctx);
+                    } catch (e: any) {
                         Logger.error(`❌ Erreur dans la fonction persistée ${id}:`, e);
+                        if (!interaction.replied && !interaction.deferred) {
+                            await interaction.reply({ content: `❌ Erreur: ${e.message}`, ephemeral: true }).catch(() => {});
+                        } else {
+                            await interaction.followUp({ content: `❌ Erreur: ${e.message}`, ephemeral: true }).catch(() => {});
+                        }
                     }
                 };
                 buttonFunctions.set(id, func);
