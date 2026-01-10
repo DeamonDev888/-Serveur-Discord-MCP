@@ -245,7 +245,10 @@ export function getEmbedAnalytics(embedId: string): any {
 export function generateAnalyticsReport(embedId: string): string {
   const analytics = getEmbedAnalytics(embedId);
   const reactions = Array.from(analytics.reactions.entries())
-    .map(([btn, count]) => `  • ${btn}: ${count} clics`)
+    .map((entry: any) => {
+      const [btn, count] = entry;
+      return `  • ${btn}: ${count} clics`;
+    })
     .join('\n');
 
   return `📊 **Analytics Embed ${embedId}**

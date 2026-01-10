@@ -1,1326 +1,157 @@
 [
   {
-    "id": "embedv2_embed_1766601614930_16jxx8gbq_custom_1766601614932_ndjyi",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "💖 TESTER LE BOUTON",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "✅ ÇA MARCHE !",
-          "description": "Le bouton custom fonctionne !\n\n💖 Réponse embed personnalisée affichée !",
-          "color": 65280
-        }
-      }
-    },
-    "createdAt": "2025-12-24T18:40:14.933Z"
-  },
-  {
-    "id": "embedv2_embed_1766601961461_61bxquy84_custom_1766601961463_se8rb",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "💖 TESTER LE BOUTON",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "✅ ÇA MARCHE !",
-          "description": "Le bouton custom fonctionne !\n\n💖 Réponse embed personnalisée affichée !",
-          "color": 65280
-        }
-      }
-    },
-    "createdAt": "2025-12-24T18:46:01.464Z"
-  },
-  {
-    "id": "embedv2_embed_1766602034639_ebfux2zrj_custom_1766602034642_quk4x",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "💖 TESTER LE BOUTON",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "✅ ÇA MARCHE !",
-          "description": "Le bouton custom fonctionne !\n\n💖 Réponse embed personnalisée affichée !",
-          "color": 65280
-        }
-      }
-    },
-    "createdAt": "2025-12-24T18:47:14.643Z"
-  },
-  {
-    "id": "embedv2_embed_1766602172092_bpch0azlx_custom_1766602172097_vp0cc",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "🎅 PAPA NOËL",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "🎅 HO HO HO !",
-          "description": "Joyeux Noël !\n\n🎁 Tu as été sage cette année ?",
-          "color": 16711680
-        }
-      }
-    },
-    "createdAt": "2025-12-24T18:49:32.098Z"
-  },
-  {
-    "id": "embedv2_embed_1766602172092_bpch0azlx_custom_1766602172098_xsji3",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "❄️ FLOCONS",
-    "action": {
-      "type": "custom",
-      "data": {
-        "message": "❄️ Les flocons de neige dansent dans l'air !"
-      }
-    },
-    "createdAt": "2025-12-24T18:49:32.098Z"
-  },
-  {
-    "id": "embedv2_embed_1766602273919_uenmalf38_custom_1766602273924_cavm2",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "🎅 PAPA NOËL",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "🎅 HO HO HO !",
-          "description": "Joyeux Noël !\n\n🎁 Tu as été sage cette année ?",
-          "color": 16711680
-        }
-      }
-    },
-    "createdAt": "2025-12-24T18:51:13.925Z"
-  },
-  {
-    "id": "embedv2_embed_1766602273919_uenmalf38_custom_1766602273925_4tsdk",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "❄️ FLOCONS",
-    "action": {
-      "type": "custom",
-      "data": {
-        "message": "❄️ Les flocons de neige dansent dans l'air !"
-      }
-    },
-    "createdAt": "2025-12-24T18:51:13.925Z"
-  },
-  {
-    "id": "embedv2_embed_1766602273919_uenmalf38_custom_1766602273925_o0x0g",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "🎁 CADEAU",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "🎁 UN CADEAU POUR TOI !",
-          "description": "🎊 Félicitations ! Tu as reçu un cadeau virtuel !\n\n💝 Enjoy your gift!",
-          "color": 16761035
-        }
-      }
-    },
-    "createdAt": "2025-12-24T18:51:13.926Z"
-  },
-  {
-    "id": "embedv2_embed_1766602445687_z6swaw4fv_custom_1766602445693_lna6b",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "🎅 PAPA NOËL",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "🎅 HO HO HO !",
-          "description": "Joyeux Noël !\n\n🎁 Tu as été sage cette année ?",
-          "color": 16711680
-        }
-      }
-    },
-    "createdAt": "2025-12-24T18:54:05.694Z"
-  },
-  {
-    "id": "embedv2_embed_1766602445687_z6swaw4fv_custom_1766602445694_ngf32",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "❄️ FLOCONS",
-    "action": {
-      "type": "custom",
-      "data": {
-        "message": "❄️ Les flocons de neige dansent dans l'air !"
-      }
-    },
-    "createdAt": "2025-12-24T18:54:05.694Z"
-  },
-  {
-    "id": "embedv2_embed_1766602445687_z6swaw4fv_custom_1766602445694_flv35",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "🎁 CADEAU",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "🎁 UN CADEAU POUR TOI !",
-          "description": "🎊 Félicitations ! Tu as reçu un cadeau virtuel !\n\n💝 Enjoy your gift!",
-          "color": 16761035
-        }
-      }
-    },
-    "createdAt": "2025-12-24T18:54:05.694Z"
-  },
-  {
-    "id": "embedv2_embed_1766602993459_ndztazerf_custom_1766602993465_pcubm",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "🎅 PAPA NOËL",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "🎅 HO HO HO !",
-          "description": "Joyeux Noël !\n\n🎁 Tu as été sage cette année ?",
-          "color": 16711680
-        }
-      }
-    },
-    "createdAt": "2025-12-24T19:03:13.466Z"
-  },
-  {
-    "id": "embedv2_embed_1766602993459_ndztazerf_custom_1766602993466_opod0",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "❄️ FLOCONS",
-    "action": {
-      "type": "custom",
-      "data": {
-        "message": "❄️ Les flocons de neige dansent dans l'air !"
-      }
-    },
-    "createdAt": "2025-12-24T19:03:13.466Z"
-  },
-  {
-    "id": "embedv2_embed_1766602993459_ndztazerf_custom_1766602993466_dedb5",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "🎁 CADEAU",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "🎁 UN CADEAU POUR TOI !",
-          "description": "🎊 Félicitations ! Tu as reçu un cadeau virtuel !\n\n💝 Enjoy your gift!",
-          "color": 16761035
-        }
-      }
-    },
-    "createdAt": "2025-12-24T19:03:13.466Z"
-  },
-  {
-    "id": "embedv2_embed_1766603663466_ub3cfal97_custom_1766603663471_nuvv0",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "🎅 PAPA NOËL",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "🎅 HO HO HO !",
-          "description": "Joyeux Noël !\n\n🎁 Tu as été sage cette année ?",
-          "color": 16711680
-        }
-      }
-    },
-    "createdAt": "2025-12-24T19:14:23.472Z"
-  },
-  {
-    "id": "embedv2_embed_1766603663466_ub3cfal97_custom_1766603663472_9x9th",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "❄️ FLOCONS",
-    "action": {
-      "type": "custom",
-      "data": {
-        "message": "❄️ Les flocons de neige dansent dans l'air !"
-      }
-    },
-    "createdAt": "2025-12-24T19:14:23.472Z"
-  },
-  {
-    "id": "embedv2_embed_1766603663466_ub3cfal97_custom_1766603663472_2pifx",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "🎁 CADEAU",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "🎁 UN CADEAU POUR TOI !",
-          "description": "🎊 Félicitations ! Tu as reçu un cadeau virtuel !\n\n💝 Enjoy your gift!",
-          "color": 16761035
-        }
-      }
-    },
-    "createdAt": "2025-12-24T19:14:23.472Z"
-  },
-  {
-    "id": "embedv2_embed_1766603758188_q02tihmkp_custom_1766603758193_gavt7",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "🎅 PAPA NOËL",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "🎅 HO HO HO !",
-          "description": "Joyeux Noël !\n\n🎁 Tu as été sage cette année ?",
-          "color": 16711680
-        }
-      }
-    },
-    "createdAt": "2025-12-24T19:15:58.194Z"
-  },
-  {
-    "id": "embedv2_embed_1766603758188_q02tihmkp_custom_1766603758194_sbknq",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "❄️ FLOCONS",
-    "action": {
-      "type": "custom",
-      "data": {
-        "message": "❄️ Les flocons de neige dansent dans l'air !"
-      }
-    },
-    "createdAt": "2025-12-24T19:15:58.194Z"
-  },
-  {
-    "id": "embedv2_embed_1766603758188_q02tihmkp_custom_1766603758194_ps1ac",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "🎁 CADEAU",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "🎁 UN CADEAU POUR TOI !",
-          "description": "🎊 Félicitations ! Tu as reçu un cadeau virtuel !\n\n💝 Enjoy your gift!",
-          "color": 16761035
-        }
-      }
-    },
-    "createdAt": "2025-12-24T19:15:58.194Z"
-  },
-  {
-    "id": "embedv2_embed_1766603834527_w3alyvth7_custom_1766603834533_9uat2",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "🎅 PAPA NOËL",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "🎅 HO HO HO !",
-          "description": "Joyeux Noël !\n\n🎁 Tu as été sage cette année ?",
-          "color": 16711680
-        }
-      }
-    },
-    "createdAt": "2025-12-24T19:17:14.534Z"
-  },
-  {
-    "id": "embedv2_embed_1766603834527_w3alyvth7_custom_1766603834534_j9406",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "❄️ FLOCONS",
-    "action": {
-      "type": "custom",
-      "data": {
-        "message": "❄️ Les flocons de neige dansent dans l'air !"
-      }
-    },
-    "createdAt": "2025-12-24T19:17:14.534Z"
-  },
-  {
-    "id": "embedv2_embed_1766603834527_w3alyvth7_custom_1766603834534_yeij7",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "🎁 CADEAU",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "🎁 UN CADEAU POUR TOI !",
-          "description": "🎊 Félicitations ! Tu as reçu un cadeau virtuel !\n\n💝 Enjoy your gift!",
-          "color": 16761035
-        }
-      }
-    },
-    "createdAt": "2025-12-24T19:17:14.534Z"
-  },
-  {
-    "id": "embedv2_embed_1766603923056_8d8aa1wrm_custom_1766603923063_0nmm4",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "✅ BOUTON 1",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "✅ ÇA MARCHE !",
-          "description": "Le premier bouton fonctionne !",
-          "color": 65280
-        }
-      }
-    },
-    "createdAt": "2025-12-24T19:18:43.063Z"
-  },
-  {
-    "id": "embedv2_embed_1766603923056_8d8aa1wrm_custom_1766603923064_p8dca",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "💬 BOUTON 2",
-    "action": {
-      "type": "custom",
-      "data": {
-        "message": "✅ Message personnalisé envoyé !"
-      }
-    },
-    "createdAt": "2025-12-24T19:18:43.064Z"
-  },
-  {
-    "id": "embedv2_embed_1766604006820_a6rrl1uuf_custom_1766604006826_ngwlp",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "✅ BOUTON 1",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "✅ ÇA MARCHE !",
-          "description": "Le premier bouton fonctionne !",
-          "color": 65280
-        }
-      }
-    },
-    "createdAt": "2025-12-24T19:20:06.827Z"
-  },
-  {
-    "id": "embedv2_embed_1766604006820_a6rrl1uuf_custom_1766604006827_uso1t",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "💬 BOUTON 2",
-    "action": {
-      "type": "custom",
-      "data": {
-        "message": "✅ Message personnalisé envoyé !"
-      }
-    },
-    "createdAt": "2025-12-24T19:20:06.827Z"
-  },
-  {
-    "id": "embedv2_embed_1766604076102_wsdf5glxt_custom_1766604076108_m6lij",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "✅ BOUTON 1",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "✅ ÇA MARCHE !",
-          "description": "Le premier bouton fonctionne !",
-          "color": 65280
-        }
-      }
-    },
-    "createdAt": "2025-12-24T19:21:16.109Z"
-  },
-  {
-    "id": "embedv2_embed_1766604076102_wsdf5glxt_custom_1766604076109_25msd",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "💬 BOUTON 2",
-    "action": {
-      "type": "custom",
-      "data": {
-        "message": "✅ Message personnalisé envoyé !"
-      }
-    },
-    "createdAt": "2025-12-24T19:21:16.109Z"
-  },
-  {
-    "id": "embedv2_embed_1766604179311_5wlqi6i7d_custom_1766604179317_6qb0i",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "✅ BOUTON 1",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "✅ ÇA MARCHE !",
-          "description": "Le premier bouton fonctionne !",
-          "color": 65280
-        }
-      }
-    },
-    "createdAt": "2025-12-24T19:22:59.318Z"
-  },
-  {
-    "id": "embedv2_embed_1766604179311_5wlqi6i7d_custom_1766604179318_fcdbw",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "💬 BOUTON 2",
-    "action": {
-      "type": "custom",
-      "data": {
-        "message": "✅ Message personnalisé envoyé !"
-      }
-    },
-    "createdAt": "2025-12-24T19:22:59.319Z"
-  },
-  {
-    "id": "embedv2_embed_1766604301344_nagoo6xut_custom_1766604301350_ha7kz",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "✅ BOUTON 1",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "✅ ÇA MARCHE !",
-          "description": "Le premier bouton fonctionne !",
-          "color": 65280
-        }
-      }
-    },
-    "createdAt": "2025-12-24T19:25:01.351Z"
-  },
-  {
-    "id": "embedv2_embed_1766604301344_nagoo6xut_custom_1766604301351_hal06",
-    "messageId": "",
-    "channelId": "1442317829998383235",
-    "label": "💬 BOUTON 2",
-    "action": {
-      "type": "custom",
-      "data": {
-        "message": "✅ Message personnalisé envoyé !"
-      }
-    },
-    "createdAt": "2025-12-24T19:25:01.351Z"
-  },
-  {
-    "id": "noel_2024_surprise_test",
-    "messageId": "1453930143830773843",
-    "channelId": "1442317829998383235",
-    "label": "🎁 Révéler la surprise",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "🎁 Votre Cadeau de Noël !",
-          "description": "✨ Ho ho ho !\n\n🎄 Joyeux Noël et Bonne Année !\n\nQue cette période festive te apporte joie, bonheur et réussite ! 🌟\n\n🎅🎁❄️🔔",
-          "color": 65280,
-          "timestamp": true
-        },
-        "ephemeral": true
-      }
-    },
-    "createdAt": "2025-12-26T02:00:34.786Z"
-  },
-  {
-    "id": "test_final_2024",
-    "messageId": "1453935108485812234",
-    "channelId": "1442317829998383235",
-    "label": "✅ Tester",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "🎉 Ça marche !",
-          "description": "Le bouton fonctionne correctement !\n\n✨ Le système de fallback est opérationnel !",
-          "color": 65280
-        },
-        "ephemeral": true
-      }
-    },
-    "createdAt": "2025-12-26T02:19:02.733Z"
-  },
-  {
-    "id": "bouton_multiclick_2024",
-    "messageId": "1453936518229000317",
-    "channelId": "1442317829998383235",
-    "label": "🔄 Cliquer encore !",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "✅ Encore un clic !",
-          "description": "Tu as cliqué 595 fois !\n\n🔄 Le bouton reste actif !",
-          "color": 16750848
-        },
-        "ephemeral": false
-      }
-    },
-    "createdAt": "2025-12-26T02:24:38.923Z"
-  },
-  {
-    "id": "bouton_complet_2024",
-    "messageId": "1453937442758590495",
-    "channelId": "1442317829998383235",
-    "label": "⚙️ Tester options",
-    "action": {
-      "type": "custom",
-      "data": {
-        "embed": {
-          "title": "✅ Réponse avec Options !",
-          "description": "Cette réponse va s'auto-détruire dans 10 secondes ! ⏰\n\nVisible par tous les utilisateurs.",
-          "color": 3066993
-        },
-        "ephemeral": false,
-        "visibility": "all",
-        "autoDelete": 10,
-        "autoDeleteReply": true
-      }
-    },
-    "createdAt": "2025-12-26T02:28:19.253Z"
-  },
-  {
-    "id": "btn_change_theme",
-    "messageId": "unknown",
-    "channelId": "unknown",
-    "label": "changer_theme",
-    "action": {
-      "type": "custom",
-      "data": {}
-    },
-    "functionCode": "// Fonction pour changer le thème de l'embed\nconst themes = ['cyberpunk', 'minimal', 'gaming', 'corporate', 'sunset', 'ocean'];\nconst couleurs = ['#ff00ff', '#00ffff', '#ffff00', '#ff8800', '#ff4444', '#44ff44'];\n\nlet index = 0;\n\n// Modifier l'embed avec un nouveau thème\nmodifyEmbed({\n  theme: themes[index % themes.length],\n  color: couleurs[index % couleurs.length]\n});\n\nindex++;\n\nreturn `🎨 Thème appliqué : **${themes[(index-1) % themes.length]}** !`;",
-    "createdAt": "2025-12-26T02:59:38.021Z"
-  },
-  {
-    "id": "btn_stats",
-    "messageId": "unknown",
-    "channelId": "unknown",
-    "label": "afficher_stats",
-    "action": {
-      "type": "custom",
-      "data": {}
-    },
-    "functionCode": "// Fonction pour afficher les statistiques\nconst stats = {\n  'Embeds créés': Math.floor(Math.random() * 1000),\n  'Boutons activés': Math.floor(Math.random() * 500),\n  'Actions personnalisées': Math.floor(Math.random() * 200),\n  'Utilisateurs actifs': Math.floor(Math.random() * 50)\n};\n\n// Récupérer la valeur saisie dans le modal\nconst inputValue = ctx.modalValues?.input || 'général';\n\nlet message = `📊 **Statistiques (${inputValue})**\\n\\n`;\n\nfor (const [key, value] of Object.entries(stats)) {\n  message += `• **${key}** : ${value}\\n`;\n}\n\nmessage += `\\n⏰ Mis à jour : <t:${Math.floor(Date.now()/1000)}:R>`;\n\nawait ctx.sendMessage(message);",
-    "createdAt": "2025-12-26T02:59:43.951Z"
-  },
-  {
-    "id": "noel_2025_souhait",
-    "messageId": "1454133248824315936",
-    "channelId": "1442317829998383235",
-    "label": "🎊 Souhaiter une bonne année",
-    "action": {
-      "type": "custom",
-      "data": {
-        "message": "Bonne année à toi aussi ! 🎉 Que 2025 soit formidable ! ✨"
-      }
-    },
-    "createdAt": "2025-12-26T15:26:21.999Z"
-  },
-  {
-    "id": "noel_2025_resolutions",
-    "messageId": "1454133248824315936",
-    "channelId": "1442317829998383235",
-    "label": "🎯 Partager mes résolutions",
-    "action": {
-      "type": "modal",
-      "data": {
-        "modalTitle": "Tes résolutions 2025",
-        "inputLabel": "Quelle est ta résolution principale pour 2025 ?"
-      }
-    },
-    "createdAt": "2025-12-26T15:26:21.999Z"
-  },
-  {
-    "id": "noel_2025_feux_artifice",
-    "messageId": "1454133248824315936",
-    "channelId": "1442317829998383235",
-    "label": "🎆 Voir les feux d'artifice",
-    "action": {
-      "type": "link",
-      "data": {
-        "value": "https://www.youtube.com/watch?v=Zv0wAGIoN5s"
-      }
-    },
-    "createdAt": "2025-12-26T15:26:21.999Z"
-  },
-  {
-    "id": "cyberpunk_refresh_esh26",
-    "messageId": "1454136725784760673",
-    "channelId": "1442317829998383235",
-    "label": "⚡ REFRESH ANALYSIS",
-    "action": {
-      "type": "refresh",
-      "data": {}
-    },
-    "createdAt": "2025-12-26T15:40:11.019Z"
-  },
-  {
-    "id": "cyberpunk_alert_levels",
-    "messageId": "1454136725784760673",
-    "channelId": "1442317829998383235",
-    "label": "🚨 SET LEVEL ALERTS",
-    "action": {
-      "type": "custom",
-      "data": {
-        "message": "🚨 Alertes de niveaux configurées pour ESH26-CME ! Vous recevrez des notifications quand le prix touchera les supports/résistances majeurs."
-      }
-    },
-    "createdAt": "2025-12-26T15:40:11.019Z"
-  },
-  {
-    "id": "cyberpunk_strategy_guide",
-    "messageId": "1454136725784760673",
-    "channelId": "1442317829998383235",
-    "label": "📋 STRATEGY GUIDE",
-    "action": {
-      "type": "modal",
-      "data": {
-        "modalTitle": "Guide Stratégie IA",
-        "inputLabel": "Quelle stratégie souhaitez-vous approfondir ?"
-      }
-    },
-    "createdAt": "2025-12-26T15:40:11.019Z"
-  },
-  {
-    "id": "btn_turbo",
-    "messageId": "1454137083206697045",
-    "channelId": "1442317829998383235",
-    "label": "🔥 Mode Turbo",
-    "action": {
-      "type": "none",
-      "data": {}
-    },
-    "createdAt": "2025-12-26T15:41:36.228Z"
-  },
-  {
-    "id": "btn_config",
-    "messageId": "1454137083206697045",
-    "channelId": "1442317829998383235",
-    "label": "⚙️ Config Avancée",
-    "action": {
-      "type": "none",
-      "data": {}
-    },
-    "createdAt": "2025-12-26T15:41:36.228Z"
-  },
-  {
-    "id": "btn_powerlevel",
-    "messageId": "1454137083206697045",
-    "channelId": "1442317829998383235",
-    "label": "💎 Power Level",
-    "action": {
-      "type": "none",
-      "data": {}
-    },
-    "createdAt": "2025-12-26T15:41:36.228Z"
-  },
-  {
-    "id": "crypto_refresh_1",
-    "messageId": "1454160507102695577",
-    "channelId": "1441486554223738911",
-    "label": "🔄 Actualiser",
-    "action": {
-      "type": "refresh",
-      "data": {
-        "emoji": "🔄"
-      }
-    },
-    "createdAt": "2025-12-26T17:14:40.879Z"
-  },
-  {
-    "id": "crypto_charts_1",
-    "messageId": "1454160507102695577",
-    "channelId": "1441486554223738911",
-    "label": "📈 Graphiques",
-    "action": {
-      "type": "link",
-      "data": {
-        "value": "https://example.com/charts",
-        "emoji": "📈"
-      }
-    },
-    "createdAt": "2025-12-26T17:14:40.879Z"
-  },
-  {
-    "id": "crypto_alerts_1",
-    "messageId": "1454160507102695577",
-    "channelId": "1441486554223738911",
-    "label": "⚠️ Alertes",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "⚠️"
-      }
-    },
-    "createdAt": "2025-12-26T17:14:40.879Z"
-  },
-  {
-    "id": "sp500_refresh_1",
-    "messageId": "1454161184952553555",
-    "channelId": "1441486554223738911",
-    "label": "🔄 Actualiser",
-    "action": {
-      "type": "refresh",
-      "data": {
-        "emoji": "🔄"
-      }
-    },
-    "createdAt": "2025-12-26T17:17:22.452Z"
-  },
-  {
-    "id": "sp500_chart_1",
-    "messageId": "1454161184952553555",
-    "channelId": "1441486554223738911",
-    "label": "📊 Chart",
-    "action": {
-      "type": "link",
-      "data": {
-        "value": "https://example.com/sp500",
-        "emoji": "📊"
-      }
-    },
-    "createdAt": "2025-12-26T17:17:22.452Z"
-  },
-  {
-    "id": "sp500_alerts_1",
-    "messageId": "1454161184952553555",
-    "channelId": "1441486554223738911",
-    "label": "⚠️ Alertes",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "⚠️"
-      }
-    },
-    "createdAt": "2025-12-26T17:17:22.452Z"
-  },
-  {
-    "id": "sp500_full_refresh",
-    "messageId": "1454162265220579339",
-    "channelId": "1441486554223738911",
-    "label": "🔄 Actualiser Analyse",
-    "action": {
-      "type": "refresh",
-      "data": {
-        "emoji": "🔄"
-      }
-    },
-    "createdAt": "2025-12-26T17:21:40.118Z"
-  },
-  {
-    "id": "sp500_chart_full",
-    "messageId": "1454162265220579339",
-    "channelId": "1441486554223738911",
-    "label": "📊 Chart Interactif",
-    "action": {
-      "type": "link",
-      "data": {
-        "value": "https://example.com/sp500-studies",
-        "emoji": "📊"
-      }
-    },
-    "createdAt": "2025-12-26T17:21:40.118Z"
-  },
-  {
-    "id": "sp500_studies_alerts",
-    "messageId": "1454162265220579339",
-    "channelId": "1441486554223738911",
-    "label": "⚠️ Alertes Études",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "⚠️"
-      }
-    },
-    "createdAt": "2025-12-26T17:21:40.119Z"
-  },
-  {
-    "id": "btc_full_refresh",
-    "messageId": "1454162706507497593",
-    "channelId": "1441486554223738911",
-    "label": "Actualiser BTC",
-    "action": {
-      "type": "refresh",
-      "data": {}
-    },
-    "createdAt": "2025-12-26T17:23:25.292Z"
-  },
-  {
-    "id": "btc_chart_full",
-    "messageId": "1454162706507497593",
-    "channelId": "1441486554223738911",
-    "label": "Chart Bitcoin",
-    "action": {
-      "type": "link",
-      "data": {
-        "value": "https://example.com/btc-studies"
-      }
-    },
-    "createdAt": "2025-12-26T17:23:25.292Z"
-  },
-  {
-    "id": "btc_studies_alerts",
-    "messageId": "1454162706507497593",
-    "channelId": "1441486554223738911",
-    "label": "Alertes Crypto",
-    "action": {
-      "type": "custom",
-      "data": {}
-    },
-    "createdAt": "2025-12-26T17:23:25.292Z"
-  },
-  {
-    "id": "join_discord",
-    "messageId": "1454691880993292412",
-    "channelId": "1442317829998383235",
-    "label": "Rejoindre",
-    "action": {
-      "type": "link",
-      "data": {
-        "value": "https://discord.gg/4AR82phtBz",
-        "emoji": "🚀"
-      }
-    },
-    "createdAt": "2025-12-28T04:26:11.182Z"
-  },
-  {
-    "id": "btn_capabilities",
-    "messageId": "1455573127743672513",
-    "channelId": "1442317829998383235",
-    "label": "⚡ Capacités",
-    "action": {
-      "type": "none",
-      "data": {}
-    },
-    "createdAt": "2025-12-30T14:47:54.725Z"
-  },
-  {
-    "id": "btn_tools",
-    "messageId": "1455573127743672513",
-    "channelId": "1442317829998383235",
-    "label": "🛠️ Outils",
-    "action": {
-      "type": "none",
-      "data": {}
-    },
-    "createdAt": "2025-12-30T14:47:54.725Z"
-  },
-  {
-    "id": "btn_help",
-    "messageId": "1455573127743672513",
-    "channelId": "1442317829998383235",
-    "label": "❓ Aide",
-    "action": {
-      "type": "none",
-      "data": {}
-    },
-    "createdAt": "2025-12-30T14:47:54.725Z"
-  },
-  {
-    "id": "btn_duel",
-    "messageId": "1455573389870891152",
-    "channelId": "1442317829998383235",
-    "label": "🔥 DÉFI ACCEPTÉ",
-    "action": {
-      "type": "none",
-      "data": {}
-    },
-    "createdAt": "2025-12-30T14:48:57.213Z"
-  },
-  {
-    "id": "btn_crusher",
-    "messageId": "1455573389870891152",
-    "channelId": "1442317829998383235",
-    "label": "⚡ ÉCRASER",
-    "action": {
-      "type": "none",
-      "data": {}
-    },
-    "createdAt": "2025-12-30T14:48:57.214Z"
-  },
-  {
-    "id": "bot_prediction_correct",
-    "messageId": "1457930741001224344",
-    "channelId": "1383069855070158969",
-    "label": "👍 Le Bot a raison",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "👍"
-      }
-    },
-    "createdAt": "2026-01-06T02:56:15.416Z",
-    "functionCode": "// Réaction quand un utilisateur pense que le bot a raison\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote\n// Par exemple, incrémenter un compteur dans une base de données\n\nawait interaction.reply({\n    content: `👍 **Merci ${username} !** Vous pensez que le Bot Sniper a raison !\\n\\nCe vote a été enregistré. 🗳️`,\n    ephemeral: true\n});"
-  },
-  {
-    "id": "bot_prediction_wrong",
-    "messageId": "1457930741001224344",
-    "channelId": "1383069855070158969",
-    "label": "👎 Le Bot a tort",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "👎"
-      }
-    },
-    "createdAt": "2026-01-06T02:56:15.416Z",
-    "functionCode": "// Réaction quand un utilisateur pense que le bot a tort\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote\n\nawait interaction.reply({\n    content: `👎 **Merci ${username} !** Vous pensez que le Bot Sniper se trompe !\\n\\nCe vote a été enregistré. 🗳️`,\n    ephemeral: true\n});"
-  },
-  {
-    "id": "bot_prediction_details",
-    "messageId": "1457930741001224344",
-    "channelId": "1383069855070158969",
-    "label": "📋 Voir les détails",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "📋"
-      }
-    },
-    "createdAt": "2026-01-06T02:56:15.416Z",
-    "functionCode": "// Affichage des détails de la prédiction du bot\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter plus de détails sur l'analyse technique\nconst details = `\n📊 **DÉTAILS DE LA PRÉDICTION BOT SNIPER**\n\n🔍 **Analyse Technique :**\n• RSI (14): 65.2 (neutre)\n• MACD: Signal haussier\n• Volume: +15% vs moyenne\n• Support: $89,200\n• Résistance: $95,800\n\n📈 **Facteurs Haussiers :**\n✓ Momentum positif\n✓ Volume élevé\n✓ Cassure résistance à $91,500\n\n⚠️ **Risques :**\n• Volatilité crypto élevée\n• Dépendance aux news\n• Marchés baissiers possibles\n\n🎯 **Stratégie :**\nPosition 50% du capital maximum\nStop loss strict à $89,200\n`;\n\nawait interaction.reply({\n    content: details,\n    ephemeral: true\n});"
-  },
-  {
-    "id": "olympus_analyze_signal",
-    "messageId": "1457931827481415853",
-    "channelId": "1383069855070158969",
-    "label": "🔍 Analyser le Signal",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "🔍"
-      }
-    },
-    "createdAt": "2026-01-06T03:00:34.491Z",
-    "functionCode": "// Analyse du signal OLYMPUS Trading System\nconst username = interaction.user.username;\n\nconst analysis = `\n🔍 **ANALYSE DE SIGNAL OLYMPUS**\n\n🧠 **Processus d'Analyse en 3 Couches :**\n\n**📡 Couche A (Collecte)**\n• A1-WARLORD: Collecte données marché\n• A2-WHALE ALERT: Détection activité baleines\n• A3-SEMANTIC CORE: Extraction patterns sémantiques\n\n**⚙️ Couche B (Analyse)**  \n• B1-FUSION ENGINE: Fusion sources multiples\n• B2-PROBABILITY FILTER: Filtrage probabiliste\n• B3-SIGNATURE CLUSTER: Clustering patterns\n• B4-DYNAMIC LEARNING: Apprentissage adaptatif\n\n**🎯 Couche C (Exécution)**\n• C1-PREDICT TRAIL: Prédiction trajectoire\n• C2-SEMANTIC ANALYSIS: Analyse sémantique finale\n\n**📊 Confiance Actuelle: 85%**\n`;\n\nawait interaction.reply({\n    content: analysis,\n    ephemeral: true\n});"
-  },
-  {
-    "id": "olympus_performance",
-    "messageId": "1457931827481415853",
-    "channelId": "1383069855070158969",
-    "label": "📊 Voir Performance",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "📊"
-      }
-    },
-    "createdAt": "2026-01-06T03:00:34.491Z",
-    "functionCode": "// Affichage des performances du système OLYMPUS\nconst username = interaction.user.username;\n\nconst performance = `\n📊 **PERFORMANCE OLYMPUS TRADING SYSTEM**\n\n**📈 Métriques Principales (30 derniers jours)**\n• **Win Rate**: 53.7% ✅ (Au-dessus du seuil de 50%)\n• **Profit Factor**: 0.99 ⚠️ (Presque à l'équilibre - à surveiller)\n• **Total Trades**: 41 opérations exécutées\n• **Latence**: <5ms ✅ (Exécution temps réel)\n\n**🎯 Indicateurs Techniques**\n• **Cache Hit Ratio**: 99.92% (Performance optimale)\n• **Architecture**: 3 couches d'analyse\n• **Database**: PostgreSQL 15+ avec pgvector\n• **IA Engine**: 8D semantic embedding\n\n**⚡ État du Système**\n• Status: 🟢 Actif et opérationnel\n• Plateforme: Sierra Chart 2400+ (64-bit)\n• OS: Windows 10/11 64-bit\n\n**📝 Recommandation**\nLe système montre une performance légèrement positive. \nContinuer le monitoring du Profit Factor.\n`;\n\nawait interaction.reply({\n    content: performance,\n    ephemeral: true\n});"
-  },
-  {
-    "id": "olympus_realtime_prediction",
-    "messageId": "1457931827481415853",
-    "channelId": "1383069855070158969",
-    "label": "⚡ Prédiction Temps Réel",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "⚡"
-      }
-    },
-    "createdAt": "2026-01-06T03:00:34.491Z",
-    "functionCode": "// Prédiction temps réel du système OLYMPUS\nconst username = interaction.user.username;\n\nconst prediction = `\n⚡ **PRÉDICTION TEMPS RÉEL - OLYMPUS**\n\n**🔮 Analyse Prédictive en Cours...**\n\n**📊 Signal Actuel**\n• **Direction**: 🔴 BAISSIER détecté\n• **Confiance**: 73%\n• **Timeframe**: 15min - 1H\n• **Actif**: BTC/USD\n\n**🐋 Activité Whale**\n• Volume inhabituel détecté\n• 3 gros ordres de vente identifiés\n• Sentiment: 🔻 Négatif\n\n**🎯 Prédictions Multi-Temporalité**\n• **Court terme (5-15min)**: Consolidation probable\n• **Moyen terme (1-4H)**: Correction -3% à -5%\n• **Long terme (1D)**: Rebound possible\n\n**⚠️ Alertes Actives**\n• Stop Loss recommandé à: $91,200\n• Take Profit à: $89,800\n• Surveillance: Volume anormal\n\n**🔄 Mise à jour**: <5ms (temps réel)\n`;\n\nawait interaction.reply({\n    content: prediction,\n    ephemeral: true\n});"
-  },
-  {
-    "id": "warlord_prediction_correct",
-    "messageId": "1457932128183648277",
-    "channelId": "1383069855070158969",
-    "label": "👍 Le Bot a raison",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "👍"
-      }
-    },
-    "createdAt": "2026-01-06T03:01:46.198Z",
-    "functionCode": "// Réaction quand un utilisateur pense que le Bot Warlord a raison\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote\n// Par exemple, incrémenter un compteur dans une base de données\n\nawait interaction.reply({\n    content: `👍 **Merci ${username} !** Vous pensez que le Bot Warlord a raison !\\n\\nCe vote a été enregistré. 🗳️\\n\\n**Note**: Le Bot Warlord fait partie du module A1-WARLORD de l'architecture OLYMPUS.`,\n    ephemeral: true\n});"
-  },
-  {
-    "id": "warlord_prediction_wrong",
-    "messageId": "1457932128183648277",
-    "channelId": "1383069855070158969",
-    "label": "👎 Le Bot a tort",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "👎"
-      }
-    },
-    "createdAt": "2026-01-06T03:01:46.198Z",
-    "functionCode": "// Réaction quand un utilisateur pense que le Bot Warlord a tort\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote\n\nawait interaction.reply({\n    content: `👎 **Merci ${username} !** Vous pensez que le Bot Warlord se trompe !\\n\\nCe vote a été enregistré. 🗳️\\n\\n**Analyse Alternative**: Merci de partager votre analyse !`,\n    ephemeral: true\n});"
-  },
-  {
-    "id": "warlord_prediction_details",
-    "messageId": "1457932128183648277",
-    "channelId": "1383069855070158969",
-    "label": "📋 Voir l'analyse",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "📋"
-      }
-    },
-    "createdAt": "2026-01-06T03:01:46.198Z",
-    "functionCode": "// Affichage des détails de l'analyse du Bot Warlord\nconst username = interaction.user.username;\n\n// Détails spécifiques au module A1-WARLORD\nconst details = `\n⚔️ **ANALYSE DÉTAILLÉE - BOT WARLORD**\n\n🔍 **Module A1-WARLORD (Couche Collecte OLYMPUS)**\n\n📊 **Données Collectées :**\n• Volume ETH: +23% vs moyenne 24h\n• Ordres >$100K: 15 détectés\n• Flow institutionnel: Négatif\n• Sentiment réseau: Bearish\n\n⚙️ **Traitement Warlord :**\n• Filtrage signal bruit: 94.7%\n• Corrélation cross-assets: ETH/BTC -0.67\n• Velocity momentum: -0.34\n• Order book imbalance: 63% sells\n\n🎯 **Prédiction ETH/USD :**\n• **Signal**: SELL confirmé\n• **Entry**: $2,410 (prix actuel)\n• **Target**: $2,340 (-2.9%)\n• **Stop Loss**: $2,480 (+2.9%)\n• **Risk/Reward**: 1:1\n\n⚡ **Confiance**: 78% (Module A1-WARLORD)\n`;\n\nawait interaction.reply({\n    content: details,\n    ephemeral: true\n});"
-  },
-  {
-    "id": "warlord_prediction_correct_es",
-    "messageId": "1457932396086296789",
-    "channelId": "1383069855070158969",
-    "label": "👍 Le Bot a raison",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "👍"
-      }
-    },
-    "createdAt": "2026-01-06T03:02:50.112Z",
-    "functionCode": "// Réaction quand un utilisateur pense que le Bot Warlord a raison (ES-CME)\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote\n\nawait interaction.reply({\n    content: `👍 **Merci ${username} !** Vous pensez que le Bot Warlord a raison pour ES-CME !\\n\\nCe vote a été enregistré. 🗳️\\n\\n**Note**: Prédiction ES-CME (E-mini S&P 500) avec confiance 82%.`,\n    ephemeral: true\n});"
-  },
-  {
-    "id": "warlord_prediction_wrong_es",
-    "messageId": "1457932396086296789",
-    "channelId": "1383069855070158969",
-    "label": "👎 Le Bot a tort",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "👎"
-      }
-    },
-    "createdAt": "2026-01-06T03:02:50.112Z",
-    "functionCode": "// Réaction quand un utilisateur pense que le Bot Warlord a tort (ES-CME)\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote\n\nawait interaction.reply({\n    content: `👎 **Merci ${username} !** Vous pensez que le Bot Warlord se trompe sur ES-CME !\\n\\nCe vote a été enregistré. 🗳️\\n\\n**Analyse Alternative**: Merci de partager votre analyse ES-CME !`,\n    ephemeral: true\n});"
-  },
-  {
-    "id": "warlord_prediction_details_es",
-    "messageId": "1457932396086296789",
-    "channelId": "1383069855070158969",
-    "label": "📋 Voir l'analyse",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "📋"
-      }
-    },
-    "createdAt": "2026-01-06T03:02:50.112Z",
-    "functionCode": "// Affichage des détails de l'analyse du Bot Warlord pour ES-CME\nconst username = interaction.user.username;\n\n// Détails spécifiques au module A1-WARLORD pour ES-CME\nconst details = `\n⚔️ **ANALYSE DÉTAILLÉE - BOT WARLORD ES-CME**\n\n🔍 **Module A1-WARLORD (Couche Collecte OLYMPUS)**\n\n📊 **Données ES-CME Collectées :**\n• Volume E-mini S&P 500: +31% vs moyenne session\n• Block trades >500 contrats: 12 détectés\n• Flow institutionnel: Positif ($2.3M net)\n• Sentiment smart money: Bullish\n\n⚙️ **Traitement Warlord ES-CME :**\n• Filtrage signal bruit: 96.2%\n• Corrélation ES/VIX: -0.78 (inverse)\n• Momentum prix: +0.45\n• Order flow: 68% acheteurs\n\n🎯 **Prédiction ES-CME :**\n• **Signal**: BUY confirmé\n• **Entry**: $4,785 (prix actuel)\n• **Target**: $4,850 (+1.36%)\n• **Stop Loss**: $4,720 (-1.36%)\n• **Risk/Reward**: 1:1\n\n⚡ **Confiance**: 82% (Module A1-WARLORD ES-CME)\n`;\n\nawait interaction.reply({\n    content: details,\n    ephemeral: true\n});"
-  },
-  {
-    "id": "warlord_prediction_correct_es_2",
-    "messageId": "1457932678245515306",
-    "channelId": "1441486554223738911",
-    "label": "👍 Le Bot a raison",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "👍"
-      }
-    },
-    "createdAt": "2026-01-06T03:03:57.228Z",
-    "functionCode": "// Réaction quand un utilisateur pense que le Bot Warlord a raison (ES-CME) - Barème IA\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote et renforcer l'IA\n\nawait interaction.reply({\n    content: `👍 **Merci ${username} !** Vote enregistré pour ES-CME !\\n\\n🧠 **Impact sur l'IA**: Ce vote renforce l'apprentissage du Bot Sniper\\n✅ **Confiance Bot**: 82% validée par la communauté\\n\\n**Données IA mises à jour** 📊`,\n    ephemeral: true\n});"
-  },
-  {
-    "id": "warlord_prediction_wrong_es_2",
-    "messageId": "1457932678245515306",
-    "channelId": "1441486554223738911",
-    "label": "👎 Le Bot a tort",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "👎"
-      }
-    },
-    "createdAt": "2026-01-06T03:03:57.229Z",
-    "functionCode": "// Réaction quand un utilisateur pense que le Bot Warlord a tort (ES-CME) - Barème IA\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote et renforcer l'IA\n\nawait interaction.reply({\n    content: `👎 **Merci ${username} !** Vote enregistré pour ES-CME !\\n\\n🧠 **Impact sur l'IA**: Ce vote identifie une zone d'amélioration\\n⚠️ **Précision Bot**: 82% contestée par la communauté\\n\\n**Données IA mises à jour** 📊`,\n    ephemeral: true\n});"
-  },
-  {
-    "id": "warlord_prediction_details_es_2",
-    "messageId": "1457932678245515306",
-    "channelId": "1441486554223738911",
-    "label": "📋 Voir l'analyse",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "📋"
-      }
-    },
-    "createdAt": "2026-01-06T03:03:57.229Z",
-    "functionCode": "// Affichage des détails de l'analyse du Bot Warlord pour ES-CME - Prix corrects\nconst username = interaction.user.username;\n\n// Détails spécifiques au module A1-WARLORD pour ES-CME (prix autour de 6900)\nconst details = `\n⚔️ **ANALYSE DÉTAILLÉE - BOT WARLORD ES-CME**\n\n🔍 **Module A1-WARLORD (Couche Collecte OLYMPUS)**\n\n📊 **Données ES-CME Collectées :**\n• Volume E-mini S&P 500: +31% vs moyenne session\n• Block trades >500 contrats: 12 détectés\n• Flow institutionnel: Positif ($2.3M net)\n• Sentiment smart money: Bullish\n\n⚙️ **Traitement Warlord ES-CME :**\n• Filtrage signal bruit: 96.2%\n• Corrélation ES/VIX: -0.78 (inverse)\n• Momentum prix: +0.45\n• Order flow: 68% acheteurs\n\n🎯 **Prédiction ES-CME :**\n• **Signal**: BUY confirmé\n• **Entry**: $6,900 (prix actuel)\n• **Target**: $7,020 (+1.74%)\n• **Stop Loss**: $6,780 (-1.74%)\n• **Risk/Reward**: 1:1\n\n🧠 **BARÈME IA**: Vos votes améliorent la précision du Bot Sniper !\n⚡ **Confiance**: 82% (Module A1-WARLORD ES-CME)\n`;\n\nawait interaction.reply({\n    content: details,\n    ephemeral: true\n});"
-  },
-  {
-    "id": "warlord_prediction_correct_es_3",
-    "messageId": "1457935516715454474",
-    "channelId": "1443768838587154563",
-    "label": "👍 Le Bot a raison",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "👍"
-      }
-    },
-    "createdAt": "2026-01-06T03:15:13.904Z",
-    "functionCode": "// Réaction - Processus correct Bot Sniper prend trade et pose question\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote et renforcer l'IA\n\nawait interaction.reply({\n    content: `👍 **Merci ${username} !** Vote enregistré pour ES-CME !\\n\\n🧠 **Impact sur l'IA**: Ce vote renforce l'apprentissage du Bot Sniper\\n✅ **Confiance Bot**: 82% validée par la communauté\\n\\n**PROCESSUS** : Bot prend trade → Pose question → Traders jugent si raison/tort 📊`,\n    ephemeral: true\n});"
-  },
-  {
-    "id": "warlord_prediction_wrong_es_3",
-    "messageId": "1457935516715454474",
-    "channelId": "1443768838587154563",
-    "label": "👎 Le Bot a tort",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "👎"
-      }
-    },
-    "createdAt": "2026-01-06T03:15:13.904Z",
-    "functionCode": "// Réaction - Processus correct Bot Sniper prend trade et pose question\nconst userId = interaction.user.id;\nconst username = interaction.user.username;\n\n// Ici vous pouvez ajouter la logique pour enregistrer le vote et renforcer l'IA\n\nawait interaction.reply({\n    content: `👎 **Merci ${username} !** Vote enregistré pour ES-CME !\\n\\n🧠 **Impact sur l'IA**: Ce vote identifie une zone d'amélioration\\n⚠️ **Précision Bot**: 82% contestée par la communauté\\n\\n**PROCESSUS** : Bot prend trade → Pose question → Traders jugent si raison/tort 📊`,\n    ephemeral: true\n});"
-  },
-  {
-    "id": "warlord_prediction_details_es_3",
-    "messageId": "1457935516715454474",
-    "channelId": "1443768838587154563",
-    "label": "📋 Voir l'analyse",
-    "action": {
-      "type": "custom",
-      "data": {
-        "emoji": "📋"
-      }
-    },
-    "createdAt": "2026-01-06T03:15:13.904Z",
-    "functionCode": "// Affichage des détails + Processus correct clarifié\nconst username = interaction.user.username;\n\n// Détails spécifiques au module A1-WARLORD pour ES-CME\nconst details = `\n⚔️ **ANALYSE DÉTAILLÉE - BOT WARLORD ES-CME**\n\n🔍 **Module A1-WARLORD (Couche Collecte OLYMPUS)**\n\n📊 **Données ES-CME Collectées :**\n• Volume E-mini S&P 500: +31% vs moyenne session\n• Block trades >500 contrats: 12 détectés\n• Flow institutionnel: Positif ($2.3M net)\n• Sentiment smart money: Bullish\n\n⚙️ **Traitement Warlord ES-CME :**\n• Filtrage signal bruit: 96.2%\n• Corrélation ES/VIX: -0.78 (inverse)\n• Momentum prix: +0.45\n• Order flow: 68% acheteurs\n\n🎯 **Prédiction ES-CME :**\n• **Signal**: BUY confirmé\n• **Entry**: $6,900 (prix actuel)\n• **Target**: $7,020 (+1.74%)\n• **Stop Loss**: $6,780 (-1.74%)\n• **Risk/Reward**: 1:1\n\n🔄 **PROCESSUS D'INTERACTION** :\n1️⃣ **Bot Sniper prend un trade**\n2️⃣ **Bot pose une question** (à propos de sa position)\n3️⃣ **Traders répondent** : \"Bot a raison\" ou \"Bot a tort\"\n\n🧠 **BARÈME IA**: Ce feedback renforce l'apprentissage du Bot Sniper !\n⚡ **Confiance**: 82% (Module A1-WARLORD ES-CME)\n`;\n\nawait interaction.reply({\n    content: details,\n    ephemeral: true\n});"
-  },
-  {
-    "id": "test_refresh_btn",
-    "messageId": "1458633408056922286",
-    "channelId": "1442317829998383235",
-    "label": "Actualiser le statut",
-    "action": {
-      "type": "refresh",
-      "data": {
-        "emoji": "🔄"
-      }
-    },
-    "createdAt": "2026-01-08T01:28:24.430Z"
-  },
-  {
-    "id": "test_link_btn",
-    "messageId": "1458633408056922286",
-    "channelId": "1442317829998383235",
-    "label": "Documentation MCP",
-    "action": {
-      "type": "link",
-      "data": {
-        "value": "https://modelcontextprotocol.io/"
-      }
-    },
-    "createdAt": "2026-01-08T01:28:24.430Z"
-  },
-  {
-    "id": "btn_update_tech_v210",
-    "messageId": "1458637556047548460",
-    "channelId": "1453395539839422644",
-    "label": "Détails Techniques",
-    "action": {
-      "type": "custom",
-      "data": {
-        "message": "Typescript 5.3 + Discord.js v14 + FastMCP v3 = Super Stabilité ! 🦾",
-        "ephemeral": true
-      }
-    },
-    "createdAt": "2026-01-08T01:44:53.346Z"
-  },
-  {
-    "id": "btn_update_test_embed_v210",
-    "messageId": "1458637556047548460",
-    "channelId": "1453395539839422644",
-    "label": "Tester l'action Embed",
-    "action": {
-      "type": "custom",
-      "data": {
-        "ephemeral": true,
-        "embed": {
-          "title": "Test de l'action Embed Native",
-          "description": "L'action 'embed' est maintenant nativement supportée par les boutons ! Plus besoin de ruses de Sioux. 🏹\\n\\nC'est propre, c'est net, c'est Sniper ! 🎯",
-          "color": 3447003
-        }
-      }
-    },
-    "createdAt": "2026-01-08T01:44:53.346Z"
-  },
-  {
-    "id": "sentinel_vote_correct",
-    "messageId": "1458997641387184168",
-    "channelId": "1421701551080345710",
-    "label": "👍 👍 Le Bot a raison",
-    "action": {
-      "type": "custom",
-      "data": {
-        "message": "✅ **Vote enregistré : CONFIRMATION**\n*L'algorithme de conviction a été renforcé.*",
-        "ephemeral": true
-      }
-    },
-    "createdAt": "2026-01-09T01:35:44.165Z"
-  },
-  {
-    "id": "sentinel_vote_incorrect",
-    "messageId": "1458997641387184168",
-    "channelId": "1421701551080345710",
-    "label": "👎 👎 Le Bot a tort",
-    "action": {
-      "type": "custom",
-      "data": {
-        "message": "❌ **Vote enregistré : DIVERGENCE**\n*Les paramètres de sensibilité seront recalibrés.*",
-        "ephemeral": true
-      }
-    },
-    "createdAt": "2026-01-09T01:35:44.165Z"
-  },
-  {
-    "id": "sentinel_view_details",
-    "messageId": "1458997641387184168",
-    "channelId": "1421701551080345710",
-    "label": "📋 📋 Voir l'analyse",
-    "action": {
-      "type": "custom",
-      "data": {
-        "message": "📊 **Détails de l'analyse**\n\n• **Modèle:** GPT-4 Turbo + Bert-Large-Financial\n• **Latence:** 420ms\n• **Corrélation:** 0.85 (S&P500)",
-        "ephemeral": true
-      }
-    },
-    "createdAt": "2026-01-09T01:35:44.165Z"
-  },
-  {
     "id": "sentinel_vote_valid_public",
-    "messageId": "1459006141013954571",
+    "messageId": "1459539685033382022",
     "channelId": "unknown",
     "label": "Vote Validation Sentinel",
     "action": {
       "type": "custom",
       "data": {}
     },
-    "functionCode": "\n                        // 1. Répondre immédiatement pour éviter le timeout (loading...)\n                        await ctx.deferReply(false); // false = public\n\n                        // 2. Traitement (Sauvegarde)\n                        try {\n                            await ctx.saveVote('VALIDATION', 'User validated analysis');\n                            const counts = await ctx.getVoteCounts();\n                            // 3. Confirmation finale\n                            await ctx.followUp('✅ **Vote VALIDÉ** - Merci ! (👍 ' + counts.valid + ' / 👎 ' + counts.invalid + ')', false);\n                        } catch (err) {\n                            await ctx.followUp('❌ Erreur: ' + err.message, true);\n                        }\n                    ",
-    "createdAt": "2026-01-09T01:43:32.636Z"
+    "functionCode": "\n            await ctx.saveVote('VALID');\n            const embed = ctx.interaction.message.embeds[0];\n            let fields = [...(embed.fields || [])].filter(f => !f.name.includes('COMMUNAUTÉ') && !f.name.includes('CONSENSUS'));\n            let voters = [];\n            const oldField = embed.fields?.find(f => f.name.includes('COMMUNAUTÉ'));\n            if (oldField) voters = oldField.value.split('\\n');\n            const userTag = '**' + ctx.interaction.user.username + '**';\n            voters = voters.filter(v => !v.includes(userTag));\n            voters.push('🟢' + ' ' + userTag);\n            const vAcc = voters.filter(v => v.includes('🟢')).length;\n            const total = voters.length;\n            const p = Math.round((vAcc / (total||1)) * 100);\n            const bar = '█'.repeat(Math.round(p/10)) + '░'.repeat(10 - Math.round(p/10));\n            fields.push(\n                { name: '👥 COMMUNAUTÉ', value: voters.join('\\n'), inline: true },\n                { name: '📊 CONSENSUS', value: '`' + bar + '` **' + p + '%**\\n(' + total + ' agents)', inline: true }\n            );\n            await ctx.editReply({ embeds: [{ ...embed.toJSON(), fields }] });\n            await ctx.followUp('✅ **VOTE ENREGISTRÉ**', true);\n        ",
+    "createdAt": "2026-01-09T15:58:13.297Z"
   },
   {
     "id": "sentinel_vote_invalid_public",
-    "messageId": "1459006141013954571",
+    "messageId": "1459539685033382022",
     "channelId": "unknown",
     "label": "Vote Rejet Sentinel",
     "action": {
       "type": "custom",
       "data": {}
     },
-    "functionCode": "\n                        await ctx.deferReply(false);\n                        try {\n                            await ctx.saveVote('REJECTION', 'User rejected analysis');\n                            const counts = await ctx.getVoteCounts();\n                            await ctx.followUp('⚠️ **Vote REJETÉ** - Feedback enregistré. (👍 ' + counts.valid + ' / 👎 ' + counts.invalid + ')', false);\n                        } catch (err) {\n                            await ctx.followUp('❌ Erreur: ' + err.message, true);\n                        }\n                    ",
-    "createdAt": "2026-01-09T01:43:32.649Z"
+    "functionCode": "\n            await ctx.saveVote('INVALID');\n            const embed = ctx.interaction.message.embeds[0];\n            let fields = [...(embed.fields || [])].filter(f => !f.name.includes('COMMUNAUTÉ') && !f.name.includes('CONSENSUS'));\n            let voters = [];\n            const oldField = embed.fields?.find(f => f.name.includes('COMMUNAUTÉ'));\n            if (oldField) voters = oldField.value.split('\\n');\n            const userTag = '**' + ctx.interaction.user.username + '**';\n            voters = voters.filter(v => !v.includes(userTag));\n            voters.push('🔴' + ' ' + userTag);\n            const vAcc = voters.filter(v => v.includes('🟢')).length;\n            const total = voters.length;\n            const p = Math.round((vAcc / (total||1)) * 100);\n            const bar = '█'.repeat(Math.round(p/10)) + '░'.repeat(10 - Math.round(p/10));\n            fields.push(\n                { name: '👥 COMMUNAUTÉ', value: voters.join('\\n'), inline: true },\n                { name: '📊 CONSENSUS', value: '`' + bar + '` **' + p + '%**\\n(' + total + ' agents)', inline: true }\n            );\n            await ctx.editReply({ embeds: [{ ...embed.toJSON(), fields }] });\n            await ctx.followUp('✅ **VOTE ENREGISTRÉ**', true);\n        ",
+    "createdAt": "2026-01-09T15:58:13.312Z"
+  },
+  {
+    "id": "btn_docs_anthropic",
+    "messageId": "1459375464370929799",
+    "channelId": "1442317829998383235",
+    "label": "📚 Documentation",
+    "action": {
+      "type": "link",
+      "data": {
+        "value": "https://docs.anthropic.com"
+      }
+    },
+    "createdAt": "2026-01-10T02:37:03.189Z"
+  },
+  {
+    "id": "btn_help_claude",
+    "messageId": "1459375464370929799",
+    "channelId": "1442317829998383235",
+    "label": "🎮 Aide",
+    "action": {
+      "type": "message",
+      "data": {
+        "message": "Besoin d'aide ? Demandez-moi n'importe quoi :\n• /help - Commandes disponibles\n• Analyse de code\n• Création d'embeds\n• Analyse trading\n• Et bien plus !",
+        "ephemeral": false
+      }
+    },
+    "createdAt": "2026-01-10T02:37:03.189Z"
+  },
+  {
+    "id": "help_button",
+    "messageId": "1459558683544391979",
+    "channelId": "1442317829998383235",
+    "label": "📚 Aide",
+    "action": {
+      "type": "message",
+      "data": {
+        "message": "Tape /help pour voir toutes les commandes disponibles !"
+      }
+    },
+    "createdAt": "2026-01-10T14:45:04.887Z"
+  },
+  {
+    "id": "discord_link",
+    "messageId": "1459558683544391979",
+    "channelId": "1442317829998383235",
+    "label": "🎮 Discord",
+    "action": {
+      "type": "link",
+      "data": {
+        "value": "https://discord.com"
+      }
+    },
+    "createdAt": "2026-01-10T14:45:04.888Z"
+  },
+  {
+    "id": "test_image",
+    "messageId": "1459559293320691742",
+    "channelId": "1442317829998383235",
+    "label": "🧪 Tester",
+    "action": {
+      "type": "message",
+      "data": {
+        "message": "Envoie-moi une URL d'image et je l'analyserai !"
+      }
+    },
+    "createdAt": "2026-01-10T14:47:29.962Z"
+  },
+  {
+    "id": "examples_button",
+    "messageId": "1459559293320691742",
+    "channelId": "1442317829998383235",
+    "label": "📖 Exemples",
+    "action": {
+      "type": "message",
+      "data": {
+        "message": "Exemples d'images à tester :\n• Screenshot de code\n• Interface web\n• Graphique trading\n• Page PDF"
+      }
+    },
+    "createdAt": "2026-01-10T14:47:29.963Z"
+  },
+  {
+    "id": "demo_image",
+    "messageId": "1459559656052625493",
+    "channelId": "1443768838587154563",
+    "label": "🧪 Démo Live",
+    "action": {
+      "type": "message",
+      "data": {
+        "message": "Envoie une URL d'image et je l'analyserai en direct !"
+      }
+    },
+    "createdAt": "2026-01-10T14:48:56.767Z"
+  },
+  {
+    "id": "more_info",
+    "messageId": "1459559656052625493",
+    "channelId": "1443768838587154563",
+    "label": "📖 Plus d'infos",
+    "action": {
+      "type": "message",
+      "data": {
+        "message": "Autres outils MCP disponibles :\n• discord-server - Gestion Discord\n• sierra-chart - Trading\n• postgresql-server - Base de données\n• web-reader - Lecture web"
+      }
+    },
+    "createdAt": "2026-01-10T14:48:56.767Z"
+  },
+  {
+    "id": "continue_tests",
+    "messageId": "1459568355408089356",
+    "channelId": "1443768838587154563",
+    "label": "🔄 Continuer Tests",
+    "action": {
+      "type": "message",
+      "data": {
+        "message": "Je lance la phase 2 de tests sur d'autres catégories de sites !"
+      }
+    },
+    "createdAt": "2026-01-10T15:23:30.892Z"
+  },
+  {
+    "id": "final_report",
+    "messageId": "1459568355408089356",
+    "channelId": "1443768838587154563",
+    "label": "📊 Rapport Final",
+    "action": {
+      "type": "message",
+      "data": {
+        "message": "Je génère un rapport final complet basé sur les tests déjà effectués !"
+      }
+    },
+    "createdAt": "2026-01-10T15:23:30.892Z"
   }
 ]

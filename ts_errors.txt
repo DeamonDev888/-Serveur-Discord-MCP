@@ -1,0 +1,33 @@
+src/bridge/discordProcess.ts(648,15): error TS18047: 'message.author' is possibly 'null'.
+src/bridge/discordProcess.ts(649,21): error TS18047: 'message.author' is possibly 'null'.
+src/state/embedState.ts(248,10): error TS2345: Argument of type '([btn, count]: [any, any]) => string' is not assignable to parameter of type '(value: unknown, index: number, array: unknown[]) => string'.
+  Types of parameters '__0' and 'value' are incompatible.
+    Type 'unknown' is not assignable to type '[any, any]'.
+src/tools/channels.ts(154,40): error TS2554: Expected 1 arguments, but got 2.
+src/tools/channels.ts(251,23): error TS2339: Property 'permissionOverwrites' does not exist on type 'GuildBasedChannel'.
+  Property 'permissionOverwrites' does not exist on type 'PublicThreadChannel<boolean>'.
+src/tools/common.ts(171,10): error TS2345: Argument of type '([btn, count]: [any, any]) => string' is not assignable to parameter of type '(value: unknown, index: number, array: unknown[]) => string'.
+  Types of parameters '__0' and 'value' are incompatible.
+    Type 'unknown' is not assignable to type '[any, any]'.
+src/tools/interactions.ts(541,40): error TS2345: Argument of type '{ type: "string_select"; customId: string; placeholder: string | undefined; minValues: number; maxValues: number; options: { label: string; value: string; description?: string | undefined; emoji?: string | undefined; }[]; }' is not assignable to parameter of type '{ options: { default: boolean; label: string; value: string; description?: string | undefined; emoji?: string | undefined; }[]; customId: string; minValues: number; maxValues: number; type: "string_select"; disabled: boolean; placeholder?: string | undefined; }'.
+  Property 'disabled' is missing in type '{ type: "string_select"; customId: string; placeholder: string | undefined; minValues: number; maxValues: number; options: { label: string; value: string; description?: string | undefined; emoji?: string | undefined; }[]; }' but required in type '{ options: { default: boolean; label: string; value: string; description?: string | undefined; emoji?: string | undefined; }[]; customId: string; minValues: number; maxValues: number; type: "string_select"; disabled: boolean; placeholder?: string | undefined; }'.
+src/tools/members.ts(81,31): error TS2339: Property 'invisible' does not exist on type '{ online: string; idle: string; dnd: string; offline: string; }'.
+src/tools/members.ts(126,68): error TS6234: This expression is not callable because it is a 'get' accessor. Did you mean to use it without '()'?
+  Type 'Number' has no call signatures.
+src/tools/members.ts(132,84): error TS2551: Property 'joinedAtTimestamp' does not exist on type 'GuildMember'. Did you mean 'joinedTimestamp'?
+src/tools/roles.ts(218,37): error TS2345: Argument of type 'string[]' is not assignable to parameter of type 'PermissionResolvable'.
+  Type 'string[]' is not assignable to type 'RecursiveReadonlyArray<bigint | `${bigint}` | "CreateInstantInvite" | "KickMembers" | "BanMembers" | "Administrator" | "ManageChannels" | "ManageGuild" | "AddReactions" | "ViewAuditLog" | "PrioritySpeaker" | ... 43 more ... | Readonly<...>>'.
+    Types of property 'concat' are incompatible.
+      Type '{ (...items: ConcatArray<string>[]): string[]; (...items: (string | ConcatArray<string>)[]): string[]; }' is not assignable to type '{ (...items: ConcatArray<bigint | `${bigint}` | "CreateInstantInvite" | "KickMembers" | "BanMembers" | "Administrator" | "ManageChannels" | "ManageGuild" | "AddReactions" | "ViewAuditLog" | "PrioritySpeaker" | ... 44 more ... | RecursiveReadonlyArray<...>>[]): (bigint | ... 54 more ... | RecursiveReadonlyArray<...>)...'.
+        Types of parameters 'items' and 'items' are incompatible.
+          Type 'ConcatArray<bigint | `${bigint}` | "CreateInstantInvite" | "KickMembers" | "BanMembers" | "Administrator" | "ManageChannels" | "ManageGuild" | "AddReactions" | "ViewAuditLog" | "PrioritySpeaker" | ... 44 more ... | RecursiveReadonlyArray<...>>' is not assignable to type 'ConcatArray<string>'.
+            Type 'bigint | `${bigint}` | "CreateInstantInvite" | "KickMembers" | "BanMembers" | "Administrator" | "ManageChannels" | "ManageGuild" | "AddReactions" | "ViewAuditLog" | "PrioritySpeaker" | ... 44 more ... | RecursiveReadonlyArray<...>' is not assignable to type 'string'.
+              Type 'bigint' is not assignable to type 'string'.
+src/tools/roles.ts(220,38): error TS2345: Argument of type 'string[]' is not assignable to parameter of type 'BitFieldResolvable<"CreateInstantInvite" | "KickMembers" | "BanMembers" | "Administrator" | "ManageChannels" | "ManageGuild" | "AddReactions" | "ViewAuditLog" | "PrioritySpeaker" | "Stream" | ... 41 more ... | "BypassSlowmode", bigint>'.
+  Type 'string[]' is not assignable to type 'RecursiveReadonlyArray<bigint | `${bigint}` | "CreateInstantInvite" | "KickMembers" | "BanMembers" | "Administrator" | "ManageChannels" | "ManageGuild" | "AddReactions" | "ViewAuditLog" | "PrioritySpeaker" | ... 43 more ... | Readonly<...>>'.
+    Types of property 'concat' are incompatible.
+      Type '{ (...items: ConcatArray<string>[]): string[]; (...items: (string | ConcatArray<string>)[]): string[]; }' is not assignable to type '{ (...items: ConcatArray<bigint | `${bigint}` | "CreateInstantInvite" | "KickMembers" | "BanMembers" | "Administrator" | "ManageChannels" | "ManageGuild" | "AddReactions" | "ViewAuditLog" | "PrioritySpeaker" | ... 44 more ... | RecursiveReadonlyArray<...>>[]): (bigint | ... 54 more ... | RecursiveReadonlyArray<...>)...'.
+        Types of parameters 'items' and 'items' are incompatible.
+          Type 'ConcatArray<bigint | `${bigint}` | "CreateInstantInvite" | "KickMembers" | "BanMembers" | "Administrator" | "ManageChannels" | "ManageGuild" | "AddReactions" | "ViewAuditLog" | "PrioritySpeaker" | ... 44 more ... | RecursiveReadonlyArray<...>>' is not assignable to type 'ConcatArray<string>'.
+            Type 'bigint | `${bigint}` | "CreateInstantInvite" | "KickMembers" | "BanMembers" | "Administrator" | "ManageChannels" | "ManageGuild" | "AddReactions" | "ViewAuditLog" | "PrioritySpeaker" | ... 44 more ... | RecursiveReadonlyArray<...>' is not assignable to type 'string'.
+              Type 'bigint' is not assignable to type 'string'.

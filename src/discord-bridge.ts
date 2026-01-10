@@ -99,7 +99,7 @@ export class DiscordBridge {
         reject(new Error('Timeout de connexion Discord (20s)'));
       }, 20000);
 
-      this.client!.once('ready', () => {
+      this.client!.once('clientReady', () => {
         clearTimeout(timeout);
         this.isConnected = true;
         Logger.info(`✅ [Bridge] Connecté: ${this.client!.user!.tag}`);
@@ -172,6 +172,20 @@ export class DiscordBridge {
                         followUp: async (content: string, ephemeral: boolean = true) => {
                             await interaction.followUp({ content, ephemeral });
                         },
+                        editReply: async (data: any) => {
+                            return await interaction.editReply(data);
+                        },
+                        updateEmbed: async (data: any) => {
+                            return await interaction.editReply(data);
+                        },
+                        sendEmbed: async (embed: any, ephemeral: boolean = false) => {
+                             if (interaction.deferred || interaction.replied) {
+                                 await interaction.followUp({ embeds: [embed], ephemeral });
+                             } else {
+                                 await interaction.reply({ embeds: [embed], ephemeral });
+                             }
+                        },
+
                         sendMessage: async (content: string) => {
                             const channel = await interaction.client.channels.fetch(context.channelId);
                             if (channel && 'send' in channel) {
@@ -309,14 +323,31 @@ export class DiscordBridge {
     // On traite TOUS les boutons connus (embedv2_, pb_, et custom_id personnalisés)
     Logger.debug(`🔍 [Bridge] Chargement des boutons custom depuis la persistance...`);
 
-    // Charger les boutons depuis la persistance pour TOUS les custom_id
+    // Charger les boutons customs (buttons.json)
     const { loadCustomButtons } = await import('./utils/buttonPersistence.js');
     const buttons = await loadCustomButtons();
-    Logger.debug(`🔍 [Bridge] Boutons chargés: ${buttons.size} boutons`);
-    Logger.debug(`🔍 [Bridge] IDs disponibles:`, Array.from(buttons.keys()).slice(0, 10).join(', '));
+    
+    // Charger les boutons persistants (dist/data/persistent-buttons.json)
+    const { getPersistentButton } = await import('./utils/distPersistence.js');
+    const persistentBtn = await getPersistentButton(customId); // C'est ici que la MAGIE opère (lecture disque fraîche)
 
-    const button = buttons.get(customId);
-    Logger.debug(`🔍 [Bridge] Bouton ${customId} trouvé:`, button ? 'OUI' : 'NON');
+    Logger.debug(`🔍 [Bridge] Boutons customs chargés: ${buttons.size}`);
+    Logger.debug(`🔍 [Bridge] Bouton persistant trouvé pour ${customId}: ${persistentBtn ? 'OUI' : 'NON'}`);
+
+    // Fusionner la logique : on prend soit le custom, soit le persistant
+    let button: any = buttons.get(customId);
+    if (!button && persistentBtn) {
+        // Adapter le format pour qu'il ressemble à un bouton custom pour la suite du code
+        button = {
+            id: persistentBtn.id,
+            action: persistentBtn.action, // Action est déjà objet complet {type: 'message', content: ...}
+            label: persistentBtn.label,
+            channelId: persistentBtn.channelId
+        };
+        Logger.debug(`🔍 [Bridge] Utilisation de la configuration persistante pour ${customId}`);
+    }
+
+    Logger.debug(`🔍 [Bridge] Résultat final recherche bouton ${customId}:`, button ? 'TROUVÉ' : 'PERDU');
 
     if (button) {
         Logger.debug(`🔍 [Bridge] Structure du bouton:`, JSON.stringify(button, null, 2).substring(0, 500));

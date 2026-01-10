@@ -62,6 +62,22 @@ export function registerButtonFunctionTools(server: FastMCP) {
               followUp: async (content: string, ephemeral: boolean = true) => {
                 await interaction.followUp({ content, ephemeral });
               },
+              editReply: async (data: any) => {
+                // Utilise editReply pour mettre à jour le message original après un deferUpdate/deferReply
+                return await interaction.editReply(data);
+              },
+              updateEmbed: async (data: any) => {
+                // Alias plus clair pour la mise à jour d'embed
+                return await interaction.editReply(data);
+              },
+              sendEmbed: async (embed: any, ephemeral: boolean = false) => {
+                   if (interaction.deferred || interaction.replied) {
+                       await interaction.followUp({ embeds: [embed], ephemeral });
+                   } else {
+                       await interaction.reply({ embeds: [embed], ephemeral });
+                   }
+              },
+
               // Envoyer un message dans le canal
               sendMessage: async (content: string) => {
                 const channel = await interaction.client.channels.fetch(context.channelId);
@@ -275,10 +291,12 @@ await ctx.reply('Vote enregistré !');
                   return await channel.messages.fetch(context.messageId);
                 }
               },
-              // SAUVEGARDE DE VOTE/DONNÉES
+                  // SAUVEGARDE DE VOTE/DONNÉES
               saveVote: async (voteType: string, details: string = '') => {
                  try {
-                    const voteFile = path.join(process.cwd(), 'votes_sentinel.csv');
+                    // CHEMIN ABSOLU FORCÉ pour être sûr de trouver le fichier
+                    const voteFile = 'c:\\Users\\Deamon\\Desktop\\Backup\\Serveur MCP\\votes_sentinel.csv';
+                    
                     // Ensure file exists with header
                     if (!fs.existsSync(voteFile)) {
                         fs.writeFileSync(voteFile, 'timestamp,vote_type,user,user_id,channel_id,details\n');

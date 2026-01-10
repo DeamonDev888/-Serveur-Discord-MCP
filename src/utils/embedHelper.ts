@@ -315,9 +315,16 @@ export const INTERACTIVE_GUIDE = {
 // VALIDATION INTELLIGENTE AVEC CONSEILS
 // ============================================================================
 
+interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+  tips: string[];
+}
+
 export const INTELLIGENT_VALIDATION = {
   // Valide les paramètres et retourne des conseils
-  validate: (params: any): { isValid: boolean; errors: string[]; warnings: string[]; tips: string[] } => {
+  validate: (params: any): ValidationResult => {
     const errors: string[] = [];
     const warnings: string[] = [];
     const tips: string[] = [];
@@ -374,20 +381,20 @@ export const INTELLIGENT_VALIDATION = {
   },
 
   // Affiche les résultats de validation
-  displayResults: (results: ReturnType<typeof INTELLIGENT_VALIDATION.validate>): void => {
+  displayResults: (results: ValidationResult): void => {
     if (results.errors.length > 0) {
       Logger.error('\n❌ ERREURS À CORRIGER:');
-      results.errors.forEach(error => Logger.error(`   ${error}`));
+      results.errors.forEach((error: string) => Logger.error(`   ${error}`));
     }
 
     if (results.warnings.length > 0) {
       Logger.warn('\n⚠️ AVERTISSEMENTS:');
-      results.warnings.forEach(warning => Logger.warn(`   ${warning}`));
+      results.warnings.forEach((warning: string) => Logger.warn(`   ${warning}`));
     }
 
     if (results.tips.length > 0) {
       Logger.info('\n💡 CONSEILS:');
-      results.tips.forEach(tip => Logger.info(`   ${tip}`));
+      results.tips.forEach((tip: string) => Logger.info(`   ${tip}`));
     }
 
     if (results.isValid) {
@@ -395,7 +402,7 @@ export const INTELLIGENT_VALIDATION = {
       Logger.info(HELP_MESSAGES.SUCCESS_WITH_THEME.message);
       Logger.info(HELP_MESSAGES.SUCCESS_WITH_THEME.tip);
       Logger.info('\n🚀 Phase 1 Enhancement activé:');
-      HELP_MESSAGES.PHASE1_ENHANCEMENT.features.forEach(feature => Logger.info(`   ${feature}`));
+      HELP_MESSAGES.PHASE1_ENHANCEMENT.features.forEach((feature: string) => Logger.info(`   ${feature}`));
     }
   }
 };

@@ -168,12 +168,15 @@ export function getEmbedAnalytics(embedId: string): any {
 export function generateAnalyticsReport(embedId: string): string {
   const analytics = getEmbedAnalytics(embedId);
   const reactions = Array.from(analytics.reactions.entries())
-    .map(([btn, count]) => `  • ${btn}: ${count} clics`)
+    .map((entry: any) => {
+      const [btn, count] = entry;
+      return `  • ${btn}: ${count} clics`;
+    })
     .join('\n');
 
   return `📊 **Analytics Embed ${embedId}**
 👀 Vues: ${analytics.views}
-🖱️ Clics: ${analytics.clics}
+🖱️ Clics: ${analytics.clicks}
 📈 Taux d'engagement: ${analytics.views > 0 ? ((analytics.clicks / analytics.views) * 100).toFixed(1) : 0}%
 ⏰ Dernière interaction: ${analytics.lastInteraction ? new Date(analytics.lastInteraction).toLocaleString('fr-FR') : 'Jamais'}
 ${reactions ? `🎯 **Boutons:**\n${reactions}` : ''}`;

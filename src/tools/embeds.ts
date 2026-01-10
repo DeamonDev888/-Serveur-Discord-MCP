@@ -527,6 +527,8 @@ export function isLocalLogoUrl(url: string | undefined): boolean {
     'upload.wikimedia.org',
     'pbs.twimg.com',
     'abs.twimg.com',
+    'i.imgur.com',
+    'imgur.com',
   ];
 
   // Vérifier si l'URL provient d'un CDN fiable
@@ -1671,7 +1673,7 @@ export function registerEmbedTools(server: FastMCP) {
       includeHandler: z.boolean().optional().default(true).describe('Inclut le code de gestion des boutons dans la génération (si generateCode=true)'),
     }),
     execute: async (args) => {
-      Logger.error(`🔥 [DEBUG] creer_embed execute called for channel ${args.channelId}`);
+      Logger.info(`📡 [DEBUG] creer_embed execute called for channel ${args.channelId}`);
       Logger.debug(`🔍 [TRACE] args keys: ${Object.keys(args).join(', ')}`);
 
       // ============================================================================
@@ -1721,13 +1723,32 @@ export function registerEmbedTools(server: FastMCP) {
       Logger.info('[EMBEDS] 🚀 DÉBUT EXECUTION creer_embed');
       Logger.info('[EMBEDS] Args reçus:', JSON.stringify(args, null, 2));
       try {
-        Logger.error(`🚀 [creer_embed] Titre: ${args.title || 'N/A'}`);
+        Logger.info(`🚀 [creer_embed] Titre: ${args.title || 'N/A'}`);
         const client = await ensureDiscordConnection();
-        const channel = await client.channels.fetch(args.channelId);
+        // ============================================================================
+        // 🚨 OVERRIDE SENTINEL POLLS
+        // Utilisation directe du canal dédié 1421701551080345710 pour Sentinel
+        // ============================================================================
+        let finalChannelId = args.channelId;
+        
+        // 1. Détection par l'auteur (Si le message vient du système Sentinel)
+        if (args.authorName && typeof args.authorName === 'string' && args.authorName.toUpperCase().includes('SENTINEL')) {
+          Logger.info('🚨 [SENTINEL] Détection Sentinel (Author) - Force Canal: 1421701551080345710');
+          finalChannelId = '1421701551080345710';
+        }
+
+        // 2. Détection par contenu (Backup)
+        else if (args.title && typeof args.title === 'string' && args.title.includes('ALERTE DE CAPITULATION')) {
+             Logger.info('🚨 [SENTINEL] Détection Sentinel (Titre) - Force Canal: 1421701551080345710');
+             finalChannelId = '1421701551080345710';
+        }
+
+        const channel = await client.channels.fetch(finalChannelId);
 
         if (!channel || !('send' in channel)) {
           throw new Error('Canal invalide ou inaccessible');
         }
+
 
         let embedData = {};
         if (args.templateName) {
@@ -2059,6 +2080,50 @@ export function registerEmbedTools(server: FastMCP) {
 
           for (let index = 0; index < args.buttons.length; index++) {
             const btn = args.buttons[index];
+
+            // ==================================================================================
+            // 🛡️ GARDE-FOUS (SAFETY CHECKS) - DEMANDE UTILISATEUR
+            // ==================================================================================
+            
+            // 1. Validation du format custom_id (Crucial pour le routing interne)
+            if (btn.custom_id) {
+               const safeIdRegex = /^[a-zA-Z0-9_-]+$/;
+               if (!safeIdRegex.test(btn.custom_id)) {
+                   throw new Error(`🛡️ GARDE-FOU: L'ID '${btn.custom_id}' est invalide. Utilisez uniquement lettres, chiffres, tirets (-) et underscores (_).`);
+               }
+               // Vérifier la longueur (Discord limite à 100, mais restons prudents à 50)
+               if (btn.custom_id.length > 50) {
+                   throw new Error(`🛡️ GARDE-FOU: L'ID '${btn.custom_id}' est trop long (max 50 caractères).`);
+               }
+            }
+
+            // 2. Validation de l'action LINK
+            if (btn.action === 'link') {
+                if (!btn.value || (!btn.value.startsWith('http') && !btn.value.startsWith('discord://'))) {
+                    throw new Error(`🛡️ GARDE-FOU: Le bouton '${btn.label}' (link) nécessite une URL valide dans 'value' (http... ou discord://...).`);
+                }
+            }
+
+            // 3. Validation de l'action ROLE
+            if (btn.action === 'role') {
+                if (!btn.roleId) {
+                    throw new Error(`🛡️ GARDE-FOU: Le bouton '${btn.label}' (role) nécessite un 'roleId' valide.`);
+                }
+            }
+
+            // 4. Validation de l'action MESSAGE/CUSTOM (Pour éviter les interactions vides)
+            if (btn.action === 'message' || btn.action === 'custom') {
+                const hasContent = btn.customData?.message || btn.value || btn.customData?.embed;
+                if (!hasContent) {
+                     // On injecte un contenu par défaut pour éviter le crash "Empty Message"
+                     Logger.warn(`[GARDE-FOU] Le bouton '${btn.label}' n'avait pas de contenu. Ajout d'un contenu par défaut.`);
+                     if (!btn.customData) btn.customData = {};
+                     btn.customData.message = `Action ${btn.label} effectuée ✅`;
+                }
+            }
+
+            // ==================================================================================
+
             // Créer un ID unique pour le bouton
             // 1. Si custom_id fourni → utilise l'ID fixe personnalisé
             // 2. Si persistant: pb_<messageId>_<index>
@@ -2100,6 +2165,20 @@ export function registerEmbedTools(server: FastMCP) {
                 createdAt: new Date().toISOString(),
               };
               await upsertPersistentButton(persistentBtn);
+              
+              // ==================================================================================
+              // 🕵️‍♂️ AUTO-VALIDATION (READ-AFTER-WRITE) - DEMANDE UTILISATEUR
+              // ==================================================================================
+              // On vérifie immédiatement si le bouton est bien inscrit sur le disque
+              const { getPersistentButton } = await import('../utils/distPersistence.js');
+              const checkParams = await getPersistentButton(buttonId);
+              
+              if (!checkParams) {
+                  throw new Error(`⛔ CRITIQUE: Le bouton '${btn.label}' a été créé mais la persistance a échoué lors de la vérification. Le fichier JSON est peut-être verrouillé.`);
+              }
+              Logger.info(`[EMBEDS] ✅ Persistance vérifiée et validée pour ${buttonId}`);
+              // ==================================================================================
+
               Logger.info(`[EMBEDS] 🔒 Bouton persistant créé: ${buttonId} → ${btn.label}`);
             }
 

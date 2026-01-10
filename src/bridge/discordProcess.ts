@@ -355,7 +355,7 @@ process.stdin.on('data', data => {
 });
 
 // Gestion du client Discord
-client.on('ready', () => {
+client.on('clientReady', () => {
   Logger.info(`Bot Discord prêt: ${client.user?.tag}`);
 });
 

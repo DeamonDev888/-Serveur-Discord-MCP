@@ -41,7 +41,7 @@ export function registerWebhooksTools(server: FastMCP): void {
     parameters: CreateWebhookSchema,
     execute: async args => {
       try {
-        Logger.error(`🪝 [create_webhook] Canal: ${args.channelId}, Nom: ${args.name}`);
+        Logger.info(`🪝 [create_webhook] Canal: ${args.channelId}, Nom: ${args.name}`);
         const client = await ensureDiscordConnection();
         const channel = await client.channels.fetch(args.channelId);
 
@@ -68,7 +68,7 @@ export function registerWebhooksTools(server: FastMCP): void {
     parameters: ListWebhooksSchema,
     execute: async args => {
       try {
-        Logger.error(`📋 [list_webhooks] Canal: ${args.channelId}`);
+        Logger.info(`📋 [list_webhooks] Canal: ${args.channelId}`);
         const client = await ensureDiscordConnection();
         const channel = await client.channels.fetch(args.channelId);
 
@@ -82,7 +82,7 @@ export function registerWebhooksTools(server: FastMCP): void {
           return `📋 Aucun webhook trouvé dans ce canal`;
         }
 
-        const list = webhooks.map(w => `• ${w.name} | ID: ${w.id} | Token: ${w.token}`).join('\n');
+        const list = webhooks.map((w: any) => `• ${w.name} | ID: ${w.id} | Token: ${w.token}`).join('\n');
         return `📋 ${webhooks.size} webhook(s):\n${list}`;
       } catch (error: any) {
         Logger.error(`❌ [list_webhooks]`, error.message);
@@ -97,7 +97,7 @@ export function registerWebhooksTools(server: FastMCP): void {
     parameters: SendWebhookSchema,
     execute: async args => {
       try {
-        Logger.error(`📤 [send_webhook] Webhook: ${args.webhookId}`);
+        Logger.info(`📤 [send_webhook] Webhook: ${args.webhookId}`);
         const client = await ensureDiscordConnection();
 
         const webhook = await client.fetchWebhook(args.webhookId, args.webhookToken);
