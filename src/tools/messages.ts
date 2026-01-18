@@ -62,6 +62,7 @@ export function registerMessageTools(server: FastMCP) {
     parameters: z.object({
       channelId: z.string().describe('ID du canal'),
       limit: z.number().min(1).max(100).default(10).describe('Nombre de messages'),
+      json: z.boolean().optional().default(false).describe('Retourner au format JSON'),
     }),
     execute: async (args) => {
       try {
@@ -73,7 +74,18 @@ export function registerMessageTools(server: FastMCP) {
         }
 
         const messages = await channel.messages.fetch({ limit: args.limit });
-        const list = messages.map(m => `• ${m.author.username}: ${m.content}`).join('\n');
+        
+        if (args.json) {
+            const data = messages.map(m => ({
+                id: m.id,
+                author: m.author.username,
+                content: m.content,
+                embeds: m.embeds.length
+            }));
+            return JSON.stringify(data);
+        }
+
+        const list = messages.map(m => `• ${m.author.username} (ID: ${m.id}): ${m.content}`).join('\n');
         return `📖 ${messages.size} messages:\n${list}`;
       } catch (error: any) {
         return `❌ Erreur: ${error.message}`;

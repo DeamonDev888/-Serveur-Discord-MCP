@@ -348,22 +348,37 @@ async function loadTemplate(name: string): Promise<any | null> {
   }
 }
 
-function validateFieldLength(fields: any[]): { valid: boolean; warnings: string[] } {
+function validateFieldLength(fields: any[], title?: string, description?: string, footerText?: string): { valid: boolean; warnings: string[]; totalLength: number } {
   const warnings: string[] = [];
+  let totalLength = (title?.length || 0) + (description?.length || 0) + (footerText?.length || 0);
 
   fields?.forEach((field, index) => {
-    if (field.name.length > 256) {
-      warnings.push(`Champ #${index + 1}: Le nom dépasse 256 caractères (${field.name.length})`);
+    const nameLen = field.name.length;
+    const valLen = field.value.length;
+    totalLength += nameLen + valLen;
+
+    if (nameLen > 256) {
+      warnings.push(`Champ #${index + 1}: Le nom dépasse 256 caractères (${nameLen})`);
     }
-    if (field.value.length > 1024) {
-      warnings.push(`Champ #${index + 1}: La valeur dépasse 1024 caractères (${field.value.length}) ⚠️`);
+    if (valLen > 1024) {
+      warnings.push(`Champ #${index + 1}: La valeur dépasse 1024 caractères (${valLen}) ⚠️`);
     }
-    if (field.value.length > 800) {
-      warnings.push(`Champ #${index + 1}: La valeur est longue (${field.value.length} chars), considérez la pagination`);
+    if (valLen > 800 && valLen <= 1024) {
+      warnings.push(`Champ #${index + 1}: La valeur est longue (${valLen} chars), considérez la pagination pour la lisibilité.`);
     }
   });
 
-  return { valid: warnings.filter(w => w.includes('⚠️')).length === 0, warnings };
+  if (totalLength > 6000) {
+    warnings.push(`⚠️ TOTAL: L'embed dépasse la limite globale de 6000 caractères de Discord (${totalLength}/6000) ! 🛑`);
+  } else if (totalLength > 5000) {
+    warnings.push(`⚠️ TOTAL: L'embed approche de la limite globale (actuel: ${totalLength}/6000).`);
+  }
+
+  return { 
+    valid: warnings.filter(w => w.includes('⚠️') || w.includes('🛑')).length === 0, 
+    warnings,
+    totalLength
+  };
 }
 
 function generateAsciiChart(type: string, data: number[], labels?: string[], options: any = {}): string {
@@ -1099,6 +1114,10 @@ Dernière mise à jour : {timestamp}
     case 'minimal': {
       themedArgs.color = 0x2C2C2C; // Gris foncé
       if (!args.title) themedArgs.title = 'Titre Minimal';
+      if (!args.authorIcon && THEME_IMAGE_MAP.MINIMAL.author) themedArgs.authorIcon = THEME_IMAGE_MAP.MINIMAL.author;
+      if (!args.thumbnail && THEME_IMAGE_MAP.MINIMAL.thumbnail) themedArgs.thumbnail = THEME_IMAGE_MAP.MINIMAL.thumbnail;
+      if (!args.footerIcon && THEME_IMAGE_MAP.MINIMAL.footer) themedArgs.footerIcon = THEME_IMAGE_MAP.MINIMAL.footer;
+      
       if (!args.description) {
         themedArgs.description = `
 Design épuré et moderne.
@@ -1117,6 +1136,127 @@ Design épuré et moderne.
           { name: 'Element 2', value: 'Donnée précise', inline: true },
           { name: 'Element 3', value: 'Détails supplémentaires', inline: false }
         ];
+      }
+      break;
+    }
+
+    // ========================================================================
+    // 🌌 THÈME CYBERPUNK - Futuriste
+    // ========================================================================
+    case 'cyberpunk': {
+      themedArgs.color = 0xFF00FF; // Magenta
+      if (!args.title) themedArgs.title = '🌆 Terminal Cyberpunk';
+      if (!args.authorName) themedArgs.authorName = 'SYSTEM_CORE_v.7';
+      if (!args.authorIcon && THEME_IMAGE_MAP.CYBERPUNK.author) themedArgs.authorIcon = THEME_IMAGE_MAP.CYBERPUNK.author;
+      if (!args.thumbnail && THEME_IMAGE_MAP.CYBERPUNK.thumbnail) themedArgs.thumbnail = THEME_IMAGE_MAP.CYBERPUNK.thumbnail;
+      if (!args.image && THEME_IMAGE_MAP.CYBERPUNK.image) themedArgs.image = THEME_IMAGE_MAP.CYBERPUNK.image;
+      if (!args.footerIcon && THEME_IMAGE_MAP.CYBERPUNK.footer) themedArgs.footerIcon = THEME_IMAGE_MAP.CYBERPUNK.footer;
+      
+      if (!args.description) {
+        themedArgs.description = `
+\`\`\`[SYS] Connexion d'urgence établie...
+[SYS] Initialisation du protocole ALPHA-1...
+[SYS] Analyse de la Matrice en cours.\`\`\`
+
+🔮 **Alpha Signals Detectés**
+• Puissance du Signal: ████████░░
+• Latence Neuronale: 12ms
+
+💡 *Le futur est déjà écrit dans le code.*
+        `.trim();
+      }
+      break;
+    }
+
+    // ========================================================================
+    // 🎮 THÈME GAMING - Esport / Pro
+    // ========================================================================
+    case 'gaming': {
+      themedArgs.color = 0x7289DA; // Blurple
+      if (!args.title) themedArgs.title = '🎮 Session de Jeu';
+      if (!args.authorName) themedArgs.authorName = 'PRO_GAMER_HUD';
+      if (!args.authorIcon && THEME_IMAGE_MAP.GAMING.author) themedArgs.authorIcon = THEME_IMAGE_MAP.GAMING.author;
+      if (!args.thumbnail && THEME_IMAGE_MAP.GAMING.thumbnail) themedArgs.thumbnail = THEME_IMAGE_MAP.GAMING.thumbnail;
+      if (!args.image && THEME_IMAGE_MAP.GAMING.image) themedArgs.image = THEME_IMAGE_MAP.GAMING.image;
+      if (!args.footerIcon && THEME_IMAGE_MAP.GAMING.footer) themedArgs.footerIcon = THEME_IMAGE_MAP.GAMING.footer;
+
+      if (!args.description) {
+        themedArgs.description = `
+🎯 **Objectif de Mission**
+Éliminez les anomalies système et sécurisez le périmètre.
+
+**Stats du Match :**
+• Score: 13,337
+• Division: ELITE
+        `.trim();
+      }
+      break;
+    }
+
+    // ========================================================================
+    // 💼 THÈME CORPORATE - Professionnel
+    // ========================================================================
+    case 'corporate': {
+      themedArgs.color = 0x0066CC; // Bleu business
+      if (!args.title) themedArgs.title = '📊 Rapport Trimestriel';
+      if (!args.authorName) themedArgs.authorName = 'Département Analytique';
+      if (!args.authorIcon && THEME_IMAGE_MAP.CORPORATE.author) themedArgs.authorIcon = THEME_IMAGE_MAP.CORPORATE.author;
+      if (!args.thumbnail && THEME_IMAGE_MAP.CORPORATE.thumbnail) themedArgs.thumbnail = THEME_IMAGE_MAP.CORPORATE.thumbnail;
+      if (!args.image && THEME_IMAGE_MAP.CORPORATE.image) themedArgs.image = THEME_IMAGE_MAP.CORPORATE.image;
+      if (!args.footerIcon && THEME_IMAGE_MAP.CORPORATE.footer) themedArgs.footerIcon = THEME_IMAGE_MAP.CORPORATE.footer;
+
+      if (!args.description) {
+        themedArgs.description = `
+💼 **Résumé Exécutif**
+Les indicateurs clés de performance (KPI) montrent une croissance stable.
+
+• ROI: +15.4%
+• Pénétration Marché: 12%
+        `.trim();
+      }
+      break;
+    }
+
+    // ========================================================================
+    // 🌅 THÈME SUNSET - Chaleureux
+    // ========================================================================
+    case 'sunset': {
+      themedArgs.color = 0xFF6B6B; // Corail
+      if (!args.title) themedArgs.title = '🌅 Lumière du Jour';
+      if (!args.authorIcon && THEME_IMAGE_MAP.SUNSET.author) themedArgs.authorIcon = THEME_IMAGE_MAP.SUNSET.author;
+      if (!args.thumbnail && THEME_IMAGE_MAP.SUNSET.thumbnail) themedArgs.thumbnail = THEME_IMAGE_MAP.SUNSET.thumbnail;
+      if (!args.image && THEME_IMAGE_MAP.SUNSET.image) themedArgs.image = THEME_IMAGE_MAP.SUNSET.image;
+      if (!args.footerIcon && THEME_IMAGE_MAP.SUNSET.footer) themedArgs.footerIcon = THEME_IMAGE_MAP.SUNSET.footer;
+
+      if (!args.description) {
+        themedArgs.description = `
+🌇 **Fin de Journée**
+Le calme après la tempête. Profitez de ce moment de sérénité.
+
+✨ *Demain est un autre jour.*
+        `.trim();
+      }
+      break;
+    }
+
+    // ========================================================================
+    // 🌊 THÈME OCEAN - Apaisant
+    // ========================================================================
+    case 'ocean': {
+      themedArgs.color = 0x00CED1; // Turquoise
+      if (!args.title) themedArgs.title = '🌊 Profondeurs de l\'Océan';
+      if (!args.authorIcon && THEME_IMAGE_MAP.OCEAN.author) themedArgs.authorIcon = THEME_IMAGE_MAP.OCEAN.author;
+      if (!args.thumbnail && THEME_IMAGE_MAP.OCEAN.thumbnail) themedArgs.thumbnail = THEME_IMAGE_MAP.OCEAN.thumbnail;
+      if (!args.image && THEME_IMAGE_MAP.OCEAN.image) themedArgs.image = THEME_IMAGE_MAP.OCEAN.image;
+      if (!args.footerIcon && THEME_IMAGE_MAP.OCEAN.footer) themedArgs.footerIcon = THEME_IMAGE_MAP.OCEAN.footer;
+
+      if (!args.description) {
+        themedArgs.description = `
+🐋 **Exploration Marine**
+Plongez dans les eaux cristallines et découvrez des secrets oubliés.
+
+💧 *L'eau est la force motrice de toute la nature.*
+        `.trim();
       }
       break;
     }
@@ -1279,6 +1419,47 @@ function generateTypeScriptCode(args: any): string {
       code.push(`    { name: '${field.name}', value: \`${val}\`${inline} },`);
     });
     code.push(`  );`);
+    code.push(`  `);
+  }
+
+  // Charts (NEW)
+  if (params.charts && params.charts.length > 0) {
+    code.push(`  // Graphiques ASCII (NEW)`);
+    params.charts.forEach((chart: any) => {
+      code.push(`  const asciiChart${params.charts.indexOf(chart)} = generateAsciiChart('${chart.type}', ${JSON.stringify(chart.data)}, ${JSON.stringify(chart.labels)}, { height: ${chart.size === 'small' ? 5 : chart.size === 'large' ? 15 : 10} });`);
+      code.push(`  embed.addFields({ name: '📊 ${chart.title}', value: asciiChart${params.charts.indexOf(chart)}, inline: ${chart.size === 'small'} });`);
+    });
+    code.push(`  `);
+  }
+
+  // Adaptive Links (NEW)
+  if (params.adaptiveLinks && params.adaptiveLinks.length > 0) {
+    code.push(`  // Liens adaptatifs (NEW)`);
+    code.push(`  const linksText = ${JSON.stringify(params.adaptiveLinks)}.map(link => adaptLinkForUser(link, 'USER_ID')).join('\\n');`);
+    code.push(`  embed.addFields({ name: '🔗 Liens', value: linksText, inline: false });`);
+    code.push(`  `);
+  }
+
+  // Progress Bars (NEW)
+  if (params.progressBars && params.progressBars.length > 0) {
+    code.push(`  // Barres de progression (NEW)`);
+    params.progressBars.forEach((progress: any) => {
+      code.push(`  const bar${params.progressBars.indexOf(progress)} = createProgressBar(${progress.value}, ${progress.max}, ${progress.length || 10});`);
+      code.push(`  const pct${params.progressBars.indexOf(progress)} = Math.round((${progress.value} / ${progress.max}) * 100);`);
+      code.push(`  embed.addFields({ name: '${progress.label}', value: \`\${bar${params.progressBars.indexOf(progress)}} \${pct${params.progressBars.indexOf(progress)}}% (\${${progress.value}}/\${${progress.max}})\`, inline: false });`);
+    });
+    code.push(`  `);
+  }
+
+  // Crypto List (NEW)
+  if (params.cryptoList && params.cryptoList.length > 0) {
+    code.push(`  // Liste de cryptos (NEW)`);
+    code.push(`  const cryptoLines = ${JSON.stringify(params.cryptoList)}.map((crypto, index) => {`);
+    code.push(`    const displayName = crypto.name || crypto.symbol;`);
+    code.push(`    const value = crypto.value ? ' - ' + crypto.value : '';`);
+    code.push(`    return \`\${index + 1}. **\${displayName.toUpperCase()}** (\${crypto.symbol.toUpperCase()})\${value}\`;`);
+    code.push(`  });`);
+    code.push(`  embed.addFields({ name: '🪙 Crypto-monnaies', value: cryptoLines.join('\\n'), inline: false });`);
     code.push(`  `);
   }
 
@@ -1733,14 +1914,14 @@ export function registerEmbedTools(server: FastMCP) {
         
         // 1. Détection par l'auteur (Si le message vient du système Sentinel)
         if (args.authorName && typeof args.authorName === 'string' && args.authorName.toUpperCase().includes('SENTINEL')) {
-          Logger.info('🚨 [SENTINEL] Détection Sentinel (Author) - Force Canal: 1421701551080345710');
-          finalChannelId = '1421701551080345710';
+          Logger.info('🚨 [SENTINEL] Détection Sentinel (Author) - Force Canal: 1460428956518846466');
+          finalChannelId = '1460428956518846466';
         }
 
         // 2. Détection par contenu (Backup)
         else if (args.title && typeof args.title === 'string' && args.title.includes('ALERTE DE CAPITULATION')) {
-             Logger.info('🚨 [SENTINEL] Détection Sentinel (Titre) - Force Canal: 1421701551080345710');
-             finalChannelId = '1421701551080345710';
+             Logger.info('🚨 [SENTINEL] Détection Sentinel (Titre) - Force Canal: 1460428956518846466');
+             finalChannelId = '1460428956518846466';
         }
 
         const channel = await client.channels.fetch(finalChannelId);
@@ -2049,7 +2230,7 @@ export function registerEmbedTools(server: FastMCP) {
         }
 
         if (args.strictValidation) {
-          const validation = validateFieldLength(processedFields);
+          const validation = validateFieldLength(processedFields, dataToUse.title, dataToUse.description, dataToUse.footerText);
           if (validation.warnings.length > 0) {
             console.warn('⚠️ Avertissements:', validation.warnings);
           }

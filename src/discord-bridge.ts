@@ -311,12 +311,14 @@ export class DiscordBridge {
 
     // 🔥 ACQUITTER immédiatement pour éviter l'expiration de l'interaction
     // deferUpdate() est fait pour les boutons (update du message au lieu de nouvelle réponse)
-    try {
-      await interaction.deferUpdate();
-      Logger.debug(`⏱️ [Bridge] deferUpdate() effectué`);
-    } catch (e) {
-      Logger.error(`❌ [Bridge] Erreur deferUpdate:`, e);
-      return; // Interaction expirée, on ne peut rien faire
+    if (!interaction.replied && !interaction.deferred) {
+        try {
+          await interaction.deferUpdate();
+          Logger.debug(`⏱️ [Bridge] deferUpdate() effectué`);
+        } catch (e) {
+          Logger.error(`❌ [Bridge] Erreur deferUpdate:`, e);
+          // Continue execution even if defer fails (could be already handled in edge cases)
+        }
     }
 
     // 1. GESTION DIRECTE des boutons custom avec embed/message (priorité MAXIMALE)
@@ -590,15 +592,133 @@ export class DiscordBridge {
       Logger.debug(`🔄 [Bridge] interactionHandler sauté pour bouton embedv2_/pb_`);
     }
 
-    // Puis les fonctions personnalisées génériques
-    const customFunction = buttonFunctions.get(customId);
-    if (customFunction) {
-      try {
-        await customFunction(interaction, { customId, user, channelId, messageId });
-        wasHandled = true;
-      } catch (error: any) {
-        Logger.error(`❌ [Bridge] Erreur fonction bouton ${customId}:`, error.message);
-      }
+    // 🔥 HOT RELOAD: Exécution dynamique du code depuis le disque (Priorité sur le cache mémoire)
+    // N'exécuter que si pas encore géré par une action automatique (message/embed)
+    if (button && button.functionCode && !wasHandled) {
+         Logger.info(`⚡ [Hot-Reload] Exécution code frais pour ${customId}`);
+         try {
+             // Reconstruire le contexte (ctx) identique à celui de registerButtonFunctions
+             const ctx = {
+                        interaction,
+                        channelId: interaction.channelId,
+                        messageId: interaction.message.id,
+                        user: interaction.user,
+                        client: interaction.client, // Ensure client is passed
+                        buttonId: interaction.customId,
+                        // Fonctions utilitaires
+                        reply: async (content: string, ephemeral: boolean = true) => {
+                            if (interaction.deferred || interaction.replied) {
+                                await interaction.followUp({ content, ephemeral });
+                            } else {
+                                try {
+                                    await interaction.reply({ content, ephemeral });
+                                } catch (e: any) {
+                                    if (e.code === 40060) await interaction.followUp({ content, ephemeral });
+                                    else throw e;
+                                }
+                            }
+                        },
+                        update: async (data: any) => {
+                            if (interaction.deferred || interaction.replied) {
+                                await interaction.editReply(data);
+                            } else {
+                                try {
+                                    await interaction.update(data);
+                                } catch (e: any) {
+                                    if (e.code === 40060) await interaction.editReply(data);
+                                    else throw e;
+                                }
+                            }
+                        },
+                        deferReply: async (ephemeral: boolean = true) => {
+                            if (!interaction.deferred && !interaction.replied) {
+                                try {
+                                    await interaction.deferReply({ ephemeral });
+                                } catch (e: any) {
+                                    if (e.code !== 40060) throw e;
+                                }
+                            }
+                        },
+                        followUp: async (content: string, ephemeral: boolean = true) => {
+                             if (interaction.deferred || interaction.replied) {
+                                 await interaction.followUp({ content, ephemeral });
+                             } else {
+                                 // Fallback to reply if not acknowledged
+                                 try {
+                                     await interaction.reply({ content, ephemeral });
+                                 } catch (e: any) {
+                                     if (e.code === 40060) await interaction.followUp({ content, ephemeral });
+                                     else throw e;
+                                 }
+                             }
+                        },
+                        editReply: async (data: any) => {
+                            return await interaction.editReply(data);
+                        },
+                        updateEmbed: async (data: any) => {
+                            return await interaction.editReply(data);
+                        },
+                        sendEmbed: async (embed: any, ephemeral: boolean = false) => {
+                             if (interaction.deferred || interaction.replied) {
+                                 await interaction.followUp({ embeds: [embed], ephemeral });
+                             } else {
+                                 await interaction.reply({ embeds: [embed], ephemeral });
+                             }
+                        },
+                        sendMessage: async (content: string) => {
+                            const channel = await interaction.client.channels.fetch(interaction.channelId);
+                            if (channel && 'send' in channel) {
+                                await channel.send(content);
+                            }
+                        },
+                        getMessage: async () => {
+                            const channel = await interaction.client.channels.fetch(interaction.channelId);
+                            if (channel && 'messages' in channel) {
+                                return await channel.messages.fetch(interaction.message.id);
+                            }
+                        },
+                        saveVote: async (voteType: string, details: string = '') => {
+                            const { VoteManager } = await import('./utils/voteManager.js');
+                            await VoteManager.saveVote(voteType, interaction.user, interaction.channelId, details);
+                        },
+                        getVoteCounts: async () => {
+                            const { VoteManager } = await import('./utils/voteManager.js');
+                            return await VoteManager.getVoteCounts();
+                        }
+             };
+
+             // Exécuter le code avec le contexte
+             const asyncFunction = new Function('ctx', `
+                return (async () => {
+                    try {
+                        ${button.functionCode}
+                    } catch (e) {
+                        throw e;
+                    }
+                })();
+             `);
+
+             await asyncFunction(ctx);
+             wasHandled = true;
+
+         } catch (e: any) {
+             Logger.error(`❌ [Hot-Reload] Erreur exécution ${customId}:`, e);
+             if (!interaction.replied && !interaction.deferred) {
+                 await interaction.reply({ content: `❌ Erreur: ${e.message}`, ephemeral: true }).catch(() => {});
+             }
+         }
+    }
+    // Fallback sur mémoire si pas de bouton disque (peu probable si customFunction existe)
+    else {
+        const customFunction = buttonFunctions.get(customId);
+        if (customFunction) {
+          try {
+            await customFunction(interaction, { customId, user, channelId, messageId });
+            wasHandled = true;
+          } catch (error: any) {
+            Logger.error(`❌ [Bridge] Erreur fonction bouton ${customId}:`, error.message);
+          }
+        }
     }
 
     // AUTO-HANDLER: Répondre automatiquement si aucun handler n'a répondu

@@ -207,7 +207,9 @@ export const INTERACTIVE_GUIDE = {
       guide.push('  → data_report (rapports)');
       guide.push('  → status_update (statuts)');
       guide.push('  → product_showcase (produits)');
-      guide.push('  → leaderboard (classements)\n');
+      guide.push('  → leaderboard (classements)');
+      guide.push('  → cyberpunk (futuriste)');
+      guide.push('  → dashboard (métriques)\n');
     }
 
     // Étape 3: Images
@@ -303,6 +305,19 @@ export const INTERACTIVE_GUIDE = {
   ],
   buttons: [
     { label: '🔄 Actualiser', style: 'Primary', action: 'refresh' }
+  ]
+});`,
+
+      cyberpunk: `creer_embed({
+  channelId: 'VOTRE_ID',
+  theme: 'cyberpunk',
+  title: '🌆 Terminal Cyberpunk',
+  description: 'Procotole Alpha-1 activé. Analyse de la matrice...',
+  charts: [
+    { title: 'Signal Stabilité', type: 'sparkline', data: [10, 20, 15, 30, 25, 40] }
+  ],
+  buttons: [
+    { label: '🔮 Décoder', style: 'Primary', action: 'custom', custom_id: 'btn_decode' }
   ]
 });`
     };

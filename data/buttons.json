@@ -1,26 +1,26 @@
 [
   {
     "id": "sentinel_vote_valid_public",
-    "messageId": "1459539685033382022",
+    "messageId": "1461523042210545665",
     "channelId": "unknown",
     "label": "Vote Validation Sentinel",
     "action": {
       "type": "custom",
       "data": {}
     },
-    "functionCode": "\n            await ctx.saveVote('VALID');\n            const embed = ctx.interaction.message.embeds[0];\n            let fields = [...(embed.fields || [])].filter(f => !f.name.includes('COMMUNAUTÉ') && !f.name.includes('CONSENSUS'));\n            let voters = [];\n            const oldField = embed.fields?.find(f => f.name.includes('COMMUNAUTÉ'));\n            if (oldField) voters = oldField.value.split('\\n');\n            const userTag = '**' + ctx.interaction.user.username + '**';\n            voters = voters.filter(v => !v.includes(userTag));\n            voters.push('🟢' + ' ' + userTag);\n            const vAcc = voters.filter(v => v.includes('🟢')).length;\n            const total = voters.length;\n            const p = Math.round((vAcc / (total||1)) * 100);\n            const bar = '█'.repeat(Math.round(p/10)) + '░'.repeat(10 - Math.round(p/10));\n            fields.push(\n                { name: '👥 COMMUNAUTÉ', value: voters.join('\\n'), inline: true },\n                { name: '📊 CONSENSUS', value: '`' + bar + '` **' + p + '%**\\n(' + total + ' agents)', inline: true }\n            );\n            await ctx.editReply({ embeds: [{ ...embed.toJSON(), fields }] });\n            await ctx.followUp('✅ **VOTE ENREGISTRÉ**', true);\n        ",
+    "functionCode": "\n            await ctx.saveVote('VALID');\n            const embed = ctx.interaction.message.embeds[0];\n            let fields = [...(embed.fields || [])].filter(f => !f.name.includes('COMMUNAUTÉ') && !f.name.includes('CONSENSUS'));\n            let voters = [];\n            const oldField = embed.fields?.find(f => f.name.includes('COMMUNAUTÉ'));\n            if (oldField) voters = oldField.value.split('\\n');\n            const userTag = '**' + ctx.interaction.user.username + '**';\n            voters = voters.filter(v => !v.includes(userTag));\n            voters.push('🟢' + ' ' + userTag);\n            const vAcc = voters.filter(v => v.includes('🟢')).length;\n            const total = voters.length;\n            const p = Math.round((vAcc / (total||1)) * 100);\n            const bar = '█'.repeat(Math.round(p/10)) + '░'.repeat(10 - Math.round(p/10));\n            const vRef = total - vAcc;\n            fields.push(\n                { name: '👥 COMMUNAUTÉ', value: voters.join('\\n'), inline: true },\n                { name: '📊 CONSENSUS', value: '`' + bar + '` **' + p + '%**\\n🟢 ' + vAcc + ' Bull | 🔴 ' + vRef + ' Bear', inline: true }\n            );\n            await ctx.update({ embeds: [{ ...embed.toJSON(), fields }] });\n            await ctx.followUp('✅ **VOTE ENREGISTRÉ**', true);\n        ",
     "createdAt": "2026-01-09T15:58:13.297Z"
   },
   {
     "id": "sentinel_vote_invalid_public",
-    "messageId": "1459539685033382022",
+    "messageId": "1461523042210545665",
     "channelId": "unknown",
     "label": "Vote Rejet Sentinel",
     "action": {
       "type": "custom",
       "data": {}
     },
-    "functionCode": "\n            await ctx.saveVote('INVALID');\n            const embed = ctx.interaction.message.embeds[0];\n            let fields = [...(embed.fields || [])].filter(f => !f.name.includes('COMMUNAUTÉ') && !f.name.includes('CONSENSUS'));\n            let voters = [];\n            const oldField = embed.fields?.find(f => f.name.includes('COMMUNAUTÉ'));\n            if (oldField) voters = oldField.value.split('\\n');\n            const userTag = '**' + ctx.interaction.user.username + '**';\n            voters = voters.filter(v => !v.includes(userTag));\n            voters.push('🔴' + ' ' + userTag);\n            const vAcc = voters.filter(v => v.includes('🟢')).length;\n            const total = voters.length;\n            const p = Math.round((vAcc / (total||1)) * 100);\n            const bar = '█'.repeat(Math.round(p/10)) + '░'.repeat(10 - Math.round(p/10));\n            fields.push(\n                { name: '👥 COMMUNAUTÉ', value: voters.join('\\n'), inline: true },\n                { name: '📊 CONSENSUS', value: '`' + bar + '` **' + p + '%**\\n(' + total + ' agents)', inline: true }\n            );\n            await ctx.editReply({ embeds: [{ ...embed.toJSON(), fields }] });\n            await ctx.followUp('✅ **VOTE ENREGISTRÉ**', true);\n        ",
+    "functionCode": "\n            await ctx.saveVote('INVALID');\n            const embed = ctx.interaction.message.embeds[0];\n            let fields = [...(embed.fields || [])].filter(f => !f.name.includes('COMMUNAUTÉ') && !f.name.includes('CONSENSUS'));\n            let voters = [];\n            const oldField = embed.fields?.find(f => f.name.includes('COMMUNAUTÉ'));\n            if (oldField) voters = oldField.value.split('\\n');\n            const userTag = '**' + ctx.interaction.user.username + '**';\n            voters = voters.filter(v => !v.includes(userTag));\n            voters.push('🔴' + ' ' + userTag);\n            const vAcc = voters.filter(v => v.includes('🟢')).length;\n            const total = voters.length;\n            const p = Math.round((vAcc / (total||1)) * 100);\n            const bar = '█'.repeat(Math.round(p/10)) + '░'.repeat(10 - Math.round(p/10));\n            const vRef = total - vAcc;\n            fields.push(\n                { name: '👥 COMMUNAUTÉ', value: voters.join('\\n'), inline: true },\n                { name: '📊 CONSENSUS', value: '`' + bar + '` **' + p + '%**\\n🟢 ' + vAcc + ' Bull | 🔴 ' + vRef + ' Bear', inline: true }\n            );\n            await ctx.update({ embeds: [{ ...embed.toJSON(), fields }] });\n            await ctx.followUp('✅ **VOTE ENREGISTRÉ**', true);\n        ",
     "createdAt": "2026-01-09T15:58:13.312Z"
   },
   {
@@ -153,5 +153,96 @@
       }
     },
     "createdAt": "2026-01-10T15:23:30.892Z"
+  },
+  {
+    "id": "btn_github_screenflow",
+    "messageId": "1459985680410345502",
+    "channelId": "1442317829998383235",
+    "label": "📦 Voir sur GitHub",
+    "action": {
+      "type": "link",
+      "data": {
+        "value": "https://github.com/votre-repo/screen-recorder"
+      }
+    },
+    "createdAt": "2026-01-11T19:01:48.164Z"
+  },
+  {
+    "id": "btn_docs_screenflow",
+    "messageId": "1459985680410345502",
+    "channelId": "1442317829998383235",
+    "label": "📖 Documentation",
+    "action": {
+      "type": "link",
+      "data": {
+        "value": "https://github.com/votre-repo/screen-recorder/blob/main/README.md"
+      }
+    },
+    "createdAt": "2026-01-11T19:01:48.165Z"
+  },
+  {
+    "id": "btn_github_sf",
+    "messageId": "1459987138958463149",
+    "channelId": "1421197847843569855",
+    "label": "📦 GitHub",
+    "action": {
+      "type": "link",
+      "data": {
+        "value": "https://github.com/votre-repo/screen-recorder"
+      }
+    },
+    "createdAt": "2026-01-11T19:07:35.821Z"
+  },
+  {
+    "id": "btn_thread_sf",
+    "messageId": "1459987138958463149",
+    "channelId": "1421197847843569855",
+    "label": "💬 Fil du projet",
+    "action": {
+      "type": "link",
+      "data": {
+        "value": "https://discord.com/channels/804393160092024832/1459979958389833904"
+      }
+    },
+    "createdAt": "2026-01-11T19:07:35.821Z"
+  },
+  {
+    "id": "github_link",
+    "messageId": "1462449318014484584",
+    "channelId": "1442317829998383235",
+    "label": "📦 GitHub Repo",
+    "action": {
+      "type": "link",
+      "data": {
+        "value": "https://github.com/DeamonDev888/PostgreSQL-MCP-Serveur"
+      }
+    },
+    "createdAt": "2026-01-18T14:11:27.340Z"
+  },
+  {
+    "id": "install_info",
+    "messageId": "1462449318014484584",
+    "channelId": "1442317829998383235",
+    "label": "⚡ Installation Rapide",
+    "action": {
+      "type": "message",
+      "data": {
+        "message": "```bash\ngit clone https://github.com/DeamonDev888/PostgreSQL-MCP-Serveur.git\ncd PostgreSQL-MCP-Serveur\npnpm install\n```"
+      }
+    },
+    "createdAt": "2026-01-18T14:11:27.340Z"
+  },
+  {
+    "id": "github_link_v2",
+    "messageId": "1462450572119642175",
+    "channelId": "1454214246169837789",
+    "label": "📦 GitHub Repo",
+    "action": {
+      "type": "link",
+      "data": {
+        "value": "https://github.com/DeamonDev888/PostgreSQL-MCP-Serveur"
+      }
+    },
+    "createdAt": "2026-01-18T14:16:26.428Z"
   }
 ]
