@@ -63,3 +63,7 @@ embed-templates.json
 *.crt
 *.p12
 tools_list.csv
+
+lint_results.json
+lint_output.txt
+lint_compact.txt
