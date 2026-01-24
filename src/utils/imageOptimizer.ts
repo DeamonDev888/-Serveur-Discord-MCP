@@ -21,7 +21,7 @@ export const DISCORD_IMAGE_POSITIONS: Record<string, ImagePositionConfig> = {
     recommendedWidth: 64,
     recommendedHeight: 64,
     discordSize: 'small',
-    description: 'Petite icône en haut-gauche (16x16 affiché)'
+    description: 'Petite icône en haut-gauche (16x16 affiché)',
   },
   thumbnail: {
     name: 'Thumbnail',
@@ -30,7 +30,7 @@ export const DISCORD_IMAGE_POSITIONS: Record<string, ImagePositionConfig> = {
     recommendedWidth: 128,
     recommendedHeight: 128,
     discordSize: 'medium',
-    description: 'Image moyenne en haut-droite (80x80 affiché)'
+    description: 'Image moyenne en haut-droite (80x80 affiché)',
   },
   image: {
     name: 'Image',
@@ -39,7 +39,7 @@ export const DISCORD_IMAGE_POSITIONS: Record<string, ImagePositionConfig> = {
     recommendedWidth: 1024,
     recommendedHeight: 512,
     discordSize: 'large',
-    description: 'Grande image en bas (400x250 affiché, pleine largeur)'
+    description: 'Grande image en bas (400x250 affiché, pleine largeur)',
   },
   footerIcon: {
     name: 'Footer Icon',
@@ -48,8 +48,8 @@ export const DISCORD_IMAGE_POSITIONS: Record<string, ImagePositionConfig> = {
     recommendedWidth: 64,
     recommendedHeight: 64,
     discordSize: 'small',
-    description: 'Petite icône en bas-gauche (16x16 affiché)'
-  }
+    description: 'Petite icône en bas-gauche (16x16 affiché)',
+  },
 };
 
 export interface OptimizationResult {
@@ -83,7 +83,7 @@ export class ImageOptimizer {
         position,
         isOptimized: false,
         warnings: [`Position inconnue: ${position}`],
-        suggestions: []
+        suggestions: [],
       };
       this.cache.set(cacheKey, result);
       return result;
@@ -109,7 +109,7 @@ export class ImageOptimizer {
       position,
       isOptimized,
       warnings,
-      suggestions
+      suggestions,
     };
 
     this.cache.set(cacheKey, result);
@@ -165,10 +165,14 @@ export class ImageOptimizer {
     }
 
     // Suggestion de dimension
-    suggestions.push(`Redimensionner à ${config.recommendedWidth}x${config.recommendedHeight}px pour optimiser l'affichage Discord`);
+    suggestions.push(
+      `Redimensionner à ${config.recommendedWidth}x${config.recommendedHeight}px pour optimiser l'affichage Discord`
+    );
 
     // Suggestion de CDN avec redimensionnement
-    suggestions.push(`Utiliser un CDN avec redimensionnement automatique (ex: Cloudinary, ImageKit)`);
+    suggestions.push(
+      `Utiliser un CDN avec redimensionnement automatique (ex: Cloudinary, ImageKit)`
+    );
 
     // Suggestion de compression
     suggestions.push(`Compresser l'image (qualité 80-85% pour PNG, 75-80% pour JPEG)`);
@@ -195,7 +199,7 @@ export class ImageOptimizer {
         break;
 
       case 'image':
-        warnings.push('L\'image principale est limitée à ~400x250px par Discord');
+        warnings.push("L'image principale est limitée à ~400x250px par Discord");
         warnings.push('Utiliser des images en paysage pour un meilleur rendu');
         break;
     }
@@ -206,12 +210,16 @@ export class ImageOptimizer {
   /**
    * Génère une URL optimisée (prototype)
    */
-  generateOptimizedUrl(originalUrl: string, position: string, options?: {
-    width?: number;
-    height?: number;
-    format?: 'webp' | 'jpg' | 'png';
-    quality?: number;
-  }): string {
+  generateOptimizedUrl(
+    originalUrl: string,
+    position: string,
+    options?: {
+      width?: number;
+      height?: number;
+      format?: 'webp' | 'jpg' | 'png';
+      quality?: number;
+    }
+  ): string {
     const config = DISCORD_IMAGE_POSITIONS[position];
     if (!config) {
       return originalUrl;
@@ -222,7 +230,7 @@ export class ImageOptimizer {
       height: config.recommendedHeight,
       format: 'webp' as const,
       quality: 80,
-      ...options
+      ...options,
     };
 
     // Dans une vraie implémentation, on utiliserait un service comme:
@@ -257,36 +265,46 @@ export class ImageOptimizer {
   /**
    * Vérifie si une image respecte les limites Discord
    */
-  validateDiscordLimits(position: string, imageInfo: {
-    width?: number;
-    height?: number;
-    size?: number; // taille en bytes
-  }): { isValid: boolean; warnings: string[] } {
+  validateDiscordLimits(
+    position: string,
+    imageInfo: {
+      width?: number;
+      height?: number;
+      size?: number; // taille en bytes
+    }
+  ): { isValid: boolean; warnings: string[] } {
     const config = DISCORD_IMAGE_POSITIONS[position];
     if (!config) {
       return {
         isValid: false,
-        warnings: [`Position inconnue: ${position}`]
+        warnings: [`Position inconnue: ${position}`],
       };
     }
 
     const warnings: string[] = [];
 
     if (imageInfo.width && imageInfo.width > config.maxWidth) {
-      warnings.push(`Largeur ${imageInfo.width}px dépasse la limite Discord (${config.maxWidth}px)`);
+      warnings.push(
+        `Largeur ${imageInfo.width}px dépasse la limite Discord (${config.maxWidth}px)`
+      );
     }
 
     if (imageInfo.height && imageInfo.height > config.maxHeight) {
-      warnings.push(`Hauteur ${imageInfo.height}px dépasse la limite Discord (${config.maxHeight}px)`);
+      warnings.push(
+        `Hauteur ${imageInfo.height}px dépasse la limite Discord (${config.maxHeight}px)`
+      );
     }
 
-    if (imageInfo.size && imageInfo.size > 8 * 1024 * 1024) { // 8MB
-      warnings.push(`Taille ${(imageInfo.size / 1024 / 1024).toFixed(2)}MB dépasse la limite Discord (8MB)`);
+    if (imageInfo.size && imageInfo.size > 8 * 1024 * 1024) {
+      // 8MB
+      warnings.push(
+        `Taille ${(imageInfo.size / 1024 / 1024).toFixed(2)}MB dépasse la limite Discord (8MB)`
+      );
     }
 
     return {
       isValid: warnings.length === 0,
-      warnings
+      warnings,
     };
   }
 
@@ -304,7 +322,7 @@ export class ImageOptimizer {
       authorIcon: 2 * 1024, // 2KB
       footerIcon: 2 * 1024, // 2KB
       thumbnail: 10 * 1024, // 10KB
-      image: 50 * 1024 // 50KB
+      image: 50 * 1024, // 50KB
     };
 
     const recommendedSize = recommendedSizes[position] || 50 * 1024;
@@ -389,7 +407,7 @@ export class ImageOptimizer {
   getCacheStats(): { size: number; hitRate: number } {
     return {
       size: this.cache.size,
-      hitRate: 0 // Dans une vraie implém, on trackerait les hits
+      hitRate: 0, // Dans une vraie implém, on trackerait les hits
     };
   }
 }

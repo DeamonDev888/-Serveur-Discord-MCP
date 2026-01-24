@@ -46,7 +46,7 @@ export class EmbedEnhancer {
       preValidate: true,
       autoFix: true,
       reportIssues: true,
-      ...config
+      ...config,
     };
   }
 
@@ -60,7 +60,7 @@ export class EmbedEnhancer {
       warnings: [],
       suggestions: [],
       appliedEnhancements: [],
-      urls: []
+      urls: [],
     };
 
     try {
@@ -97,13 +97,14 @@ export class EmbedEnhancer {
 
       result.isEnhanced = result.appliedEnhancements.length > 0;
 
-      Logger.info(`[EmbedEnhancer] Amélioration terminée: ${result.appliedEnhancements.length} enhancements appliqués`);
+      Logger.info(
+        `[EmbedEnhancer] Amélioration terminée: ${result.appliedEnhancements.length} enhancements appliqués`
+      );
 
       return {
         enhanced: embedData,
-        result
+        result,
       };
-
     } catch (error: any) {
       Logger.error('[EmbedEnhancer] Erreur:', error.message);
       result.issues.push(`Erreur d'amélioration: ${error.message}`);
@@ -124,7 +125,7 @@ export class EmbedEnhancer {
       original: url,
       status: {} as UrlValidationResult,
       optimization: {} as OptimizationResult,
-      cached: undefined as string | undefined
+      cached: undefined as string | undefined,
     };
 
     try {
@@ -175,7 +176,6 @@ export class EmbedEnhancer {
       }
 
       result.urls.push(urlEntry);
-
     } catch (error: any) {
       Logger.error(`[EmbedEnhancer] Erreur traitement ${position}:`, error.message);
       result.issues.push(`${position}: ${error.message}`);
@@ -203,7 +203,7 @@ export class EmbedEnhancer {
         [], // Pas d'alternatives pour l'instant
         {
           category: this.detectCategoryFromEmbed(embedData),
-          theme: embedData.theme
+          theme: embedData.theme,
         }
       );
 
@@ -275,7 +275,7 @@ export class EmbedEnhancer {
       return;
     }
 
-    Logger.info('=== RAPPORT D\'AMÉLIORATION EMBED ===');
+    Logger.info("=== RAPPORT D'AMÉLIORATION EMBED ===");
 
     if (result.appliedEnhancements.length > 0) {
       Logger.info('✅ Améliorations appliquées:');
@@ -311,7 +311,9 @@ export class EmbedEnhancer {
   /**
    * Pré-valide un embed avant envoi
    */
-  async preValidate(embedData: any): Promise<{ isValid: boolean; errors: string[]; warnings: string[] }> {
+  async preValidate(
+    embedData: any
+  ): Promise<{ isValid: boolean; errors: string[]; warnings: string[] }> {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -331,9 +333,8 @@ export class EmbedEnhancer {
       return {
         isValid: errors.length === 0,
         errors,
-        warnings
+        warnings,
       };
-
     } catch (error: any) {
       errors.push(`Erreur de validation: ${error.message}`);
       return { isValid: false, errors, warnings };
@@ -351,7 +352,7 @@ export class EmbedEnhancer {
     return {
       cache: imageCache.getStats(),
       validator: urlValidator.getStats(),
-      optimizer: imageOptimizer.getCacheStats()
+      optimizer: imageOptimizer.getCacheStats(),
     };
   }
 
@@ -395,5 +396,5 @@ export const embedEnhancer = new EmbedEnhancer({
   enableOptimization: true,
   preValidate: true,
   autoFix: true,
-  reportIssues: true
+  reportIssues: true,
 });

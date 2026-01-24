@@ -49,23 +49,27 @@ async function convertSvgToPng(svgBuffer: Buffer, size: number = 64): Promise<Bu
     return await sharp(svgBuffer)
       .resize(size, size, {
         fit: 'contain',
-        background: { r: 0, g: 0, b: 0, alpha: 0 }
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
       })
       .png()
       .toBuffer();
   } catch (error) {
-    Logger.warn(`[SVG Converter] Direct conversion failed, falling back to wrapper method: ${error instanceof Error ? error.message : String(error)}`);
-    
-    // Fallback: Si la conversion directe échoue (ex: SVG mal formé), 
+    Logger.warn(
+      `[SVG Converter] Direct conversion failed, falling back to wrapper method: ${error instanceof Error ? error.message : String(error)}`
+    );
+
+    // Fallback: Si la conversion directe échoue (ex: SVG mal formé),
     // on l'encapsule dans un nouveau SVG
     const svgString = svgBuffer.toString('utf-8');
     const base64Svg = Buffer.from(svgString).toString('base64');
-    
-    return await sharp(Buffer.from(`
+
+    return await sharp(
+      Buffer.from(`
       <svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
         <image href="data:image/svg+xml;base64,${base64Svg}" width="${size}" height="${size}"/>
       </svg>
-    `))
+    `)
+    )
       .png()
       .toBuffer();
   }
@@ -78,7 +82,10 @@ async function convertSvgToPng(svgBuffer: Buffer, size: number = 64): Promise<Bu
  * @param size - Taille du PNG (défaut: 64)
  * @returns Objet avec chemin et nom pour attachment Discord
  */
-export async function convertSvgUrlToPng(svgUrl: string, size: number = 64): Promise<{ path: string; attachmentName: string; attachmentUrl: string }> {
+export async function convertSvgUrlToPng(
+  svgUrl: string,
+  size: number = 64
+): Promise<{ path: string; attachmentName: string; attachmentUrl: string }> {
   try {
     // Vérifier si déjà en cache
     const cacheFilename = getCacheFilename(svgUrl);
@@ -89,7 +96,7 @@ export async function convertSvgUrlToPng(svgUrl: string, size: number = 64): Pro
       return {
         path: cachePath,
         attachmentName: cacheFilename,
-        attachmentUrl: `attachment://${cacheFilename}`
+        attachmentUrl: `attachment://${cacheFilename}`,
       };
     }
 
@@ -109,9 +116,8 @@ export async function convertSvgUrlToPng(svgUrl: string, size: number = 64): Pro
     return {
       path: cachePath,
       attachmentName: cacheFilename,
-      attachmentUrl: `attachment://${cacheFilename}`
+      attachmentUrl: `attachment://${cacheFilename}`,
     };
-
   } catch (error: any) {
     Logger.error(`[SVG Converter] Error converting ${svgUrl}:`, error.message);
     throw error;
@@ -123,10 +129,12 @@ export async function convertSvgUrlToPng(svgUrl: string, size: number = 64): Pro
  */
 export function isSvgUrl(url: string): boolean {
   const lowerUrl = url.toLowerCase();
-  return lowerUrl.endsWith('.svg') ||
-         lowerUrl.includes('.svg?') ||
-         lowerUrl.includes('simpleicons.org') ||
-         lowerUrl.includes('cdn.jsdelivr.net/gh/devicons/devicon');
+  return (
+    lowerUrl.endsWith('.svg') ||
+    lowerUrl.includes('.svg?') ||
+    lowerUrl.includes('simpleicons.org') ||
+    lowerUrl.includes('cdn.jsdelivr.net/gh/devicons/devicon')
+  );
 }
 
 /**

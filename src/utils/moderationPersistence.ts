@@ -71,7 +71,7 @@ const MUTE_PERSISTENCE = new PersistenceManager<Mute[]>(MUTES_FILE, 1000);
 // Charger toutes les actions de modération
 export async function loadModerationActions(): Promise<Map<string, ModerationAction>> {
   const actionsArray = await MODERATION_PERSISTENCE.load([]);
-  
+
   const actionsMap = new Map<string, ModerationAction>();
   actionsArray.forEach(action => {
     action.timestamp = new Date(action.timestamp);
@@ -86,7 +86,7 @@ export async function loadModerationActions(): Promise<Map<string, ModerationAct
 export async function saveModerationActions(actions: Map<string, ModerationAction>): Promise<void> {
   const actionsArray = Array.from(actions.values()).map(action => ({
     ...action,
-    timestamp: (action.timestamp instanceof Date) ? action.timestamp.toISOString() : action.timestamp,
+    timestamp: action.timestamp instanceof Date ? action.timestamp.toISOString() : action.timestamp,
   }));
 
   await MODERATION_PERSISTENCE.saveImmediate(actionsArray as any);
@@ -108,7 +108,7 @@ export async function addModerationAction(
 // Charger tous les warns
 export async function loadWarnings(): Promise<Map<string, Warning>> {
   const warningsArray = await WARNING_PERSISTENCE.load([]);
-  
+
   const warningsMap = new Map<string, Warning>();
   warningsArray.forEach(warning => {
     warning.timestamp = new Date(warning.timestamp);
@@ -124,8 +124,10 @@ export async function loadWarnings(): Promise<Map<string, Warning>> {
 export async function saveWarnings(warnings: Map<string, Warning>): Promise<void> {
   const warningsArray = Array.from(warnings.values()).map(warning => ({
     ...warning,
-    timestamp: (warning.timestamp instanceof Date) ? warning.timestamp.toISOString() : warning.timestamp,
-    expiresAt: (warning.expiresAt instanceof Date) ? warning.expiresAt.toISOString() : warning.expiresAt,
+    timestamp:
+      warning.timestamp instanceof Date ? warning.timestamp.toISOString() : warning.timestamp,
+    expiresAt:
+      warning.expiresAt instanceof Date ? warning.expiresAt.toISOString() : warning.expiresAt,
   }));
 
   await WARNING_PERSISTENCE.saveImmediate(warningsArray as any);
@@ -158,7 +160,7 @@ export async function deleteWarning(
 // Charger tous les mutes
 export async function loadMutes(): Promise<Map<string, Mute>> {
   const mutesArray = await MUTE_PERSISTENCE.load([]);
-  
+
   const mutesMap = new Map<string, Mute>();
   mutesArray.forEach(mute => {
     mute.timestamp = new Date(mute.timestamp);
@@ -174,8 +176,8 @@ export async function loadMutes(): Promise<Map<string, Mute>> {
 export async function saveMutes(mutes: Map<string, Mute>): Promise<void> {
   const mutesArray = Array.from(mutes.values()).map(mute => ({
     ...mute,
-    timestamp: (mute.timestamp instanceof Date) ? mute.timestamp.toISOString() : mute.timestamp,
-    expiresAt: (mute.expiresAt instanceof Date) ? mute.expiresAt.toISOString() : mute.expiresAt,
+    timestamp: mute.timestamp instanceof Date ? mute.timestamp.toISOString() : mute.timestamp,
+    expiresAt: mute.expiresAt instanceof Date ? mute.expiresAt.toISOString() : mute.expiresAt,
   }));
 
   await MUTE_PERSISTENCE.saveImmediate(mutesArray as any);

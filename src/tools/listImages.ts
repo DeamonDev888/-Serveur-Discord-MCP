@@ -71,7 +71,10 @@ const PICSUM_BASE_URL = 'https://picsum.photos';
 // MAPPING INTELLIGENT SYMBOLE → QUERY PICSUM
 // ============================================================================
 
-const SYMBOL_TO_QUERY: Record<string, { width: number; height: number; blur?: number; grayscale?: boolean }> = {
+const SYMBOL_TO_QUERY: Record<
+  string,
+  { width: number; height: number; blur?: number; grayscale?: boolean }
+> = {
   // Cryptos populaires - Images abstraites technologiques
   BTC: { width: 800, height: 400 },
   ETH: { width: 800, height: 400, grayscale: true },
@@ -119,7 +122,10 @@ const SYMBOL_TO_QUERY: Record<string, { width: number; height: number; blur?: nu
   GITHUB: { width: 800, height: 400 },
 };
 
-const CATEGORY_TO_QUERY: Record<string, { width: number; height: number; blur?: number; grayscale?: boolean }> = {
+const CATEGORY_TO_QUERY: Record<
+  string,
+  { width: number; height: number; blur?: number; grayscale?: boolean }
+> = {
   crypto: { width: 800, height: 400, grayscale: true },
   companies: { width: 800, height: 600 },
   services: { width: 800, height: 400 },
@@ -165,61 +171,167 @@ const CATEGORY_TO_GIF: Record<string, { width: number; height: number; blur: num
 // ============================================================================
 
 const ListImagesSchema = z.object({
-  symbols: z.union([
-    z.string(),  // Un seul symbole
-    z.array(z.string())  // Plusieurs symboles
-  ]).optional().describe('Symbole(s) à rechercher (ex: "BTC" ou ["BTC", "ETH", "AAPL"]). Si vide, liste tous les logos de la catégorie.'),
-  category: z.enum([
-    'all', 'crypto', 'companies', 'services', 'ai', 'dev', 'finance',
-    // NOUVELLES CATÉGORIES LOGOS
-    'pokemon', 'anime', 'steam', 'devops', 'esport', 'videogame', 'party', 'simpleicons', 'themes',
-    // VRAIES IMAGES UNSPLASH - Collection complète (photos HD, wallpapers)
-    // Abstrait & Art
-    'abstract', 'art',
-    // Culture & Style de vie
-    'anime_images', 'animals', 'architecture', 'business', 'fashion', 'people', 'food', 'travel',
-    // Tech & Cyberpunk
-    'cyberpunk', 'devops_images', 'technology', 'neon', 'night',
-    // Nature & Espaces
-    'nature', 'space', 'sports',
-    // Gaming
-    'esport_images', 'gaming',
-    // Vintage & Wallpaper
-    'vintage', 'wallpaper',
-    // NOUVELLES CATÉGORIES (2024)
-    // Tech AI & Development
-    'tech_ai', 'development',
-    // Sciences
-    'science',
-    // Finance & Business
-    'finance_images',
-    // Lifestyle
-    'lifestyle',
-    // Toutes les images
-    'real_images'
-  ]).optional().default('all').describe('Catégorie de logos ou images'),
-  sector: z.enum(['all', 'technology', 'finance', 'healthcare', 'consumer', 'energy', 'automotive', 'aerospace', 'telecom', 'retail', 'entertainment']).optional().default('all').describe('Secteur (pour companies uniquement)'),
-  subcategory: z.enum([
-    'all', 'top20', 'defi', 'meme', 'stablecoins', 'exchanges', 'social', 'cloud', 'broker', 'index', 'bank', 'payment', 'news', 'ai', 'dev',
-    // NOUVELLES SOUS-CATÉGORIES
-    'type', 'pokemon', 'item', // Pokemon: types, pokemons, items
-    'service', 'streaming', 'studio', 'genre', // Anime
-    'platform', 'game', 'team', // Steam/ESport
-    'cloud', 'container', 'iac', 'cicd', 'monitoring', 'logging', // DevOps
-    'organizer', // ESport
-  ]).optional().default('all').describe('Sous-catégorie (pour crypto et services)'),
-  search: z.string().optional().describe('Recherche personnalisée pour photos (ex: "cybertruck desert")'),
-  format: z.enum(['list', 'compact', 'urls', 'json', 'discord']).optional().default('discord').describe('Format de sortie'),
-  limit: z.number().optional().default(20).describe('Nombre maximum d\'images à retourner (Picsum = illimité)'),
+  symbols: z
+    .union([
+      z.string(), // Un seul symbole
+      z.array(z.string()), // Plusieurs symboles
+    ])
+    .optional()
+    .describe(
+      'Symbole(s) à rechercher (ex: "BTC" ou ["BTC", "ETH", "AAPL"]). Si vide, liste tous les logos de la catégorie.'
+    ),
+  category: z
+    .enum([
+      'all',
+      'crypto',
+      'companies',
+      'services',
+      'ai',
+      'dev',
+      'finance',
+      // NOUVELLES CATÉGORIES LOGOS
+      'pokemon',
+      'anime',
+      'steam',
+      'devops',
+      'esport',
+      'videogame',
+      'party',
+      'simpleicons',
+      'themes',
+      // VRAIES IMAGES UNSPLASH - Collection complète (photos HD, wallpapers)
+      // Abstrait & Art
+      'abstract',
+      'art',
+      // Culture & Style de vie
+      'anime_images',
+      'animals',
+      'architecture',
+      'business',
+      'fashion',
+      'people',
+      'food',
+      'travel',
+      // Tech & Cyberpunk
+      'cyberpunk',
+      'devops_images',
+      'technology',
+      'neon',
+      'night',
+      // Nature & Espaces
+      'nature',
+      'space',
+      'sports',
+      // Gaming
+      'esport_images',
+      'gaming',
+      // Vintage & Wallpaper
+      'vintage',
+      'wallpaper',
+      // NOUVELLES CATÉGORIES (2024)
+      // Tech AI & Development
+      'tech_ai',
+      'development',
+      // Sciences
+      'science',
+      // Finance & Business
+      'finance_images',
+      // Lifestyle
+      'lifestyle',
+      // Toutes les images
+      'real_images',
+    ])
+    .optional()
+    .default('all')
+    .describe('Catégorie de logos ou images'),
+  sector: z
+    .enum([
+      'all',
+      'technology',
+      'finance',
+      'healthcare',
+      'consumer',
+      'energy',
+      'automotive',
+      'aerospace',
+      'telecom',
+      'retail',
+      'entertainment',
+    ])
+    .optional()
+    .default('all')
+    .describe('Secteur (pour companies uniquement)'),
+  subcategory: z
+    .enum([
+      'all',
+      'top20',
+      'defi',
+      'meme',
+      'stablecoins',
+      'exchanges',
+      'social',
+      'cloud',
+      'broker',
+      'index',
+      'bank',
+      'payment',
+      'news',
+      'ai',
+      'dev',
+      // NOUVELLES SOUS-CATÉGORIES
+      'type',
+      'pokemon',
+      'item', // Pokemon: types, pokemons, items
+      'service',
+      'streaming',
+      'studio',
+      'genre', // Anime
+      'platform',
+      'game',
+      'team', // Steam/ESport
+      'cloud',
+      'container',
+      'iac',
+      'cicd',
+      'monitoring',
+      'logging', // DevOps
+      'organizer', // ESport
+    ])
+    .optional()
+    .default('all')
+    .describe('Sous-catégorie (pour crypto et services)'),
+  search: z
+    .string()
+    .optional()
+    .describe('Recherche personnalisée pour photos (ex: "cybertruck desert")'),
+  format: z
+    .enum(['list', 'compact', 'urls', 'json', 'discord'])
+    .optional()
+    .default('discord')
+    .describe('Format de sortie'),
+  limit: z
+    .number()
+    .optional()
+    .default(20)
+    .describe("Nombre maximum d'images à retourner (Picsum = illimité)"),
   // NOUVEAU : choix entre logo, photo réelle, ou image stylisée
-  mode: z.enum(['auto', 'logo', 'photo', 'gif', 'real']).optional().default('auto').describe('auto = détecte automatiquement (recommandé), logo = logos classiques (base locale), photo = images HD (Picsum), gif = images stylisées avec blur (Picsum), real = vraies images Unsplash thématiques (cyberpunk, anime, etc.)')
+  mode: z
+    .enum(['auto', 'logo', 'photo', 'gif', 'real'])
+    .optional()
+    .default('auto')
+    .describe(
+      'auto = détecte automatiquement (recommandé), logo = logos classiques (base locale), photo = images HD (Picsum), gif = images stylisées avec blur (Picsum), real = vraies images Unsplash thématiques (cyberpunk, anime, etc.)'
+    ),
 });
 
 // ============================================================================
 // FONCTIONS UTILITAIRES
 // ============================================================================
 
-function getImageUrl(symbol: string, mode: 'logo' | 'photo' = 'logo'): { name: string; url: string; type: string; mode: string } | null {
+function getImageUrl(
+  symbol: string,
+  mode: 'logo' | 'photo' = 'logo'
+): { name: string; url: string; type: string; mode: string } | null {
   const upperSymbol = symbol.toUpperCase().replace(/[-_\s]/g, '');
 
   // Chercher dans les cryptos
@@ -297,8 +409,22 @@ function getImageUrl(symbol: string, mode: 'logo' | 'photo' = 'logo'): { name: s
   return null;
 }
 
-function getAllImages(category: string = 'all', sector: string = 'all', subcategory: string = 'all', search: string = '', limit: number = 50, mode: 'logo' | 'photo' = 'logo') {
-  const results: Array<{ symbol: string; name: string; url: string; type: string; mode: string; sector?: string }> = [];
+function getAllImages(
+  category: string = 'all',
+  sector: string = 'all',
+  subcategory: string = 'all',
+  search: string = '',
+  limit: number = 50,
+  mode: 'logo' | 'photo' = 'logo'
+) {
+  const results: Array<{
+    symbol: string;
+    name: string;
+    url: string;
+    type: string;
+    mode: string;
+    sector?: string;
+  }> = [];
 
   // Cryptos
   if (category === 'all' || category === 'crypto') {
@@ -307,7 +433,28 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     // Filtrer par sous-catégorie
     if (subcategory !== 'all') {
       const subcategories: Record<string, string[]> = {
-        top20: ['BTC', 'ETH', 'XRP', 'USDT', 'BNB', 'SOL', 'USDC', 'ADA', 'DOGE', 'TRX', 'TON', 'LINK', 'MATIC', 'DOT', 'SHIB', 'AVAX', 'LTC', 'BCH', 'UNI', 'ATOM'],
+        top20: [
+          'BTC',
+          'ETH',
+          'XRP',
+          'USDT',
+          'BNB',
+          'SOL',
+          'USDC',
+          'ADA',
+          'DOGE',
+          'TRX',
+          'TON',
+          'LINK',
+          'MATIC',
+          'DOT',
+          'SHIB',
+          'AVAX',
+          'LTC',
+          'BCH',
+          'UNI',
+          'ATOM',
+        ],
         defi: ['UNI', 'AAVE', 'MKR', 'COMP', 'SNX', 'CRV', 'SUSHI', 'YFI', 'INCH', 'LDO', 'RPL'],
         meme: ['DOGE', 'SHIB', 'PEPE', 'FLOKI', 'BONK'],
         stablecoins: ['USDT', 'USDC', 'DAI', 'BUSD', 'TUSD', 'FRAX'],
@@ -321,19 +468,22 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     // Recherche
     if (search) {
       const searchLower = search.toLowerCase();
-      cryptos = cryptos.filter(([symbol, info]) =>
-        symbol.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower)
+      cryptos = cryptos.filter(
+        ([symbol, info]) =>
+          symbol.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...cryptos.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.logo,
-      type: 'crypto',
-      mode,
-    })));
+    results.push(
+      ...cryptos.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.logo,
+        type: 'crypto',
+        mode,
+      }))
+    );
   }
 
   // Entreprises
@@ -361,20 +511,23 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     // Recherche
     if (search) {
       const searchLower = search.toLowerCase();
-      companies = companies.filter(([symbol, info]) =>
-        symbol.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower)
+      companies = companies.filter(
+        ([symbol, info]) =>
+          symbol.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...companies.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.logo,
-      type: 'company',
-      mode,
-      sector: info.sector,
-    })));
+    results.push(
+      ...companies.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.logo,
+        type: 'company',
+        mode,
+        sector: info.sector,
+      }))
+    );
   }
 
   // Services
@@ -402,19 +555,21 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     // Recherche
     if (search) {
       const searchLower = search.toLowerCase();
-      services = services.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower)
+      services = services.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) || info.name.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...services.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.logo,
-      type: info.category.toLowerCase(),
-      mode,
-    })));
+    results.push(
+      ...services.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.logo,
+        type: info.category.toLowerCase(),
+        mode,
+      }))
+    );
   }
 
   // === NOUVELLES CATÉGORIES ===
@@ -440,19 +595,21 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     // Recherche
     if (search) {
       const searchLower = search.toLowerCase();
-      pokemons = pokemons.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower)
+      pokemons = pokemons.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) || info.name.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...pokemons.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.logo,
-      type: 'pokemon',
-      mode,
-    })));
+    results.push(
+      ...pokemons.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.logo,
+        type: 'pokemon',
+        mode,
+      }))
+    );
   }
 
   // Anime (NOUVEAU)
@@ -476,19 +633,21 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     // Recherche
     if (search) {
       const searchLower = search.toLowerCase();
-      animes = animes.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower)
+      animes = animes.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) || info.name.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...animes.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.logo,
-      type: 'anime',
-      mode,
-    })));
+    results.push(
+      ...animes.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.logo,
+        type: 'anime',
+        mode,
+      }))
+    );
   }
 
   // Steam (NOUVEAU)
@@ -514,19 +673,21 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     // Recherche
     if (search) {
       const searchLower = search.toLowerCase();
-      steamItems = steamItems.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower)
+      steamItems = steamItems.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) || info.name.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...steamItems.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.logo,
-      type: 'steam',
-      mode,
-    })));
+    results.push(
+      ...steamItems.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.logo,
+        type: 'steam',
+        mode,
+      }))
+    );
   }
 
   // DevOps (NOUVEAU)
@@ -552,19 +713,21 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     // Recherche
     if (search) {
       const searchLower = search.toLowerCase();
-      devopsItems = devopsItems.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower)
+      devopsItems = devopsItems.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) || info.name.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...devopsItems.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.logo,
-      type: 'devops',
-      mode,
-    })));
+    results.push(
+      ...devopsItems.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.logo,
+        type: 'devops',
+        mode,
+      }))
+    );
   }
 
   // ESport (NOUVEAU)
@@ -589,19 +752,21 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     // Recherche
     if (search) {
       const searchLower = search.toLowerCase();
-      esportItems = esportItems.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower)
+      esportItems = esportItems.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) || info.name.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...esportItems.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.logo,
-      type: 'esport',
-      mode,
-    })));
+    results.push(
+      ...esportItems.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.logo,
+        type: 'esport',
+        mode,
+      }))
+    );
   }
 
   // Video Games (NOUVEAU)
@@ -611,19 +776,21 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     // Recherche
     if (search) {
       const searchLower = search.toLowerCase();
-      games = games.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower)
+      games = games.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) || info.name.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...games.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.logo,
-      type: 'videogame',
-      mode,
-    })));
+    results.push(
+      ...games.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.logo,
+        type: 'videogame',
+        mode,
+      }))
+    );
   }
 
   // Party/Célébrations (NOUVEAU)
@@ -633,19 +800,21 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     // Recherche
     if (search) {
       const searchLower = search.toLowerCase();
-      parties = parties.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower)
+      parties = parties.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) || info.name.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...parties.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.logo,
-      type: 'party',
-      mode,
-    })));
+    results.push(
+      ...parties.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.logo,
+        type: 'party',
+        mode,
+      }))
+    );
   }
 
   // SimpleIcons (NOUVEAU)
@@ -655,19 +824,21 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     // Recherche
     if (search) {
       const searchLower = search.toLowerCase();
-      icons = icons.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower)
+      icons = icons.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) || info.name.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...icons.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.logo,
-      type: 'simpleicons',
-      mode,
-    })));
+    results.push(
+      ...icons.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.logo,
+        type: 'simpleicons',
+        mode,
+      }))
+    );
   }
 
   // Thèmes (NOUVEAU)
@@ -677,19 +848,21 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     // Recherche
     if (search) {
       const searchLower = search.toLowerCase();
-      themes = themes.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower)
+      themes = themes.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) || info.name.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...themes.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.logo,
-      type: 'theme',
-      mode,
-    })));
+    results.push(
+      ...themes.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.logo,
+        type: 'theme',
+        mode,
+      }))
+    );
   }
 
   // === VRAIES IMAGES UNSPLASH ===
@@ -700,21 +873,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     // Recherche
     if (search) {
       const searchLower = search.toLowerCase();
-      animeImages = animeImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.anime?.toLowerCase().includes(searchLower)
+      animeImages = animeImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.anime?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...animeImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'anime_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...animeImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'anime_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Cyberpunk Images - Cities, Characters, Abstract
@@ -724,21 +900,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     // Recherche
     if (search) {
       const searchLower = search.toLowerCase();
-      cyberpunkImages = cyberpunkImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      cyberpunkImages = cyberpunkImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...cyberpunkImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'cyberpunk_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...cyberpunkImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'cyberpunk_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // DevOps Images - Infrastructure, Cloud, Coding
@@ -748,21 +927,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     // Recherche
     if (search) {
       const searchLower = search.toLowerCase();
-      devopsImages = devopsImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      devopsImages = devopsImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...devopsImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'devops_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...devopsImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'devops_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Nature Images - Landscapes
@@ -772,20 +954,22 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     // Recherche
     if (search) {
       const searchLower = search.toLowerCase();
-      natureImages = natureImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower)
+      natureImages = natureImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) || info.name.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...natureImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'nature_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...natureImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'nature_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // ESport Images - Arena, Setup, Gaming
@@ -795,21 +979,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     // Recherche
     if (search) {
       const searchLower = search.toLowerCase();
-      esportImages = esportImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      esportImages = esportImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...esportImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'esport_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...esportImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'esport_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // === NOUVELLES COLLECTIONS UNSPLASH ===
@@ -820,21 +1007,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      abstractImages = abstractImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      abstractImages = abstractImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...abstractImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'abstract_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...abstractImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'abstract_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Animals Images - Wildlife, Pets, Nature
@@ -843,21 +1033,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      animalsImages = animalsImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      animalsImages = animalsImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...animalsImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'animal_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...animalsImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'animal_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Architecture Images - Buildings, Cities, Structures
@@ -866,21 +1059,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      architectureImages = architectureImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      architectureImages = architectureImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...architectureImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'architecture_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...architectureImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'architecture_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Art Images - Paintings, Sculptures, Creative
@@ -889,21 +1085,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      artImages = artImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      artImages = artImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...artImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'art_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...artImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'art_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Business Images - Office, Meeting, Startup
@@ -912,21 +1111,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      businessImages = businessImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      businessImages = businessImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...businessImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'business_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...businessImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'business_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Fashion Images - Style, Clothing, Trends
@@ -935,21 +1137,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      fashionImages = fashionImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      fashionImages = fashionImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...fashionImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'fashion_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...fashionImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'fashion_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Food Images - Cuisine, Dishes, Drinks
@@ -958,21 +1163,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      foodImages = foodImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      foodImages = foodImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...foodImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'food_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...foodImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'food_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Neon Images - Lights, Signs, Night City
@@ -981,21 +1189,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      neonImages = neonImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      neonImages = neonImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...neonImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'neon_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...neonImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'neon_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Night Images - Dark, Evening, Moon
@@ -1004,21 +1215,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      nightImages = nightImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      nightImages = nightImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...nightImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'night_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...nightImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'night_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // People Images - Portrait, Lifestyle, Culture
@@ -1027,21 +1241,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      peopleImages = peopleImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      peopleImages = peopleImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...peopleImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'people_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...peopleImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'people_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Space Images - Universe, Planets, Cosmos
@@ -1050,21 +1267,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      spaceImages = spaceImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      spaceImages = spaceImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...spaceImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'space_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...spaceImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'space_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Sports Images - Competition, Action, Fitness
@@ -1073,21 +1293,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      sportsImages = sportsImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      sportsImages = sportsImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...sportsImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'sport_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...sportsImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'sport_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Technology Images - Innovation, Digital, Modern
@@ -1096,21 +1319,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      techImages = techImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      techImages = techImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...techImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'technology_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...techImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'technology_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Travel Images - Adventure, Places, Culture
@@ -1119,21 +1345,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      travelImages = travelImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      travelImages = travelImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...travelImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'travel_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...travelImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'travel_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Vintage Images - Retro, Classic, Nostalgia
@@ -1142,21 +1371,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      vintageImages = vintageImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      vintageImages = vintageImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...vintageImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'vintage_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...vintageImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'vintage_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Wallpaper Images - Desktop, Mobile, Background
@@ -1165,21 +1397,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      wallpaperImages = wallpaperImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      wallpaperImages = wallpaperImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...wallpaperImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'wallpaper_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...wallpaperImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'wallpaper_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // === NOUVELLES COLLECTIONS 2024 ===
@@ -1190,21 +1425,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      techAiImages = techAiImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      techAiImages = techAiImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...techAiImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'tech_ai_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...techAiImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'tech_ai_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Development Images - JavaScript, Python, Code, Programming
@@ -1213,21 +1451,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      devImages = devImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      devImages = devImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...devImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'development_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...devImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'development_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Science Images - Math, Physics, Biology, Neuroscience, Archaeology
@@ -1236,21 +1477,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      scienceImages = scienceImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      scienceImages = scienceImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...scienceImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'science_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...scienceImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'science_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Finance Images - Stock Market, Financial Report, Calendar
@@ -1259,21 +1503,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      financeImages = financeImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      financeImages = financeImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...financeImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'finance_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...financeImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'finance_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Gaming Images - GTA 5, Minecraft, Video Games
@@ -1282,21 +1529,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      gamingImages = gamingImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      gamingImages = gamingImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...gamingImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'gaming_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...gamingImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'gaming_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Lifestyle Images - Party, Humor, Coffee, Bretzel, etc.
@@ -1305,21 +1555,24 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
 
     if (search) {
       const searchLower = search.toLowerCase();
-      lifestyleImages = lifestyleImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower) ||
-        info.category?.toLowerCase().includes(searchLower)
+      lifestyleImages = lifestyleImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) ||
+          info.name.toLowerCase().includes(searchLower) ||
+          info.category?.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...lifestyleImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'lifestyle_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...lifestyleImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'lifestyle_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   // Real Images - All Unsplash images combined
@@ -1329,26 +1582,40 @@ function getAllImages(category: string = 'all', sector: string = 'all', subcateg
     // Recherche
     if (search) {
       const searchLower = search.toLowerCase();
-      realImages = realImages.filter(([key, info]) =>
-        key.toLowerCase().includes(searchLower) ||
-        info.name.toLowerCase().includes(searchLower)
+      realImages = realImages.filter(
+        ([key, info]) =>
+          key.toLowerCase().includes(searchLower) || info.name.toLowerCase().includes(searchLower)
       );
     }
 
-    results.push(...realImages.map(([symbol, info]) => ({
-      symbol,
-      name: info.name,
-      url: info.image,
-      type: 'real_image',
-      mode: 'photo',
-      source: 'Unsplash',
-    })));
+    results.push(
+      ...realImages.map(([symbol, info]) => ({
+        symbol,
+        name: info.name,
+        url: info.image,
+        type: 'real_image',
+        mode: 'photo',
+        source: 'Unsplash',
+      }))
+    );
   }
 
   return results.slice(0, limit);
 }
 
-function formatResults(results: Array<{ symbol: string; name: string; url: string; type: string; mode: string; sector?: string }>, format: string, singleSymbol: string | null, imageType: 'logo' | 'photo' | 'gif' = 'logo'): string {
+function formatResults(
+  results: Array<{
+    symbol: string;
+    name: string;
+    url: string;
+    type: string;
+    mode: string;
+    sector?: string;
+  }>,
+  format: string,
+  singleSymbol: string | null,
+  imageType: 'logo' | 'photo' | 'gif' = 'logo'
+): string {
   // Si un seul symbole demandé et trouvé, retourner uniquement l'URL
   if (singleSymbol && results.length === 1) {
     return results[0].url;
@@ -1439,7 +1706,7 @@ export function registerListImagesTools(server: FastMCP): void {
     • list_images({search: "bitcoin"}) → Recherche par nom
     • list_images({category: "cyberpunk", search: "neon"}) → Filtre les résultats`,
     parameters: ListImagesSchema,
-    execute: async (args) => {
+    execute: async args => {
       try {
         // Récupérer les paramètres
         let mode = args.mode || 'auto';
@@ -1462,15 +1729,36 @@ export function registerListImagesTools(server: FastMCP): void {
         // ============================================================================
         const THEMATIC_CATEGORIES = [
           // Collections existantes
-          'anime_images', 'cyberpunk', 'devops_images', 'nature',
-          'esport_images', 'real_images',
+          'anime_images',
+          'cyberpunk',
+          'devops_images',
+          'nature',
+          'esport_images',
+          'real_images',
           // Nouvelles collections
-          'abstract', 'animals', 'architecture', 'art', 'business',
-          'fashion', 'food', 'neon', 'night', 'people', 'space',
-          'sports', 'technology', 'travel', 'vintage', 'wallpaper',
+          'abstract',
+          'animals',
+          'architecture',
+          'art',
+          'business',
+          'fashion',
+          'food',
+          'neon',
+          'night',
+          'people',
+          'space',
+          'sports',
+          'technology',
+          'travel',
+          'vintage',
+          'wallpaper',
           // NOUVELLES CATÉGORIES 2024
-          'tech_ai', 'development', 'science', 'finance_images',
-          'gaming', 'lifestyle'
+          'tech_ai',
+          'development',
+          'science',
+          'finance_images',
+          'gaming',
+          'lifestyle',
         ];
 
         // ============================================================================
@@ -1501,7 +1789,7 @@ export function registerListImagesTools(server: FastMCP): void {
             args.subcategory || 'all',
             args.search || '',
             limit,
-            'photo'  // Utilise les vraies images Unsplash
+            'photo' // Utilise les vraies images Unsplash
           );
 
           if (results.length === 0) {
@@ -1518,19 +1806,21 @@ export function registerListImagesTools(server: FastMCP): void {
         if (mode === 'logo') {
           // Si des symboles spécifiques sont demandés
           if (symbols.length > 0) {
-            const results = symbols.map(symbol => {
-              const result = getImageUrl(symbol, 'logo');
-              if (result) {
-                return {
-                  symbol: symbol.toUpperCase(),
-                  name: result.name,
-                  url: result.url,
-                  type: result.type,
-                  mode: 'logo',
-                };
-              }
-              return null;
-            }).filter(r => r !== null);
+            const results = symbols
+              .map(symbol => {
+                const result = getImageUrl(symbol, 'logo');
+                if (result) {
+                  return {
+                    symbol: symbol.toUpperCase(),
+                    name: result.name,
+                    url: result.url,
+                    type: result.type,
+                    mode: 'logo',
+                  };
+                }
+                return null;
+              })
+              .filter(r => r !== null);
 
             if (results.length === 0) {
               return `❌ Aucun logo trouvé pour: ${symbols.join(', ')}\n\n💡 Astuce: Utilisez mode: "photo" pour des images aléatoires ou mode: "real" pour des images thématiques.`;
@@ -1567,7 +1857,13 @@ export function registerListImagesTools(server: FastMCP): void {
             return `⚠️ ATTENTION: Vous utilisez mode: "photo" pour la catégorie "${catName}"\n\n💡 Les images seront ALEATOIRES (Picsum), pas thématiques !\n\n✅ Solution: Utilisez mode: "auto" ou mode: "real" pour les vraies images Unsplash thématiques.`;
           }
 
-          const results: Array<{ symbol: string; name: string; url: string; type: string; mode: string }> = [];
+          const results: Array<{
+            symbol: string;
+            name: string;
+            url: string;
+            type: string;
+            mode: string;
+          }> = [];
           const seedBase = Date.now(); // Seed pour variation
 
           // Si des symboles spécifiques sont demandés
@@ -1636,7 +1932,13 @@ export function registerListImagesTools(server: FastMCP): void {
         // MODE GIF: Picsum avec blur (simulation d'effets animés)
         // ============================================================================
         if (mode === 'gif') {
-          const gifResults: Array<{ symbol: string; name: string; url: string; type: string; mode: string }> = [];
+          const gifResults: Array<{
+            symbol: string;
+            name: string;
+            url: string;
+            type: string;
+            mode: string;
+          }> = [];
           const seedBase = Date.now(); // Seed pour variation
 
           // Si des symboles spécifiques sont demandés
@@ -1690,7 +1992,6 @@ export function registerListImagesTools(server: FastMCP): void {
 
         // Mode inconnu
         return `❌ Mode inconnu: ${mode}. Utilisez 'auto', 'logo', 'photo', 'real' ou 'gif'.`;
-
       } catch (error: any) {
         return `❌ Erreur: ${error.message}`;
       }

@@ -14,7 +14,6 @@ import { ensureDiscordConnection } from './common.js';
 // ============================================================================
 
 export function registerRoleTools(server: FastMCP) {
-
   // ========================================================================
   // 1. LISTE DES RÔLES
   // ========================================================================
@@ -25,7 +24,7 @@ export function registerRoleTools(server: FastMCP) {
     parameters: z.object({
       includePermissions: z.boolean().optional().default(false).describe('Inclure les permissions'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();
@@ -40,10 +39,14 @@ export function registerRoleTools(server: FastMCP) {
           .sort((a, b) => b.position - a.position)
           .filter(r => r.name !== '@everyone');
 
-        const list = roles.map(r => {
-          const permissions = args.includePermissions ? `\n   Permissions: ${r.permissions.toArray().join(', ')}` : '';
-          return `• **${r.name}** (${r.id})${r.color ? ` 🎨 ${r.hexColor}` : ''}${permissions}`;
-        }).join('\n');
+        const list = roles
+          .map(r => {
+            const permissions = args.includePermissions
+              ? `\n   Permissions: ${r.permissions.toArray().join(', ')}`
+              : '';
+            return `• **${r.name}** (${r.id})${r.color ? ` 🎨 ${r.hexColor}` : ''}${permissions}`;
+          })
+          .join('\n');
 
         return `📋 **${roles.length} rôles**:\n\n${list}`;
       } catch (error: any) {
@@ -67,7 +70,7 @@ export function registerRoleTools(server: FastMCP) {
       mentionable: z.boolean().optional().default(false).describe('Mentionnable'),
       permissions: z.array(z.string()).optional().describe('Liste des permissions'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();
@@ -116,7 +119,7 @@ export function registerRoleTools(server: FastMCP) {
       hoist: z.boolean().optional().describe('Afficher séparément'),
       mentionable: z.boolean().optional().describe('Mentionnable'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();
@@ -158,7 +161,7 @@ export function registerRoleTools(server: FastMCP) {
     parameters: z.object({
       roleId: z.string().describe('ID du rôle à supprimer'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();
@@ -194,13 +197,13 @@ export function registerRoleTools(server: FastMCP) {
 
   server.addTool({
     name: 'set_role_permissions',
-    description: 'Définit les permissions d\'un rôle',
+    description: "Définit les permissions d'un rôle",
     parameters: z.object({
       roleId: z.string().describe('ID du rôle'),
       permissions: z.array(z.string()).describe('Liste des permissions à accorder'),
       reset: z.boolean().optional().default(false).describe('Reset les permissions existantes'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();

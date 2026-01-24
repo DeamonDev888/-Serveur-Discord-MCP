@@ -42,8 +42,10 @@ export class PersistenceManager<T> {
         return JSON.parse(data) as T;
       }
     } catch {
-      Logger.error(`⚠️ Corruption détectée dans ${this.filePath}, tentative de récupération via backup...`);
-      
+      Logger.error(
+        `⚠️ Corruption détectée dans ${this.filePath}, tentative de récupération via backup...`
+      );
+
       try {
         if (await this.exists(this.backupPath)) {
           const data = await fs.readFile(this.backupPath, 'utf-8');
@@ -78,7 +80,7 @@ export class PersistenceManager<T> {
 
       // 3. Renommer le fichier temporaire (opération atomique sur la plupart des OS)
       await fs.rename(this.tempPath, this.filePath);
-      
+
       Logger.debug(`💾 Sauvegarde atomique réussie: ${this.filePath}`);
     } catch (error) {
       Logger.error(`❌ Échec de la sauvegarde atomique dans ${this.filePath}:`, error);

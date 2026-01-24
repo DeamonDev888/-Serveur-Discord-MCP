@@ -51,8 +51,6 @@ export const SUPPORTED_LANGUAGES: { [key: string]: string } = {
   properties: 'properties',
 };
 
-
-
 // Créer un ou plusieurs messages avec code (division automatique si trop long)
 export const createCodePreviewMessages = (code: string, language: string): string[] => {
   // Normaliser le langage
@@ -95,7 +93,10 @@ Lignes: ${lineCount}
   Logger.info('[CODE_PREVIEW] DEBUG - codeBlockStart:', JSON.stringify(codeBlockStart));
   Logger.info('[CODE_PREVIEW] DEBUG - codeBlockEnd:', JSON.stringify(codeBlockEnd));
   Logger.info('[CODE_PREVIEW] DEBUG - totalWithHeader:', totalWithHeader);
-  Logger.info('[CODE_PREVIEW] DEBUG - totalWithHeader <= maxTotalLength?', totalWithHeader <= maxTotalLength);
+  Logger.info(
+    '[CODE_PREVIEW] DEBUG - totalWithHeader <= maxTotalLength?',
+    totalWithHeader <= maxTotalLength
+  );
   // DEBUG: Afficher le message complet qui sera envoyé
   const fullMessage = `${baseHeader}${codeBlockStart}${formattedContent}${codeBlockEnd}`;
   Logger.info('[CODE_PREVIEW] DEBUG - Message complet:', JSON.stringify(fullMessage));
@@ -114,13 +115,14 @@ Lignes: ${lineCount}
 
   while (currentLineIndex < totalLines) {
     // Construire l'en-tête avec le numéro de partie
-    const partHeader = partNumber === 1
-      ? `📝 **Code Preview**
+    const partHeader =
+      partNumber === 1
+        ? `📝 **Code Preview**
 Langage: ${displayLang}
 Lignes: ${lineCount}
 
 `
-      : `📝 **Code Preview** (Suite ${partNumber})
+        : `📝 **Code Preview** (Suite ${partNumber})
 Langage: ${displayLang}
 Lignes: ${lineCount}
 
@@ -132,7 +134,8 @@ Lignes: ${lineCount}
     const BACKTICK = '\x60'; // Code hex U+0060 pour le backtick
     const partCodeBlockStart = BACKTICK + BACKTICK + BACKTICK + langTag + '\n';
     const partCodeBlockEnd = '\n' + BACKTICK + BACKTICK + BACKTICK;
-    const availableLength = maxTotalLength - partHeader.length - partCodeBlockStart.length - partCodeBlockEnd.length;
+    const availableLength =
+      maxTotalLength - partHeader.length - partCodeBlockStart.length - partCodeBlockEnd.length;
 
     // Construire un chunk de lignes qui respecte la limite de longueur
     const chunkLines: string[] = [];
@@ -217,7 +220,7 @@ export function registerCodePreviewTools(server: FastMCP) {
       code: z.string().describe('Code à afficher avec coloration syntaxique'),
       language: z.string().describe('Langage de programmation (js, ts, py, bash, etc.)'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         Logger.error(
           `🔍 [code_preview] Langage: ${args.language}, Taille: ${args.code.length} chars`

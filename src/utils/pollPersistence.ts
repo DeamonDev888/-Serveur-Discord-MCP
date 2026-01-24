@@ -35,7 +35,7 @@ const POLL_PERSISTENCE = new PersistenceManager<PollResult[]>(POLLS_FILE, 1000);
 // Charger tous les sondages depuis le fichier
 export async function loadPolls(): Promise<Map<string, PollResult>> {
   const pollsArray = await POLL_PERSISTENCE.load([]);
-  
+
   const pollsMap = new Map<string, PollResult>();
   pollsArray.forEach(poll => {
     poll.endTime = new Date(poll.endTime);
@@ -56,7 +56,7 @@ export async function savePolls(polls: Map<string, PollResult>): Promise<void> {
   // Convertir les dates en strings pour la sérialisation JSON
   const pollsToSave = pollsArray.map(poll => ({
     ...poll,
-    endTime: (poll.endTime instanceof Date) ? poll.endTime.toISOString() : poll.endTime,
+    endTime: poll.endTime instanceof Date ? poll.endTime.toISOString() : poll.endTime,
   }));
 
   await POLL_PERSISTENCE.saveImmediate(pollsToSave as any);

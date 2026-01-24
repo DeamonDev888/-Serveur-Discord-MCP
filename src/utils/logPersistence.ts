@@ -34,7 +34,7 @@ const LOG_PERSISTENCE = new PersistenceManager<LogEntry[]>(LOGS_FILE, 5000); // 
 // Charger tous les logs depuis le fichier
 export async function loadLogs(): Promise<Map<string, LogEntry>> {
   const logsArray = await LOG_PERSISTENCE.load([]);
-  
+
   const logsMap = new Map<string, LogEntry>();
   logsArray.forEach(log => {
     log.timestamp = new Date(log.timestamp);
@@ -52,7 +52,7 @@ export async function saveLogs(logs: Map<string, LogEntry>): Promise<void> {
   // Convertir les dates en strings pour la sérialisation JSON
   const logsToSave = logsArray.map(log => ({
     ...log,
-    timestamp: (log.timestamp instanceof Date) ? log.timestamp.toISOString() : log.timestamp,
+    timestamp: log.timestamp instanceof Date ? log.timestamp.toISOString() : log.timestamp,
   }));
 
   // Pour les logs, on peut utiliser debounced pour ne pas ralentir le bot

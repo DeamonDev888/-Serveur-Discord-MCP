@@ -51,7 +51,7 @@ export async function saveCustomButtons(buttons: Map<string, CustomButton>): Pro
   // Convertir les dates en strings pour la sérialisation JSON
   const buttonsToSave = buttonsArray.map(button => ({
     ...button,
-    createdAt: (button.createdAt instanceof Date) ? button.createdAt.toISOString() : button.createdAt,
+    createdAt: button.createdAt instanceof Date ? button.createdAt.toISOString() : button.createdAt,
   }));
 
   await BUTTON_PERSISTENCE.saveImmediate(buttonsToSave as any);

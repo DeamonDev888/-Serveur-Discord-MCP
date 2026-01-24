@@ -6,23 +6,29 @@
 import { EmbedBuilder } from 'discord.js';
 
 // Map pour stocker les embeds auto-updatables
-export const autoUpdateEmbeds = new Map<string, {
-  messageId: string;
-  channelId: string;
-  embedData: any;
-  interval: number;
-  lastUpdate: number;
-  source?: string;
-  updateCount: number;
-}>();
+export const autoUpdateEmbeds = new Map<
+  string,
+  {
+    messageId: string;
+    channelId: string;
+    embedData: any;
+    interval: number;
+    lastUpdate: number;
+    source?: string;
+    updateCount: number;
+  }
+>();
 
 // Map pour stocker les analytics des embeds
-export const embedAnalytics = new Map<string, {
-  views: number;
-  clicks: number;
-  lastInteraction: number;
-  reactions: Map<string, number>;
-}>();
+export const embedAnalytics = new Map<
+  string,
+  {
+    views: number;
+    clicks: number;
+    lastInteraction: number;
+    reactions: Map<string, number>;
+  }
+>();
 
 // ============================================================================
 // SYSTÈME D'AUTO-UPDATE
@@ -62,7 +68,10 @@ function parseTable(tableText: string): string {
   if (lines.length < 2) return tableText;
 
   const rows = lines.map(line =>
-    line.split('|').map(cell => cell.trim()).filter(cell => cell !== '')
+    line
+      .split('|')
+      .map(cell => cell.trim())
+      .filter(cell => cell !== '')
   );
 
   if (rows.length < 2) return tableText;
@@ -117,15 +126,19 @@ export async function updateEmbed(embedId: string, getClient: () => any): Promis
       updatedEmbedData.title = replaceVariables(updatedEmbedData.title, updatedEmbedData.variables);
     }
     if (updatedEmbedData.description) {
-      updatedEmbedData.description = replaceVariables(updatedEmbedData.description, updatedEmbedData.variables);
+      updatedEmbedData.description = replaceVariables(
+        updatedEmbedData.description,
+        updatedEmbedData.variables
+      );
     }
     if (updatedEmbedData.fields) {
       updatedEmbedData.fields = updatedEmbedData.fields.map((field: any) => ({
         ...field,
         name: replaceVariables(field.name, updatedEmbedData.variables),
-        value: updatedEmbedData.autoTable && field.value.includes('|')
-          ? parseTable(field.value)
-          : replaceVariables(field.value, updatedEmbedData.variables),
+        value:
+          updatedEmbedData.autoTable && field.value.includes('|')
+            ? parseTable(field.value)
+            : replaceVariables(field.value, updatedEmbedData.variables),
       }));
     }
 
@@ -137,7 +150,10 @@ export async function updateEmbed(embedId: string, getClient: () => any): Promis
     if (updatedEmbedData.color) {
       if (typeof updatedEmbedData.color === 'number') {
         embed.setColor(updatedEmbedData.color);
-      } else if (typeof updatedEmbedData.color === 'string' && updatedEmbedData.color.startsWith('#')) {
+      } else if (
+        typeof updatedEmbedData.color === 'string' &&
+        updatedEmbedData.color.startsWith('#')
+      ) {
         embed.setColor(updatedEmbedData.color as any);
       }
     }
@@ -184,7 +200,6 @@ export async function updateEmbed(embedId: string, getClient: () => any): Promis
     embedInfo.updateCount++;
 
     Logger.info(`✅ [Auto-Update] Embed ${embedId} mis à jour (${embedInfo.updateCount} fois)`);
-
   } catch (error) {
     Logger.error(`❌ [Auto-Update] Erreur pour ${embedId}:`, error);
   }
@@ -234,12 +249,14 @@ export function trackEmbedClick(embedId: string, buttonId?: string): void {
 }
 
 export function getEmbedAnalytics(embedId: string): any {
-  return embedAnalytics.get(embedId) || {
-    views: 0,
-    clicks: 0,
-    lastInteraction: 0,
-    reactions: {},
-  };
+  return (
+    embedAnalytics.get(embedId) || {
+      views: 0,
+      clicks: 0,
+      lastInteraction: 0,
+      reactions: {},
+    }
+  );
 }
 
 export function generateAnalyticsReport(embedId: string): string {

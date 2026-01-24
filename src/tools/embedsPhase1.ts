@@ -63,13 +63,12 @@ export async function processImageUrlWithFallback(
       [], // Pas d'alternatives pour l'instant
       {
         category: detectCategoryFromEmbed(embedData),
-        theme: embedData.theme
+        theme: embedData.theme,
       }
     );
 
     Logger.info(`[Fallback] ${position}: ${url} → ${fallback}`);
     return fallback;
-
   } catch (error: any) {
     Logger.error(`[Fallback] Erreur pour ${position}:`, error.message);
 
@@ -87,7 +86,7 @@ function getEmergencyFallback(position: string): string {
     authorIcon: '👤',
     thumbnail: '🖼️',
     image: '🎨',
-    footerIcon: '📌'
+    footerIcon: '📌',
   };
 
   return fallbacks[position] || '✨';
@@ -116,8 +115,10 @@ function detectCategoryFromEmbed(embedData: any): string {
 /**
  * Améliore un embed avec tous les systèmes Phase 1
  */
-export async function enhanceEmbed(embedData: any): Promise<{ enhanced: any; result: EnhancementResult }> {
-  Logger.info('[Enhancer] Amélioration de l\'embed avec Phase 1...');
+export async function enhanceEmbed(
+  embedData: any
+): Promise<{ enhanced: any; result: EnhancementResult }> {
+  Logger.info("[Enhancer] Amélioration de l'embed avec Phase 1...");
 
   const { enhanced, result } = await embedEnhancer.enhance(embedData);
 
@@ -160,7 +161,7 @@ export function optimizeImageUrl(url: string, position: string): string {
     width: config.recommendedWidth,
     height: config.recommendedHeight,
     format: 'webp',
-    quality: 80
+    quality: 80,
   });
 }
 
@@ -182,7 +183,7 @@ export async function validateAndFixEmbed(embedData: any): Promise<{
         isValid: false,
         errors: preValidation.errors,
         fixed: false,
-        embed: embedData
+        embed: embedData,
       };
     }
 
@@ -196,16 +197,15 @@ export async function validateAndFixEmbed(embedData: any): Promise<{
       isValid: true,
       errors: [],
       fixed: result.isEnhanced,
-      embed: finalEmbed
+      embed: finalEmbed,
     };
-
   } catch (error: any) {
     Logger.error('[ValidateAndFix] Erreur:', error.message);
     return {
       isValid: false,
       errors: [`Erreur: ${error.message}`],
       fixed: false,
-      embed: embedData
+      embed: embedData,
     };
   }
 }
@@ -228,20 +228,22 @@ export async function preloadEmbedImages(embedData: any): Promise<void> {
 export async function generateOptimizationReport(embedData: any): Promise<string> {
   const report: string[] = [];
 
-  report.push('📊 **RAPPORT D\'OPTIMISATION EMBED**\n');
+  report.push("📊 **RAPPORT D'OPTIMISATION EMBED**\n");
 
   // Statistiques des systèmes Phase 1
   const stats = embedEnhancer.getStats();
 
   report.push('🔧 **Systèmes Phase 1:**');
-  report.push(`   • Cache: ${stats.cache.entries} images en cache (${(stats.cache.totalSize / 1024).toFixed(2)}KB)`);
+  report.push(
+    `   • Cache: ${stats.cache.entries} images en cache (${(stats.cache.totalSize / 1024).toFixed(2)}KB)`
+  );
   report.push(`   • Validation: ${stats.validator.cachedEntries} URLs validées`);
   report.push(`   • Optimisation: ${stats.optimizer.size} optimisations en cache`);
   report.push('');
 
   // URLs d'images
   const imagePositions = ['authorIcon', 'thumbnail', 'image', 'footerIcon'];
-  report.push('🖼️ **Images d\'embed:**\n');
+  report.push("🖼️ **Images d'embed:**\n");
 
   for (const position of imagePositions) {
     const url = embedData[position];

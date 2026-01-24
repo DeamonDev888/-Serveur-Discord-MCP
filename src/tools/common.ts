@@ -34,13 +34,9 @@ export interface BotConfig {
 // Importer botConfig depuis config.ts qui charge maintenant le .env
 export { default as botConfig } from '../config.js';
 
-
-
 // ============================================================================
 // SYSTÈME D'AUTO-UPDATE POUR EMBEDS 🚀
 // ============================================================================
-
-
 
 // ============================================================================
 // CONNEXION DISCORD
@@ -77,6 +73,4 @@ export function formatDuration(seconds: number): string {
 
 // Imports des données et utilitaires
 import { CRYPTO_LOGOS, COMPANY_LOGOS, MISC_LOGOS } from '../data/logos.js';
-import { VISUAL_SEPARATORS, VISUAL_BADGES } from '../utils/gameData.js';
-
-export { CRYPTO_LOGOS, COMPANY_LOGOS, MISC_LOGOS, VISUAL_SEPARATORS, VISUAL_BADGES };
+export { CRYPTO_LOGOS, COMPANY_LOGOS, MISC_LOGOS };

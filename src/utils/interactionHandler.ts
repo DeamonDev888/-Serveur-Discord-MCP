@@ -7,7 +7,7 @@ import {
   getPersistentButton,
   getPersistentMenu,
   type ButtonAction,
-  type MenuAction
+  type MenuAction,
 } from './distPersistence.js';
 import Logger from './logger.js';
 import { introManager } from './introManager.js';
@@ -18,9 +18,15 @@ import { introManager } from './introManager.js';
 export class InteractionHandler {
   private polls: Map<string, any> = new Map();
   private buttons: Map<string, any> = new Map();
-  private persistentButtons: Map<string, { action: ButtonAction; label: string; channelId: string }> = new Map();
+  private persistentButtons: Map<
+    string,
+    { action: ButtonAction; label: string; channelId: string }
+  > = new Map();
   private menus: Map<string, any> = new Map();
-  private persistentMenus: Map<string, { action: MenuAction; placeholder?: string; channelId: string }> = new Map();
+  private persistentMenus: Map<
+    string,
+    { action: MenuAction; placeholder?: string; channelId: string }
+  > = new Map();
 
   constructor() {
     this.initialize();
@@ -272,7 +278,7 @@ export class InteractionHandler {
         customId,
         user,
         channelId,
-        messageId
+        messageId,
       });
       return true;
     }
@@ -280,22 +286,22 @@ export class InteractionHandler {
     // Gestion des sondages (poll_ID_option_INDEX)
     if (customId.includes('_option_') || customId.startsWith('poll_')) {
       const parts = customId.split('_option_');
-      
+
       // Cas standard: poll_ID_option_INDEX
       if (parts.length === 2) {
         const pollId = parts[0];
         const action = parts[1];
-        
+
         await this.handlePollInteraction({
           pollId,
           action,
           user,
           channelId,
-          messageId
+          messageId,
         });
         return true;
       }
-      
+
       // Cas spéciaux (end, results) si implémentés plus tard
       // Exemple: poll_ID_end
       // On vérifie juste le préfixe poll_ pour être sûr
@@ -303,18 +309,19 @@ export class InteractionHandler {
         // Tentative d'extraction d'action simple
         // Format: poll_ID_ACTION
         const lastUnderscore = customId.lastIndexOf('_');
-        if (lastUnderscore > 4) { // poll_ est au début
-            const pollId = customId.substring(0, lastUnderscore);
-            const action = customId.substring(lastUnderscore + 1);
-            
-            await this.handlePollInteraction({
-                pollId,
-                action,
-                user,
-                channelId,
-                messageId
-            });
-            return true;
+        if (lastUnderscore > 4) {
+          // poll_ est au début
+          const pollId = customId.substring(0, lastUnderscore);
+          const action = customId.substring(lastUnderscore + 1);
+
+          await this.handlePollInteraction({
+            pollId,
+            action,
+            user,
+            channelId,
+            messageId,
+          });
+          return true;
         }
       }
     }
@@ -355,14 +362,14 @@ export class InteractionHandler {
 
     // Récupérer la configuration du bouton standard
     let button = this.buttons.get(customId);
-    
+
     // Fallback: Tentative de rechargement si le bouton n'est pas trouvé
     if (!button) {
       Logger.info(`⚠️ Bouton ${customId} non trouvé en mémoire, tentative de rechargement...`);
       await this.refreshButtons();
       button = this.buttons.get(customId);
     }
-    
+
     if (!button) {
       Logger.warn(`❌ Bouton non trouvé dans la persistance après reload: ${customId}`);
       Logger.debug(`Boutons disponibles: ${Array.from(this.buttons.keys()).join(', ')}`);
@@ -409,7 +416,8 @@ export class InteractionHandler {
 
       // 🔥 NE PAS envoyer button_success pour les boutons embedv2_ avec action custom
       // car ils sont gérés directement par discord-bridge.ts pour éviter les doublons
-      const isEmbedV2CustomButton = customId.startsWith('embedv2_') && button.action.type === 'custom';
+      const isEmbedV2CustomButton =
+        customId.startsWith('embedv2_') && button.action.type === 'custom';
 
       if (!isEmbedV2CustomButton) {
         // Envoyer une confirmation à Discord uniquement pour les autres boutons
@@ -426,7 +434,9 @@ export class InteractionHandler {
           },
         });
       } else {
-        Logger.debug(`🔄 [Handler] Bouton embedv2_ custom géré par discord-bridge - pas de button_success`);
+        Logger.debug(
+          `🔄 [Handler] Bouton embedv2_ custom géré par discord-bridge - pas de button_success`
+        );
       }
 
       return true;
@@ -737,13 +747,16 @@ export class InteractionHandler {
   /**
    * Exécuter l'action d'un menu persistant
    */
-  private async executePersistentMenuAction(action: MenuAction, context: {
-    user: { id: string; username: string };
-    values: string[];
-    channelId: string;
-    messageId: string;
-    customId: string;
-  }): Promise<void> {
+  private async executePersistentMenuAction(
+    action: MenuAction,
+    context: {
+      user: { id: string; username: string };
+      values: string[];
+      channelId: string;
+      messageId: string;
+      customId: string;
+    }
+  ): Promise<void> {
     const { user, values, channelId, messageId, customId } = context;
 
     Logger.info(`🔒 Exécution action menu persistant: ${action.type}`);
@@ -876,7 +889,7 @@ export class InteractionHandler {
         user,
         channelId,
         messageId,
-        values
+        values,
       });
       return true;
     }
@@ -1015,9 +1028,11 @@ export class InteractionHandler {
 
           values.forEach((value: string, index: number) => {
             if (embed.title) embed.title = embed.title.replace(`{selection${index + 1}}`, value);
-            if (embed.description) embed.description = embed.description.replace(`{selection${index + 1}}`, value);
+            if (embed.description)
+              embed.description = embed.description.replace(`{selection${index + 1}}`, value);
           });
-          if (embed.description) embed.description = embed.description.replace('{all}', values.join(', '));
+          if (embed.description)
+            embed.description = embed.description.replace('{all}', values.join(', '));
 
           this.sendToDiscord({
             action: 'send_embed',
@@ -1157,7 +1172,7 @@ export class InteractionHandler {
       // ⚠️ DÉSACTIVÉ pour éviter de polluer stdout dans le mode MCP
       // process.stdout.write(JSON.stringify(message) + '\n');
       */
-      
+
       Logger.debug(`📤 Commande INTERNE (désactivée sur stdout): ${data.action}`);
     } catch (error) {
       Logger.error('❌ Erreur envoi commande Discord:', error);

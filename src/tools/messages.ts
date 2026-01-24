@@ -21,7 +21,7 @@ export function registerMessageTools(server: FastMCP) {
       channelId: z.string().describe('ID du canal Discord'),
       content: z.string().describe('Contenu du message'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       // 🐛 DEBUG MODE ACTIVE
       // Note: Le Wrapper withRateLimit a été retiré temporairement pour isoler les causes de crash.
       // Les logs ci-dessous sont immédiats et critiques pour tracer l'exécution avant tout crash potentiel.
@@ -64,7 +64,7 @@ export function registerMessageTools(server: FastMCP) {
       limit: z.number().min(1).max(100).default(10).describe('Nombre de messages'),
       json: z.boolean().optional().default(false).describe('Retourner au format JSON'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const channel = await client.channels.fetch(args.channelId);
@@ -74,18 +74,20 @@ export function registerMessageTools(server: FastMCP) {
         }
 
         const messages = await channel.messages.fetch({ limit: args.limit });
-        
+
         if (args.json) {
-            const data = messages.map(m => ({
-                id: m.id,
-                author: m.author.username,
-                content: m.content,
-                embeds: m.embeds.length
-            }));
-            return JSON.stringify(data);
+          const data = messages.map(m => ({
+            id: m.id,
+            author: m.author.username,
+            content: m.content,
+            embeds: m.embeds.length,
+          }));
+          return JSON.stringify(data);
         }
 
-        const list = messages.map(m => `• ${m.author.username} (ID: ${m.id}): ${m.content}`).join('\n');
+        const list = messages
+          .map(m => `• ${m.author.username} (ID: ${m.id}): ${m.content}`)
+          .join('\n');
         return `📖 ${messages.size} messages:\n${list}`;
       } catch (error: any) {
         return `❌ Erreur: ${error.message}`;
@@ -102,7 +104,7 @@ export function registerMessageTools(server: FastMCP) {
       messageId: z.string().describe('ID du message à modifier'),
       newContent: z.string().describe('Nouveau contenu du message'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         Logger.error(`✏️ [edit_message] Message: ${args.messageId}`);
         const client = await ensureDiscordConnection();
@@ -132,7 +134,7 @@ export function registerMessageTools(server: FastMCP) {
       messageId: z.string().describe('ID du message à supprimer'),
       reason: z.string().optional().describe('Raison de la suppression'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         Logger.error(`🗑️ [delete_message] Message: ${args.messageId}`);
         const client = await ensureDiscordConnection();
@@ -162,7 +164,7 @@ export function registerMessageTools(server: FastMCP) {
       messageId: z.string().describe('ID du message'),
       emoji: z.string().describe('Emoji'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const channel = await client.channels.fetch(args.channelId);

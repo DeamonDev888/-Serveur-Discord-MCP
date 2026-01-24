@@ -780,4 +780,3 @@ process.on('SIGINT', () => {
 
 // Démarrage automatique
 Logger.info('🔗 Processus Discord prêt à recevoir les commandes');
-

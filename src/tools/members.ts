@@ -5,11 +5,7 @@
 
 import { z } from 'zod';
 import type { FastMCP } from 'fastmcp';
-import {
-  EmbedBuilder,
-  GuildMember,
-  User,
-} from 'discord.js';
+import { EmbedBuilder, GuildMember, User } from 'discord.js';
 import Logger from '../utils/logger.js';
 import { ensureDiscordConnection, formatDuration } from './common.js';
 
@@ -18,7 +14,6 @@ import { ensureDiscordConnection, formatDuration } from './common.js';
 // ============================================================================
 
 export function registerMemberTools(server: FastMCP) {
-
   // ========================================================================
   // 1. LISTE DES MEMBRES
   // ========================================================================
@@ -32,7 +27,7 @@ export function registerMemberTools(server: FastMCP) {
       sortBy: z.enum(['joined', 'name', 'id']).optional().default('joined').describe('Tri'),
       includeBots: z.boolean().optional().default(false).describe('Inclure les bots'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();
@@ -53,9 +48,10 @@ export function registerMemberTools(server: FastMCP) {
         // Recherche
         if (args.search) {
           const searchLower = args.search.toLowerCase();
-          members = members.filter(m =>
-            m.user.username.toLowerCase().includes(searchLower) ||
-            m.displayName.toLowerCase().includes(searchLower)
+          members = members.filter(
+            m =>
+              m.user.username.toLowerCase().includes(searchLower) ||
+              m.displayName.toLowerCase().includes(searchLower)
           );
         }
 
@@ -75,12 +71,15 @@ export function registerMemberTools(server: FastMCP) {
         // Limiter
         members = members.slice(0, args.limit);
 
-        const list = members.map(m => {
-          const botStatus = m.user.bot ? ' [🤖]' : '';
-          const status = m.presence?.status || 'offline';
-          const statusEmoji = { online: '🟢', idle: '🌙', dnd: '🔴', offline: '⚫' }[status] || '⚫';
-          return `${statusEmoji} **${m.displayName}**${botStatus} (${m.user.username})`;
-        }).join('\n');
+        const list = members
+          .map(m => {
+            const botStatus = m.user.bot ? ' [🤖]' : '';
+            const status = m.presence?.status || 'offline';
+            const statusEmoji =
+              { online: '🟢', idle: '🌙', dnd: '🔴', offline: '⚫' }[status] || '⚫';
+            return `${statusEmoji} **${m.displayName}**${botStatus} (${m.user.username})`;
+          })
+          .join('\n');
 
         return `📋 **${members.length} membres** (tri par ${args.sortBy}):\n\n${list}`;
       } catch (error: any) {
@@ -96,11 +95,11 @@ export function registerMemberTools(server: FastMCP) {
 
   server.addTool({
     name: 'get_user_info',
-    description: 'Obtient les informations détaillées d\'un utilisateur',
+    description: "Obtient les informations détaillées d'un utilisateur",
     parameters: z.object({
-      userId: z.string().describe('ID de l\'utilisateur'),
+      userId: z.string().describe("ID de l'utilisateur"),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();
@@ -110,7 +109,7 @@ export function registerMemberTools(server: FastMCP) {
         }
 
         const member = await guild.members.fetch(args.userId).catch(() => null);
-        const user = member?.user || await client.users.fetch(args.userId).catch(() => null);
+        const user = member?.user || (await client.users.fetch(args.userId).catch(() => null));
 
         if (!user) {
           return `❌ Utilisateur ${args.userId} introuvable`;
@@ -123,20 +122,40 @@ export function registerMemberTools(server: FastMCP) {
           .addFields(
             { name: '🆔 ID', value: user.id, inline: true },
             { name: '🤖 Bot', value: user.bot ? 'Oui' : 'Non', inline: true },
-            { name: '📅 Compte créé', value: `<t:${Math.floor(user.createdTimestamp() / 1000)}:R>`, inline: true },
+            {
+              name: '📅 Compte créé',
+              value: `<t:${Math.floor(user.createdTimestamp() / 1000)}:R>`,
+              inline: true,
+            }
           );
 
         if (member) {
           embed.addFields(
             { name: '🏷️ Pseudo serveur', value: member.displayName, inline: true },
-            { name: '📅 Rejoint', value: member.joinedAt ? `<t:${Math.floor(member.joinedAtTimestamp() / 1000)}:R>` : 'N/A', inline: true },
-            { name: '🎭 Rôles', value: member.roles.cache.size > 1 ? member.roles.cache.map(r => r.name).join(', ') : 'Aucun', inline: false },
+            {
+              name: '📅 Rejoint',
+              value: member.joinedAt
+                ? `<t:${Math.floor(member.joinedAtTimestamp() / 1000)}:R>`
+                : 'N/A',
+              inline: true,
+            },
+            {
+              name: '🎭 Rôles',
+              value:
+                member.roles.cache.size > 1
+                  ? member.roles.cache.map(r => r.name).join(', ')
+                  : 'Aucun',
+              inline: false,
+            }
           );
         }
 
         return `📋 **Informations utilisateur:**
 
-${embed.toJSON().fields?.map(f => `**${f.name}**: ${f.value}`).join('\n')}`;
+${embed
+  .toJSON()
+  .fields?.map(f => `**${f.name}**: ${f.value}`)
+  .join('\n')}`;
       } catch (error: any) {
         Logger.error('❌ [get_user_info]', error.message);
         return `❌ Erreur: ${error.message}`;
@@ -155,7 +174,7 @@ ${embed.toJSON().fields?.map(f => `**${f.name}**: ${f.value}`).join('\n')}`;
       userId: z.string().describe('ID du membre à expulser'),
       reason: z.string().optional().describe('Raison du kick'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();
@@ -190,9 +209,13 @@ ${embed.toJSON().fields?.map(f => `**${f.name}**: ${f.value}`).join('\n')}`;
     parameters: z.object({
       userId: z.string().describe('ID du membre à bannir'),
       reason: z.string().optional().describe('Raison du ban'),
-      deleteMessageSeconds: z.number().optional().default(0).describe('Supprimer les messages (secondes)'),
+      deleteMessageSeconds: z
+        .number()
+        .optional()
+        .default(0)
+        .describe('Supprimer les messages (secondes)'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();
@@ -225,10 +248,10 @@ ${embed.toJSON().fields?.map(f => `**${f.name}**: ${f.value}`).join('\n')}`;
     name: 'unban_member',
     description: 'Débannit un utilisateur',
     parameters: z.object({
-      userId: z.string().describe('ID de l\'utilisateur à débannir'),
+      userId: z.string().describe("ID de l'utilisateur à débannir"),
       reason: z.string().optional().describe('Raison du unban'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();
@@ -262,7 +285,7 @@ ${embed.toJSON().fields?.map(f => `**${f.name}**: ${f.value}`).join('\n')}`;
       duration: z.number().describe('Durée en minutes'),
       reason: z.string().optional().describe('Raison'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();
@@ -295,12 +318,12 @@ ${embed.toJSON().fields?.map(f => `**${f.name}**: ${f.value}`).join('\n')}`;
 
   server.addTool({
     name: 'remove_timeout',
-    description: 'Retire le timeout d\'un membre',
+    description: "Retire le timeout d'un membre",
     parameters: z.object({
       userId: z.string().describe('ID du membre'),
       reason: z.string().optional().describe('Raison'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();
@@ -335,9 +358,9 @@ ${embed.toJSON().fields?.map(f => `**${f.name}**: ${f.value}`).join('\n')}`;
     description: 'Ajoute un avertissement à un membre',
     parameters: z.object({
       userId: z.string().describe('ID du membre'),
-      reason: z.string().describe('Raison de l\'avertissement'),
+      reason: z.string().describe("Raison de l'avertissement"),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();
@@ -372,7 +395,7 @@ ${embed.toJSON().fields?.map(f => `**${f.name}**: ${f.value}`).join('\n')}`;
       userId: z.string().describe('ID du membre'),
       channelId: z.string().describe('ID du salon vocal de destination'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();
@@ -387,7 +410,8 @@ ${embed.toJSON().fields?.map(f => `**${f.name}**: ${f.value}`).join('\n')}`;
         }
 
         const channel = await guild.channels.fetch(args.channelId).catch(() => null);
-        if (!channel || channel.type !== 2) { // 2 = GuildVoice
+        if (!channel || channel.type !== 2) {
+          // 2 = GuildVoice
           return `❌ Salon vocal ${args.channelId} introuvable`;
         }
 
@@ -414,7 +438,7 @@ ${embed.toJSON().fields?.map(f => `**${f.name}**: ${f.value}`).join('\n')}`;
       userId: z.string().describe('ID du membre'),
       roleId: z.string().describe('ID du rôle à ajouter'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();
@@ -451,12 +475,12 @@ ${embed.toJSON().fields?.map(f => `**${f.name}**: ${f.value}`).join('\n')}`;
 
   server.addTool({
     name: 'remove_role_from_member',
-    description: 'Retire un rôle d\'un membre',
+    description: "Retire un rôle d'un membre",
     parameters: z.object({
       userId: z.string().describe('ID du membre'),
       roleId: z.string().describe('ID du rôle à retirer'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();

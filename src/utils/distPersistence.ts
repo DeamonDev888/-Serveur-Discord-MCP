@@ -99,7 +99,11 @@ export async function listDataFiles(): Promise<string[]> {
 
 export type ButtonAction =
   | { type: 'message'; content: string; ephemeral?: boolean }
-  | { type: 'embed'; embed: { title?: string; description?: string; color?: number }; ephemeral?: boolean }
+  | {
+      type: 'embed';
+      embed: { title?: string; description?: string; color?: number };
+      ephemeral?: boolean;
+    }
   | { type: 'link'; url: string }
   | { type: 'role'; roleId: string }
   | { type: 'delete' }
@@ -109,7 +113,11 @@ export type ButtonAction =
 
 export type MenuAction =
   | { type: 'message'; content: string; ephemeral?: boolean; template?: string }
-  | { type: 'embed'; embed: { title?: string; description?: string; color?: number }; ephemeral?: boolean }
+  | {
+      type: 'embed';
+      embed: { title?: string; description?: string; color?: number };
+      ephemeral?: boolean;
+    }
   | { type: 'role'; roleId: string; mode?: 'add' | 'remove' | 'toggle' }
   | { type: 'delete' }
   | { type: 'refresh' }
@@ -123,16 +131,16 @@ export type MenuAction =
 // ============================================================================
 
 export interface PersistentButton {
-  id: string;                    // ID unique du bouton
-  messageId: string;             // ID du message contenant le bouton
-  channelId: string;             // ID du channel
-  embedIndex?: number;           // Index de l'embed si plusieurs
-  label: string;                 // Label du bouton
-  style: string;                 // Primary, Secondary, Success, Danger
-  emoji?: string;                // Emoji optionnel
-  action: ButtonAction;          // Action configurée
-  createdAt: string;             // Date de création (ISO)
-  updatedAt?: string;            // Dernière mise à jour (ISO)
+  id: string; // ID unique du bouton
+  messageId: string; // ID du message contenant le bouton
+  channelId: string; // ID du channel
+  embedIndex?: number; // Index de l'embed si plusieurs
+  label: string; // Label du bouton
+  style: string; // Primary, Secondary, Success, Danger
+  emoji?: string; // Emoji optionnel
+  action: ButtonAction; // Action configurée
+  createdAt: string; // Date de création (ISO)
+  updatedAt?: string; // Dernière mise à jour (ISO)
 }
 
 const BUTTONS_FILE = 'persistent-buttons.json';
@@ -226,18 +234,18 @@ export interface PersistentMenuOption {
 }
 
 export interface PersistentSelectMenu {
-  id: string;                    // ID unique du menu
-  messageId: string;             // ID du message contenant le menu
-  channelId: string;             // ID du channel
-  embedIndex?: number;           // Index de l'embed si plusieurs
+  id: string; // ID unique du menu
+  messageId: string; // ID du message contenant le menu
+  channelId: string; // ID du channel
+  embedIndex?: number; // Index de l'embed si plusieurs
   type: 'string' | 'user' | 'role' | 'channel' | 'mentionable';
   placeholder?: string;
   minValues?: number;
   maxValues?: number;
-  options?: PersistentMenuOption[];  // Pour string select
-  action: MenuAction;            // Action configurée
-  createdAt: string;             // Date de création (ISO)
-  updatedAt?: string;            // Dernière mise à jour (ISO)
+  options?: PersistentMenuOption[]; // Pour string select
+  action: MenuAction; // Action configurée
+  createdAt: string; // Date de création (ISO)
+  updatedAt?: string; // Dernière mise à jour (ISO)
 }
 
 const MENUS_FILE = 'persistent-menus.json';

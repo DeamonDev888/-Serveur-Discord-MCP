@@ -1,15 +1,11 @@
 #!/usr/bin/env node
 
 import { FastMCP } from 'fastmcp';
-import {
-  Client,
-  EmbedBuilder,
-} from 'discord.js';
+import { Client, EmbedBuilder } from 'discord.js';
 import { config } from 'dotenv';
 import * as fs from 'fs';
 import { DiscordBridge } from './discord-bridge.js';
 import Logger from './utils/logger.js';
-
 
 // ============================================================================
 // 🛡️ PROTECTION DU PROTOCOLE MCP & GESTION DES ERREURS
@@ -28,7 +24,7 @@ console.error = (...args) => {
 // 2. Gestionnaires d'erreurs globaux
 // Pour éviter que le processus ne crashe silencieusement sur une exception non gérée,
 // ce qui causerait une erreur "EOF" immédiate côté client MCP.
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', error => {
   Logger.error('🔥 CRITIQUE: Exception non gérée (Uncaught Exception):', error);
   // En production, on pourrait vouloir quitter, mais en dev/debug on essaie de survivre
   // pour voir les logs.
@@ -42,20 +38,9 @@ process.on('unhandledRejection', (reason, _promise) => {
 
 // ============================================================================
 
-
-
-
 // Imports des utilitaires de logos
 // Utils logos non utilisés dans index.ts mais fournis par logoUtils.js
 // getUniversalLogo, buildClearbitLogoUrl, getCryptoLogo, getCryptoInfo, buildCryptoLogoUrl
-
-// Imports des utilitaires de jeux
-// Utils jeux non utilisés dans index.ts mais fournis par gameUtils.js
-// generateConfirmationMessage, generateAnimation, generateGameResult, generateMinigame
-
-// Imports des données de jeux
-// Données jeux non utilisées dans index.ts mais fournies par gameData.js
-// VISUAL_SEPARATORS, VISUAL_BADGES, SUCCESS_ANIMATIONS, FAILURE_ANIMATIONS, CONFIRMATION_MESSAGES
 
 // Imports des données de logos
 // Données logos non utilisées dans index.ts mais fournies par logos.js
@@ -95,7 +80,6 @@ import { registerFileDownloadTools } from './tools/fileDownload.js';
 import { registerEditEmbedTools } from './tools/editEmbed.js';
 
 // Logger.info est d├⌐j├á s├╗r car il utilise process.stderr.write dans utils/logger.ts
-
 
 // Charger les variables d'environnement avec chemin robuste
 const __filename = fileURLToPath(import.meta.url);
@@ -169,17 +153,18 @@ let saveTimeout: NodeJS.Timeout | null = null;
 // ============================================================================
 
 // Map pour stocker les embeds auto-updatables
-const autoUpdateEmbeds = new Map<string, {
-  messageId: string;
-  channelId: string;
-  embedData: any;
-  interval: number;
-  lastUpdate: number;
-  source?: string;
-  updateCount: number;
-}>();
-
-
+const autoUpdateEmbeds = new Map<
+  string,
+  {
+    messageId: string;
+    channelId: string;
+    embedData: any;
+    interval: number;
+    lastUpdate: number;
+    source?: string;
+    updateCount: number;
+  }
+>();
 
 // Fonction pour mettre à jour un embed automatiquement
 async function updateEmbed(embedId: string): Promise<void> {
@@ -216,15 +201,19 @@ async function updateEmbed(embedId: string): Promise<void> {
       updatedEmbedData.title = replaceVariables(updatedEmbedData.title, updatedEmbedData.variables);
     }
     if (updatedEmbedData.description) {
-      updatedEmbedData.description = replaceVariables(updatedEmbedData.description, updatedEmbedData.variables);
+      updatedEmbedData.description = replaceVariables(
+        updatedEmbedData.description,
+        updatedEmbedData.variables
+      );
     }
     if (updatedEmbedData.fields) {
       updatedEmbedData.fields = updatedEmbedData.fields.map((field: any) => ({
         ...field,
         name: replaceVariables(field.name, updatedEmbedData.variables),
-        value: updatedEmbedData.autoTable && field.value.includes('|')
-          ? parseTable(field.value)
-          : replaceVariables(field.value, updatedEmbedData.variables),
+        value:
+          updatedEmbedData.autoTable && field.value.includes('|')
+            ? parseTable(field.value)
+            : replaceVariables(field.value, updatedEmbedData.variables),
       }));
     }
 
@@ -237,7 +226,10 @@ async function updateEmbed(embedId: string): Promise<void> {
     if (updatedEmbedData.color) {
       if (typeof updatedEmbedData.color === 'number') {
         embed.setColor(updatedEmbedData.color);
-      } else if (typeof updatedEmbedData.color === 'string' && updatedEmbedData.color.startsWith('#')) {
+      } else if (
+        typeof updatedEmbedData.color === 'string' &&
+        updatedEmbedData.color.startsWith('#')
+      ) {
         embed.setColor(updatedEmbedData.color as any);
       }
     }
@@ -286,7 +278,6 @@ async function updateEmbed(embedId: string): Promise<void> {
     embedInfo.updateCount++;
 
     Logger.info(`✅ [Auto-Update] Embed ${embedId} mis à jour (${embedInfo.updateCount} fois)`);
-
   } catch (error) {
     Logger.error(`❌ [Auto-Update] Erreur pour ${embedId}:`, error);
   }
@@ -308,20 +299,8 @@ function startAutoUpdate(): void {
 // SYSTÈME DE THÈMES 🎨
 // ============================================================================
 
-
-
-
-
-
-
-
-
 // Démarrer le système d'auto-update (délayé pour éviter erreur top-level await)
 setTimeout(startAutoUpdate, 1000);
-
-
-
-
 
 // Fonction pour sauvegarder l'état dans un fichier (version asynchrone avec debouncing)
 function saveStateToFile() {
@@ -429,18 +408,18 @@ async function ensureDiscordConnection(): Promise<Client> {
 // function checkRateLimit(toolName: string): boolean {
 //   const now = Date.now();
 //   const toolLimit = rateLimitMap.get(toolName);
-// 
+//
 //   if (!toolLimit || now > toolLimit.resetTime) {
 //     // Nouvelle fenêtre ou premier appel
 //     rateLimitMap.set(toolName, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
 //     return true;
 //   }
-// 
+//
 //   if (toolLimit.count >= RATE_LIMIT_MAX) {
 //     // Limite atteinte
 //     return false;
 //   }
-// 
+//
 //   // Incrémenter le compteur
 //   toolLimit.count++;
 //   return true;
@@ -486,7 +465,10 @@ function parseTable(tableText: string): string {
   if (lines.length < 2) return tableText;
 
   const rows = lines.map(line =>
-    line.split('|').map(cell => cell.trim()).filter(cell => cell !== '')
+    line
+      .split('|')
+      .map(cell => cell.trim())
+      .filter(cell => cell !== '')
   );
 
   if (rows.length < 2) return tableText;
@@ -550,7 +532,6 @@ function replaceVariables(text: string, variables: Record<string, string> = {}):
 
 // REMOVED: Unused utilities (createProgressBar, saveTemplate, loadTemplate, validateFieldLength, generateAsciiChart, adaptLinkForUser, applyLayout, generateVisualEffectsDescription)
 
-
 // creer_embed tool removed. Now registered via registerEmbedTools(server) in tools/embeds.ts
 
 // ============================================================================
@@ -560,15 +541,12 @@ function replaceVariables(text: string, variables: Record<string, string> = {}):
 // Outil pour voir les analytics d'un embed
 // REMOVED: get_embed_analytics -> See registerEmbedTools() in tools/embeds.ts
 
-
 // Outil pour voir tous les embeds avec auto-update
 // REMOVED: list_auto_update_embeds -> See registerEmbedTools() in tools/embeds.ts
-
 
 // REMOVED: creer_embed -> See registerEmbedTools() in tools/embeds.ts
 // REMOVED: get_embed_analytics -> See registerEmbedTools() in tools/embeds.ts
 // REMOVED: list_auto_update_embeds -> See registerEmbedTools() in tools/embeds.ts
-
 
 // REMOVED: emoji_theme_crypto, emoji_theme_companies, emoji_theme_services
 // Maintenant remplacé par l'outil unifié list_images() dans registerListImagesTools()
@@ -694,7 +672,6 @@ async function cleanup() {
       await DiscordBridge.getInstance(botConfig.token).destroy();
     }
 
-
     // Nettoyer la map de rate limiting
     // rateLimitMap.clear();
 
@@ -726,8 +703,6 @@ process.on('uncaughtException', error => {
   // Ne pas quitter, laisser le serveur continuer
 });
 
-
-
 // Limite de mémoire pour éviter les freezes
 const MEMORY_LIMIT = 512 * 1024 * 1024; // 512 MB
 if (process.memoryUsage().heapUsed > MEMORY_LIMIT) {
@@ -744,27 +719,21 @@ if (process.memoryUsage().heapUsed > MEMORY_LIMIT) {
 
 // Importer le gestionnaire d'interactions
 
-
-
-
-
-
-
 // ============================================================================
 // ENREGISTREMENT DES OUTILS MCP UNIFIÉS (40 OUTILS)
 // ============================================================================
 
 // Outils unifiés (remplacent plusieurs anciens fichiers)
-registerMemberTools(server);      // 11 outils (membres + modération)
-registerRoleTools(server);        // 5 outils (rôles)
-registerChannelTools(server);     // 5 outils (canaux)
+registerMemberTools(server); // 11 outils (membres + modération)
+registerRoleTools(server); // 5 outils (rôles)
+registerChannelTools(server); // 5 outils (canaux)
 registerInteractionTools(server); // 3 outils (boutons, menus, sondages)
 
 // Outils existants conservés
 registerEmbedTools(server);
-registerEditEmbedTools(server);  // 🔧 Édition d'embeds (list, get details, update)
+registerEditEmbedTools(server); // 🔧 Édition d'embeds (list, get details, update)
 registerMessageTools(server);
-registerListImagesTools(server);  // Nouvel outil unifié (remplace emoji_theme + get_thumbnail)
+registerListImagesTools(server); // Nouvel outil unifié (remplace emoji_theme + get_thumbnail)
 
 registerServerTools(server);
 registerWebhooksTools(server);
@@ -789,7 +758,10 @@ async function main() {
       await ensureDiscordConnection();
       Logger.info('✅ Client Discord prêt');
     } catch (error) {
-      Logger.warn('⚠️ Échec connexion Discord initiale (sera réessayé au premier appel):', (error as Error).message);
+      Logger.warn(
+        '⚠️ Échec connexion Discord initiale (sera réessayé au premier appel):',
+        (error as Error).message
+      );
     }
 
     Logger.info('📊 Status:');
@@ -801,7 +773,7 @@ async function main() {
     // 2. Démarrer le serveur MCP (Ceci est bloquant en mode STDIO)
     Logger.info('🚀 Démarrage du serveur MCP (STDIO)...');
     await server.start();
-    
+
     // Si on arrive ici, c'est que le serveur s'est arrêté proprement
     Logger.info('👋 Serveur MCP arrêté');
   } catch (error) {
@@ -811,9 +783,7 @@ async function main() {
   }
 }
 
-
 main();
 // NOTE: Les outils suivants étaient dupliqués après main() et sont maintenant enregistrés via register*Tools():
-// - deploy_rpg -> registerSystemTools()
 // - logs_explorer -> registerSystemTools()
 // - nettoyer_anciens_boutons -> registerInteractionsTools()

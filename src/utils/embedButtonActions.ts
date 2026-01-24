@@ -8,7 +8,16 @@ import Logger from './logger.js';
 import { addCustomButton } from './buttonPersistence.js';
 
 // Types d'actions supportées
-export type EmbedButtonAction = 'none' | 'refresh' | 'link' | 'custom' | 'delete' | 'edit' | 'modal' | 'react' | 'role';
+export type EmbedButtonAction =
+  | 'none'
+  | 'refresh'
+  | 'link'
+  | 'custom'
+  | 'delete'
+  | 'edit'
+  | 'modal'
+  | 'react'
+  | 'role';
 
 // Interface pour la configuration d'un bouton embed
 export interface EmbedButtonConfig {
@@ -17,9 +26,9 @@ export interface EmbedButtonConfig {
   emoji?: string;
   action: EmbedButtonAction;
   value?: string;
-  roleId?: string;  // Pour action 'role'
+  roleId?: string; // Pour action 'role'
   reaction?: string; // Pour action 'react'
-  customData?: any;  // Données personnalisées pour action 'custom'
+  customData?: any; // Données personnalisées pour action 'custom'
 }
 
 // Interface pour le contexte d'exécution
@@ -43,7 +52,7 @@ async function handleNoneAction(context: ButtonContext): Promise<void> {
 
   await interaction.reply({
     content: '✅ Bouton cliqué (action configurée)',
-    ephemeral: true
+    ephemeral: true,
   });
 }
 
@@ -56,7 +65,7 @@ async function handleRefreshAction(context: ButtonContext): Promise<void> {
   if (!originalEmbed) {
     await interaction.reply({
       content: '❌ Impossible de rafraîchir: embed non trouvé',
-      ephemeral: true
+      ephemeral: true,
     });
     return;
   }
@@ -65,7 +74,7 @@ async function handleRefreshAction(context: ButtonContext): Promise<void> {
   refreshedEmbed.setTimestamp(new Date());
 
   await interaction.update({
-    embeds: [refreshedEmbed]
+    embeds: [refreshedEmbed],
   });
 }
 
@@ -78,14 +87,14 @@ async function handleLinkAction(context: ButtonContext, value?: string): Promise
   if (!value) {
     await interaction.reply({
       content: '❌ Lien non configuré',
-      ephemeral: true
+      ephemeral: true,
     });
     return;
   }
 
   await interaction.reply({
     content: `🔗 ${value}`,
-    ephemeral: false
+    ephemeral: false,
   });
 }
 
@@ -98,7 +107,7 @@ async function handleDeleteAction(context: ButtonContext): Promise<void> {
   await interaction.update({
     content: '🗑️ Message supprimé',
     embeds: [],
-    components: []
+    components: [],
   });
 
   // Supprimer après un court délai
@@ -120,7 +129,7 @@ async function handleEditAction(context: ButtonContext, customData?: any): Promi
   if (!customData) {
     await interaction.reply({
       content: '❌ Données de modification non fournies',
-      ephemeral: true
+      ephemeral: true,
     });
     return;
   }
@@ -135,7 +144,7 @@ async function handleEditAction(context: ButtonContext, customData?: any): Promi
   }
 
   await interaction.update({
-    embeds: [newEmbed]
+    embeds: [newEmbed],
   });
 }
 
@@ -148,7 +157,7 @@ async function handleReactAction(context: ButtonContext, reaction?: string): Pro
   if (!reaction) {
     await interaction.reply({
       content: '❌ Réaction non configurée',
-      ephemeral: true
+      ephemeral: true,
     });
     return;
   }
@@ -157,12 +166,12 @@ async function handleReactAction(context: ButtonContext, reaction?: string): Pro
     await interaction.message.react(reaction);
     await interaction.reply({
       content: `✅ Réaction ${reaction} ajoutée`,
-      ephemeral: true
+      ephemeral: true,
     });
   } catch (error: any) {
     await interaction.reply({
       content: `❌ Erreur: ${error.message}`,
-      ephemeral: true
+      ephemeral: true,
     });
   }
 }
@@ -176,7 +185,7 @@ async function handleRoleAction(context: ButtonContext, roleId?: string): Promis
   if (!roleId) {
     await interaction.reply({
       content: '❌ Rôle non configuré',
-      ephemeral: true
+      ephemeral: true,
     });
     return;
   }
@@ -185,7 +194,7 @@ async function handleRoleAction(context: ButtonContext, roleId?: string): Promis
   // Pour l'instant, on renvoie un message informatif
   await interaction.reply({
     content: `🔐 Gestion de rôle: ${roleId}\n\nCette fonctionnalité nécessite des permissions supplémentaires.`,
-    ephemeral: true
+    ephemeral: true,
   });
 }
 
@@ -197,7 +206,7 @@ async function handleModalAction(context: ButtonContext, customData?: any): Prom
 
   await interaction.reply({
     content: '📝 Fonctionnalité Modal à implémenter',
-    ephemeral: true
+    ephemeral: true,
   });
 }
 
@@ -210,7 +219,7 @@ async function handleCustomAction(context: ButtonContext, customData?: any): Pro
   if (!customData) {
     await interaction.reply({
       content: '⚙️ Action personnalisée (aucune donnée fournie)',
-      ephemeral: true
+      ephemeral: true,
     });
     return;
   }
@@ -231,14 +240,14 @@ async function handleCustomAction(context: ButtonContext, customData?: any): Pro
 
     await interaction.reply({
       embeds: [customEmbed],
-      ephemeral: customData.ephemeral || true
+      ephemeral: customData.ephemeral || true,
     });
     return;
   }
 
   await interaction.reply({
     content: response,
-    ephemeral: true
+    ephemeral: true,
   });
 }
 
@@ -246,7 +255,10 @@ async function handleCustomAction(context: ButtonContext, customData?: any): Pro
 // MAP DES ACTIONS
 // ============================================================================
 
-const ACTION_HANDLERS: Record<EmbedButtonAction, (context: ButtonContext, value?: any) => Promise<void>> = {
+const ACTION_HANDLERS: Record<
+  EmbedButtonAction,
+  (context: ButtonContext, value?: any) => Promise<void>
+> = {
   none: handleNoneAction,
   refresh: handleRefreshAction,
   link: handleLinkAction,
@@ -429,7 +441,7 @@ export const EMBED_BUTTON_TEMPLATES = {
 
   // Boutons de réaction
   like: {
-    label: '👍 J\'aime',
+    label: "👍 J'aime",
     style: 'Success' as const,
     action: 'react' as const,
     reaction: '👍',
