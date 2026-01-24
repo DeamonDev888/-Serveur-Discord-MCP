@@ -111,7 +111,7 @@ export async function updateEmbed(embedId: string, getClient: () => any): Promis
       return;
     }
 
-    let updatedEmbedData = { ...embedInfo.embedData };
+    const updatedEmbedData = { ...embedInfo.embedData };
 
     if (updatedEmbedData.title) {
       updatedEmbedData.title = replaceVariables(updatedEmbedData.title, updatedEmbedData.variables);

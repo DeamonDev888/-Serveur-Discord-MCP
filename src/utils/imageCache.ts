@@ -34,7 +34,7 @@ export class ImageCache {
   private cache = new Map<string, CacheEntry>();
   private config: CacheConfig;
   private cacheDir: string;
-  private cleanupTimer?: NodeJS.Timeout;
+  private cleanupTimer?: ReturnType<typeof setInterval>;
 
   constructor(config: Partial<CacheConfig> = {}) {
     this.config = {
@@ -203,7 +203,7 @@ export class ImageCache {
       const localPath = this.generateLocalPath(url);
 
       // Comprimer si activé
-      let finalBuffer = buffer;
+      const finalBuffer = buffer;
       if (this.config.compressionEnabled && contentType === 'image/png') {
         // Note: Pour une compression réelle, on utiliserait une lib comme sharp
         // Ici on garde le buffer original pour la démo
@@ -258,7 +258,7 @@ export class ImageCache {
       if (fs.existsSync(entry.localPath)) {
         fs.unlinkSync(entry.localPath);
       }
-    } catch (error) {
+    } catch (_error) {
       Logger.warn(`[ImageCache] Impossible de supprimer le fichier: ${entry.localPath}`);
     }
 

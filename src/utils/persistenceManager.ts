@@ -10,7 +10,7 @@ export class PersistenceManager<T> {
   private filePath: string;
   private backupPath: string;
   private tempPath: string;
-  private saveTimeout: NodeJS.Timeout | null = null;
+  private saveTimeout: ReturnType<typeof setTimeout> | null = null;
   private readonly debounceMs: number;
 
   constructor(filePath: string, debounceMs: number = 1000) {
@@ -41,7 +41,7 @@ export class PersistenceManager<T> {
         const data = await fs.readFile(this.filePath, 'utf-8');
         return JSON.parse(data) as T;
       }
-    } catch (error) {
+    } catch {
       Logger.error(`⚠️ Corruption détectée dans ${this.filePath}, tentative de récupération via backup...`);
       
       try {

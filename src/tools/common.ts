@@ -51,47 +51,70 @@ export const EMBED_THEMES = {
     name: 'Cyberpunk',
     color: '#FF00FF',
     description: 'Style futuriste néon',
-    gradient: ['#FF00FF', '#00FFFF'],
-    emojis: ['⚡', '🔮', '🌆', '🤖'],
+    suggestions: {
+       image: 'Ville futuriste, néons, cybernétique',
+       thumbnail: 'Robot, IA, Puce électronique',
+       gradient: ['#FF00FF', '#00FFFF'],
+       emojis: ['⚡', '🔮', '🌆', '🤖']
+    }
   },
   minimal: {
     name: 'Minimal',
     color: '#2C2C2C',
     description: 'Style épuré et moderne',
-    gradient: ['#2C2C2C', '#4A4A4A'],
-    emojis: ['◼️', '▫️', '●', '■'],
+    suggestions: {
+       gradient: ['#2C2C2C', '#4A4A4A'],
+       emojis: ['◼️', '▫️', '●', '■']
+    }
   },
   gaming: {
     name: 'Gaming',
     color: '#7289DA',
     description: 'Style gaming coloré',
-    gradient: ['#7289DA', '#5B6EBD'],
-    emojis: ['🎮', '🎯', '🏆', '⚔️'],
+    suggestions: {
+        image: 'Setup gaming, manette, écran code',
+        thumbnail: 'Trophée, Logo jeu, Épée',
+        gradient: ['#7289DA', '#5B6EBD'],
+        emojis: ['🎮', '🎯', '🏆', '⚔️']
+    }
   },
   corporate: {
     name: 'Corporate',
     color: '#0066CC',
     description: 'Style professionnel',
-    gradient: ['#0066CC', '#004C99'],
-    emojis: ['💼', '📊', '📈', '💼'],
+    suggestions: {
+        image: 'Bureaux modernes, building, réunion',
+        thumbnail: 'Graphique, Dossier, Logo entreprise',
+        gradient: ['#0066CC', '#004C99'],
+        emojis: ['💼', '📊', '📈', '🏢']
+    }
   },
   sunset: {
     name: 'Sunset',
     color: '#FF6B6B',
     description: 'Style coucher de soleil',
-    gradient: ['#FF6B6B', '#FFA07A'],
-    emojis: ['🌅', '🌇', '🌄', '☀️'],
+    suggestions: {
+        image: 'Plage, Soleil couchant, Horizon rouge',
+        thumbnail: 'Soleil, Palmier',
+        gradient: ['#FF6B6B', '#FFA07A'],
+        emojis: ['🌅', '🌇', '🌄', '☀️']
+    }
   },
   ocean: {
     name: 'Ocean',
     color: '#00CED1',
     description: 'Style océan bleu',
-    gradient: ['#00CED1', '#4169E1'],
-    emojis: ['🌊', '🐋', '🐬', '🦈'],
+    suggestions: {
+        image: 'Vague, Fond marin, Corail',
+        thumbnail: 'Poisson, Goutte d\'eau, Dauphin',
+        gradient: ['#00CED1', '#4169E1'],
+        emojis: ['🌊', '🐋', '🐬', '🦈']
+    }
   },
 };
 
-// Fonction pour appliquer un thème
+// Fonction pour appliquer un thème (STYLES VISUELS UNIQUEMENT)
+// Les thèmes ne doivent JAMAIS imposer de contenu (images, icones) sauf si explicitement demandé.
 export function applyTheme(themeName: string, customizations: any = {}): any {
   const theme = EMBED_THEMES[themeName as keyof typeof EMBED_THEMES];
   if (!theme) return customizations;
@@ -99,8 +122,8 @@ export function applyTheme(themeName: string, customizations: any = {}): any {
   return {
     ...customizations,
     color: customizations.color || theme.color,
-    // ⚠️ Ne pas assigner d'emojis à authorIcon/footerIcon - Discord exige des URLs d'images valides
-    // Les emojis sont utilisés uniquement pour les titres et descriptions
+    // Note: On n'applique PLUS les gradients ou images par défaut.
+    // C'est à l'utilisateur de les choisir via les "suggestions" du thème.
   };
 }
 

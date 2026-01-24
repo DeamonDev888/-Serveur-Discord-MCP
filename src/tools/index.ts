@@ -23,16 +23,16 @@
 // ============================================================================
 
 // 📊 Messages
-export * from './messages';
+export * from './messages.js';
 
 // 🎨 Embeds
-export * from './embeds';
+export * from './embeds.js';
 
 // 🔧 Édition d'Embeds
-export * from './editEmbed';
+export * from './editEmbed.js';
 
 // 👥 Members
-export * from './members';
+export * from './members.js';
 
 // ============================================================================
 // OUTILS EXISTANTS (COMPATIBILITÉ)
@@ -53,7 +53,7 @@ export * from './members';
 // export { DISCORD_COLORS } from './embedBuilder';
 
 // Outils d'interactions (boutons, menus, modals) (existant)
-export { buildActionRows, BUTTON_STYLES } from './interactions';
+export { buildActionRows, BUTTON_STYLES } from './interactions.js';
 
 // Outils de gestion de messages (existant - à migrer)
 // export {
@@ -68,8 +68,8 @@ export { buildActionRows, BUTTON_STYLES } from './interactions';
 // export * from './channelManager';
 
 // Affichage de code avec coloration syntaxique
-export { createCodePreviewMessages, CodePreviewSchema, validateLanguage } from './codePreview';
-export { SUPPORTED_LANGUAGES } from './codePreview';
+export { createCodePreviewMessages, CodePreviewSchema, validateLanguage } from './codePreview.js';
+export { SUPPORTED_LANGUAGES } from './codePreview.js';
 
 // ============================================================================
 // DOCUMENTATION ET EXEMPLES
@@ -127,7 +127,7 @@ export type {
   DiscordColor,
   // ErrorCode,
   FormattedError,
-} from './types';
+} from './types.js';
 
 // ============================================================================
 // NOTES D'UTILISATION

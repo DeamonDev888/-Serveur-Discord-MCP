@@ -1,1 +1,304 @@
-[]
+[
+  {
+    "id": "poll_1768763151177_sjpgyn",
+    "question": "Quel est votre sentiment de marché pour la semaine à venir ?",
+    "options": [
+      {
+        "text": "Bullish 🚀",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Bearish 🐻",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Neutral 🦀",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Volatile 🌪️",
+        "votes": 0,
+        "percentage": 0
+      }
+    ],
+    "totalVotes": 0,
+    "endTime": "2026-01-19T19:05:51.177Z",
+    "ended": false,
+    "allowMultiple": true,
+    "anonymous": false,
+    "messageId": "1462523405474599014",
+    "channelId": "1442317829998383235",
+    "createdAt": "2026-01-18T19:05:51.415Z"
+  },
+  {
+    "id": "poll_1768763151177_sjpgyn",
+    "question": "Quel est votre sentiment de marché pour la semaine à venir ?",
+    "options": [
+      {
+        "text": "Bullish 🚀",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Bearish 🐻",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Neutral 🦀",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Volatile 🌪️",
+        "votes": 0,
+        "percentage": 0
+      }
+    ],
+    "totalVotes": 0,
+    "endTime": "2026-01-19T19:05:51.177Z",
+    "ended": false,
+    "allowMultiple": true,
+    "anonymous": false,
+    "messageId": "1462523405474599014",
+    "channelId": "1442317829998383235",
+    "createdAt": "2026-01-18T19:05:51.415Z"
+  },
+  {
+    "id": "poll_1768763269837_e3qyvm",
+    "question": "Qui sera le prochain Président de la Réserve Fédérale (FED) ?\\n\\n🔎 **Contexte :** Tensions croissantes entre l'administration Trump et Jerome Powell. Scott Bessent indique une décision imminente en Janvier.",
+    "options": [
+      {
+        "text": "Kevin Hassett (Conseiller) 🏛️",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Kevin Warsh (Ex-FED) 🏦",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Rick Rieder (BlackRock) 💵",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Scott Bessent (Trésor) ⚖️",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Jerome Powell (Maintien) 🦅",
+        "votes": 0,
+        "percentage": 0
+      }
+    ],
+    "totalVotes": 0,
+    "endTime": "2026-02-17T19:07:49.837Z",
+    "ended": false,
+    "allowMultiple": true,
+    "anonymous": false,
+    "messageId": "1462523903434952714",
+    "channelId": "1421197847843569855",
+    "createdAt": "2026-01-18T19:07:50.125Z"
+  },
+  {
+    "id": "poll_1768763269837_e3qyvm",
+    "question": "Qui sera le prochain Président de la Réserve Fédérale (FED) ?\\n\\n🔎 **Contexte :** Tensions croissantes entre l'administration Trump et Jerome Powell. Scott Bessent indique une décision imminente en Janvier.",
+    "options": [
+      {
+        "text": "Kevin Hassett (Conseiller) 🏛️",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Kevin Warsh (Ex-FED) 🏦",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Rick Rieder (BlackRock) 💵",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Scott Bessent (Trésor) ⚖️",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Jerome Powell (Maintien) 🦅",
+        "votes": 0,
+        "percentage": 0
+      }
+    ],
+    "totalVotes": 0,
+    "endTime": "2026-02-17T19:07:49.837Z",
+    "ended": false,
+    "allowMultiple": true,
+    "anonymous": false,
+    "messageId": "1462523903434952714",
+    "channelId": "1421197847843569855",
+    "createdAt": "2026-01-18T19:07:50.125Z"
+  },
+  {
+    "id": "poll_1768763434428_022zkx",
+    "question": "Qui sera le prochain Président de la Réserve Fédérale (FED) ?\\n\\n🔎 **Contexte :** Tensions croissantes entre l'administration Trump et Jerome Powell. Scott Bessent indique une décision imminente en Janvier.",
+    "options": [
+      {
+        "text": "Kevin Hassett (Conseiller) 🏛️",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Kevin Warsh (Ex-FED) 🏦",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Rick Rieder (BlackRock) 💵",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Scott Bessent (Trésor) ⚖️",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Jerome Powell (Maintien) 🦅",
+        "votes": 0,
+        "percentage": 0
+      }
+    ],
+    "totalVotes": 0,
+    "endTime": "2026-02-17T19:10:34.428Z",
+    "ended": false,
+    "allowMultiple": true,
+    "anonymous": false,
+    "messageId": "1462524593129656362",
+    "channelId": "1421197847843569855",
+    "createdAt": "2026-01-18T19:10:34.694Z"
+  },
+  {
+    "id": "poll_1768763434428_022zkx",
+    "question": "Qui sera le prochain Président de la Réserve Fédérale (FED) ?\\n\\n🔎 **Contexte :** Tensions croissantes entre l'administration Trump et Jerome Powell. Scott Bessent indique une décision imminente en Janvier.",
+    "options": [
+      {
+        "text": "Kevin Hassett (Conseiller) 🏛️",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Kevin Warsh (Ex-FED) 🏦",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Rick Rieder (BlackRock) 💵",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Scott Bessent (Trésor) ⚖️",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Jerome Powell (Maintien) 🦅",
+        "votes": 0,
+        "percentage": 0
+      }
+    ],
+    "totalVotes": 0,
+    "endTime": "2026-02-17T19:10:34.428Z",
+    "ended": false,
+    "allowMultiple": true,
+    "anonymous": false,
+    "messageId": "1462524593129656362",
+    "channelId": "1421197847843569855",
+    "createdAt": "2026-01-18T19:10:34.694Z"
+  },
+  {
+    "id": "poll_1768764011649_v4kmx2",
+    "question": "Qui sera le prochain Président de la Réserve Fédérale (FED) ?\\n\\n🔎 **Contexte :** Tensions croissantes entre l'administration Trump et Jerome Powell. Scott Bessent indique une décision imminente en Janvier.",
+    "options": [
+      {
+        "text": "Kevin Hassett (Conseiller) 🏛️",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Kevin Warsh (Ex-FED) 🏦",
+        "votes": 1,
+        "percentage": 100
+      },
+      {
+        "text": "Rick Rieder (BlackRock) 💵",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Scott Bessent (Trésor) ⚖️",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Jerome Powell (Maintien) 🦅",
+        "votes": 0,
+        "percentage": 0
+      }
+    ],
+    "totalVotes": 1,
+    "endTime": "2026-02-17T19:20:11.649Z",
+    "ended": false,
+    "allowMultiple": true,
+    "anonymous": false,
+    "messageId": "1462527014597820738",
+    "channelId": "1421197847843569855",
+    "createdAt": "2026-01-18T19:20:11.930Z"
+  },
+  {
+    "id": "poll_1768764011649_v4kmx2",
+    "question": "Qui sera le prochain Président de la Réserve Fédérale (FED) ?\\n\\n🔎 **Contexte :** Tensions croissantes entre l'administration Trump et Jerome Powell. Scott Bessent indique une décision imminente en Janvier.",
+    "options": [
+      {
+        "text": "Kevin Hassett (Conseiller) 🏛️",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Kevin Warsh (Ex-FED) 🏦",
+        "votes": 1,
+        "percentage": 100
+      },
+      {
+        "text": "Rick Rieder (BlackRock) 💵",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Scott Bessent (Trésor) ⚖️",
+        "votes": 0,
+        "percentage": 0
+      },
+      {
+        "text": "Jerome Powell (Maintien) 🦅",
+        "votes": 0,
+        "percentage": 0
+      }
+    ],
+    "totalVotes": 1,
+    "endTime": "2026-02-17T19:20:11.649Z",
+    "ended": false,
+    "allowMultiple": true,
+    "anonymous": false,
+    "messageId": "1462527014597820738",
+    "channelId": "1421197847843569855",
+    "createdAt": "2026-01-18T19:20:11.930Z"
+  }
+]

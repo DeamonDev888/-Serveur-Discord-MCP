@@ -78,50 +78,7 @@ import { interactionHandler } from '../utils/interactionHandler.js';
 // Utilise le pipeline serveur_discord/src/data/logos.ts
 // ============================================================================
 
-// Mapping des images de thèmes depuis THEME_IMAGES (logos.ts)
-const THEME_IMAGE_MAP = {
-  CYBERPUNK: {
-    author: THEME_IMAGES.CYBERPUNK_AUTHOR.logo,
-    thumbnail: THEME_IMAGES.CYBERPUNK_THUMBNAIL.logo,
-    image: THEME_IMAGES.CYBERPUNK_IMAGE.logo,
-    footer: THEME_IMAGES.CYBERPUNK_FOOTER.logo,
-  },
-  GAMING: {
-    author: THEME_IMAGES.GAMING_AUTHOR.logo,
-    thumbnail: THEME_IMAGES.GAMING_THUMBNAIL.logo,
-    image: THEME_IMAGES.GAMING_IMAGE.logo,
-    footer: THEME_IMAGES.GAMING_FOOTER.logo,
-  },
-  CORPORATE: {
-    author: THEME_IMAGES.CORPORATE_AUTHOR.logo,
-    thumbnail: THEME_IMAGES.CORPORATE_THUMBNAIL.logo,
-    image: THEME_IMAGES.CORPORATE_IMAGE.logo,
-    footer: THEME_IMAGES.CORPORATE_FOOTER.logo,
-  },
-  SUNSET: {
-    author: THEME_IMAGES.SUNSET_AUTHOR.logo,
-    thumbnail: THEME_IMAGES.SUNSET_THUMBNAIL.logo,
-    image: THEME_IMAGES.SUNSET_IMAGE.logo,
-    footer: THEME_IMAGES.SUNSET_FOOTER.logo,
-  },
-  OCEAN: {
-    author: THEME_IMAGES.OCEAN_AUTHOR.logo,
-    thumbnail: THEME_IMAGES.OCEAN_THUMBNAIL.logo,
-    image: THEME_IMAGES.OCEAN_IMAGE.logo,
-    footer: THEME_IMAGES.OCEAN_FOOTER.logo,
-  },
-  MINIMAL: {
-    author: THEME_IMAGES.MINIMAL_AUTHOR.logo,
-    thumbnail: THEME_IMAGES.MINIMAL_THUMBNAIL.logo,
-    footer: THEME_IMAGES.MINIMAL_FOOTER.logo,
-  },
-  NOEL: {
-    author: THEME_IMAGES.NOEL_AUTHOR.logo,
-    thumbnail: THEME_IMAGES.NOEL_THUMBNAIL.logo,
-    image: THEME_IMAGES.NOEL_IMAGE.logo,
-    footer: THEME_IMAGES.NOEL_FOOTER.logo,
-  },
-};
+
 
 // ============================================================================
 // FONCTIONS UTILITAIRES
@@ -249,7 +206,7 @@ function validateDiscordMentions(text: string): {
  * Génère le message d'erreur pour les mentions invalides
  */
 function generateMentionErrorMessage(validation: ReturnType<typeof validateDiscordMentions>, fieldName: string): string {
-  let message = `❌ **Format de mention invalide détecté dans ${fieldName} !**\n\n`;
+  const message = `❌ **Format de mention invalide détecté dans ${fieldName} !**\n\n`;
 
   const parts: string[] = [];
 
@@ -544,6 +501,7 @@ export function isLocalLogoUrl(url: string | undefined): boolean {
     'abs.twimg.com',
     'i.imgur.com',
     'imgur.com',
+    'assets.coingecko.com', // Added for crypto logos
   ];
 
   // Vérifier si l'URL provient d'un CDN fiable
@@ -1114,9 +1072,8 @@ Dernière mise à jour : {timestamp}
     case 'minimal': {
       themedArgs.color = 0x2C2C2C; // Gris foncé
       if (!args.title) themedArgs.title = 'Titre Minimal';
-      if (!args.authorIcon && THEME_IMAGE_MAP.MINIMAL.author) themedArgs.authorIcon = THEME_IMAGE_MAP.MINIMAL.author;
-      if (!args.thumbnail && THEME_IMAGE_MAP.MINIMAL.thumbnail) themedArgs.thumbnail = THEME_IMAGE_MAP.MINIMAL.thumbnail;
-      if (!args.footerIcon && THEME_IMAGE_MAP.MINIMAL.footer) themedArgs.footerIcon = THEME_IMAGE_MAP.MINIMAL.footer;
+      // Assets suggérés (Non appliqués automatiquement pour éviter le forcing)
+      // Suggestion: authorIcon, thumbnail, footerIcon de style Minimal
       
       if (!args.description) {
         themedArgs.description = `
@@ -1147,10 +1104,8 @@ Design épuré et moderne.
       themedArgs.color = 0xFF00FF; // Magenta
       if (!args.title) themedArgs.title = '🌆 Terminal Cyberpunk';
       if (!args.authorName) themedArgs.authorName = 'SYSTEM_CORE_v.7';
-      if (!args.authorIcon && THEME_IMAGE_MAP.CYBERPUNK.author) themedArgs.authorIcon = THEME_IMAGE_MAP.CYBERPUNK.author;
-      if (!args.thumbnail && THEME_IMAGE_MAP.CYBERPUNK.thumbnail) themedArgs.thumbnail = THEME_IMAGE_MAP.CYBERPUNK.thumbnail;
-      if (!args.image && THEME_IMAGE_MAP.CYBERPUNK.image) themedArgs.image = THEME_IMAGE_MAP.CYBERPUNK.image;
-      if (!args.footerIcon && THEME_IMAGE_MAP.CYBERPUNK.footer) themedArgs.footerIcon = THEME_IMAGE_MAP.CYBERPUNK.footer;
+      // Assets suggérés (Non appliqués automatiquement)
+      // Suggestion: images néons, cybernétiques.
       
       if (!args.description) {
         themedArgs.description = `
@@ -1175,11 +1130,8 @@ Design épuré et moderne.
       themedArgs.color = 0x7289DA; // Blurple
       if (!args.title) themedArgs.title = '🎮 Session de Jeu';
       if (!args.authorName) themedArgs.authorName = 'PRO_GAMER_HUD';
-      if (!args.authorIcon && THEME_IMAGE_MAP.GAMING.author) themedArgs.authorIcon = THEME_IMAGE_MAP.GAMING.author;
-      if (!args.thumbnail && THEME_IMAGE_MAP.GAMING.thumbnail) themedArgs.thumbnail = THEME_IMAGE_MAP.GAMING.thumbnail;
-      if (!args.image && THEME_IMAGE_MAP.GAMING.image) themedArgs.image = THEME_IMAGE_MAP.GAMING.image;
-      if (!args.footerIcon && THEME_IMAGE_MAP.GAMING.footer) themedArgs.footerIcon = THEME_IMAGE_MAP.GAMING.footer;
-
+      // Assets suggérés (Non appliqués automatiquement)
+      
       if (!args.description) {
         themedArgs.description = `
 🎯 **Objectif de Mission**
@@ -1200,11 +1152,8 @@ Design épuré et moderne.
       themedArgs.color = 0x0066CC; // Bleu business
       if (!args.title) themedArgs.title = '📊 Rapport Trimestriel';
       if (!args.authorName) themedArgs.authorName = 'Département Analytique';
-      if (!args.authorIcon && THEME_IMAGE_MAP.CORPORATE.author) themedArgs.authorIcon = THEME_IMAGE_MAP.CORPORATE.author;
-      if (!args.thumbnail && THEME_IMAGE_MAP.CORPORATE.thumbnail) themedArgs.thumbnail = THEME_IMAGE_MAP.CORPORATE.thumbnail;
-      if (!args.image && THEME_IMAGE_MAP.CORPORATE.image) themedArgs.image = THEME_IMAGE_MAP.CORPORATE.image;
-      if (!args.footerIcon && THEME_IMAGE_MAP.CORPORATE.footer) themedArgs.footerIcon = THEME_IMAGE_MAP.CORPORATE.footer;
-
+      // Assets suggérés (Non appliqués automatiquement)
+      
       if (!args.description) {
         themedArgs.description = `
 💼 **Résumé Exécutif**
@@ -1223,11 +1172,8 @@ Les indicateurs clés de performance (KPI) montrent une croissance stable.
     case 'sunset': {
       themedArgs.color = 0xFF6B6B; // Corail
       if (!args.title) themedArgs.title = '🌅 Lumière du Jour';
-      if (!args.authorIcon && THEME_IMAGE_MAP.SUNSET.author) themedArgs.authorIcon = THEME_IMAGE_MAP.SUNSET.author;
-      if (!args.thumbnail && THEME_IMAGE_MAP.SUNSET.thumbnail) themedArgs.thumbnail = THEME_IMAGE_MAP.SUNSET.thumbnail;
-      if (!args.image && THEME_IMAGE_MAP.SUNSET.image) themedArgs.image = THEME_IMAGE_MAP.SUNSET.image;
-      if (!args.footerIcon && THEME_IMAGE_MAP.SUNSET.footer) themedArgs.footerIcon = THEME_IMAGE_MAP.SUNSET.footer;
-
+      // Assets suggérés (Non appliqués automatiquement)
+      
       if (!args.description) {
         themedArgs.description = `
 🌇 **Fin de Journée**
@@ -1245,11 +1191,8 @@ Le calme après la tempête. Profitez de ce moment de sérénité.
     case 'ocean': {
       themedArgs.color = 0x00CED1; // Turquoise
       if (!args.title) themedArgs.title = '🌊 Profondeurs de l\'Océan';
-      if (!args.authorIcon && THEME_IMAGE_MAP.OCEAN.author) themedArgs.authorIcon = THEME_IMAGE_MAP.OCEAN.author;
-      if (!args.thumbnail && THEME_IMAGE_MAP.OCEAN.thumbnail) themedArgs.thumbnail = THEME_IMAGE_MAP.OCEAN.thumbnail;
-      if (!args.image && THEME_IMAGE_MAP.OCEAN.image) themedArgs.image = THEME_IMAGE_MAP.OCEAN.image;
-      if (!args.footerIcon && THEME_IMAGE_MAP.OCEAN.footer) themedArgs.footerIcon = THEME_IMAGE_MAP.OCEAN.footer;
-
+      // Assets suggérés (Non appliqués automatiquement)
+      
       if (!args.description) {
         themedArgs.description = `
 🐋 **Exploration Marine**
@@ -1814,7 +1757,9 @@ export function registerEmbedTools(server: FastMCP) {
         start: z.string().describe('Couleur de début (#RRGGBB)'),
         end: z.string().describe('Couleur de fin (#RRGGBB)'),
       }).optional().describe('Dégradé de couleurs'),
-      theme: z.enum(['basic', 'data_report', 'status_update', 'product_showcase', 'leaderboard', 'tech_announcement', 'social_feed', 'dashboard', 'noel', 'minimal', 'cyberpunk', 'gaming', 'corporate', 'sunset', 'ocean']).optional().describe('Thème prédéfini (EXEMPLES À PERSONNALISER - voir EXEMPLES_THEMES_EMBED.md)'),
+      theme: z.enum(['basic', 'data_report', 'status_update', 'product_showcase', 'leaderboard', 'tech_announcement', 'social_feed', 'dashboard', 'noel', 'minimal', 'cyberpunk', 'gaming', 'corporate', 'sunset', 'ocean'])
+        .optional()
+        .describe('Thème visuel (Couleurs & template texte). NOTE: Les images/icones ne sont PLUS automatiques. CONSEIL: Utilisez list_images({category: "nom_du_theme"}) pour trouver les assets visuels appropriés (ex: cyberpunk, gaming, minimal, etc.)'),
       enableAnalytics: z.boolean().optional().default(true).describe('Activer le tracking analytics'),
       charts: z.array(z.object({
         type: z.enum(['line', 'bar', 'pie', 'sparkline', 'area']).describe('Type de graphique'),
@@ -1948,9 +1893,37 @@ export function registerEmbedTools(server: FastMCP) {
         const embed = new EmbedBuilder();
         const dataToUse = { ...embedData, ...args };
 
-        let titlePrefix = '';
-        let descriptionPrefix = '';
-        let descriptionSuffix = '';
+        // ============================================================================
+        // 🔒 SÉCURITÉ CONTENU (CONTENT SAFETY)
+        // Empêcher l'injection d'images via le texte (Markdown)
+        // ============================================================================
+        const markdownImageRegex = /!\[.*?\]\(.*?\)|\[Image:.*?\]/i;
+        const imageExtensionRegex = /\.(jpg|jpeg|png|gif|webp)/i;
+
+        const validateNoImagesInText = (text: string | undefined, fieldName: string) => {
+            if (!text) return;
+            // On vérifie si ça ressemble à une image markdown OU si ça contient une URL d'image entre crochets
+            if (markdownImageRegex.test(text) && imageExtensionRegex.test(text)) {
+                 throw new Error(`⛔ SÉCURITÉ: Vous essayez d'insérer une image via le texte dans '${fieldName}'.\nDISCORD NE RENDERISE PAS LES IMAGES MARKDOWN DANS LES EMBEDS.\n❌ INTERDIT: ![img](url) ou [Image: url]\n✅ SOLUTION: Utilisez les paramètres 'image' (grande image bas) ou 'thumbnail' (petite image haut-droite).`);
+            }
+        };
+
+        validateNoImagesInText(dataToUse.title, 'title');
+        validateNoImagesInText(dataToUse.description, 'description');
+        validateNoImagesInText(dataToUse.authorName, 'authorName');
+        validateNoImagesInText(dataToUse.footerText, 'footerText');
+
+        if (dataToUse.fields) {
+            dataToUse.fields.forEach((f: any, i: number) => {
+                validateNoImagesInText(f.name, `fields[${i}].name`);
+                validateNoImagesInText(f.value, `fields[${i}].value`);
+            });
+        }
+
+        const titlePrefix = '';
+        const descriptionPrefix = '';
+        const descriptionSuffix = '';
+        const warnings: string[] = []; // Collection des avertissements non-bloquants
 
         // ============================================================================
         // VALIDATION DES MENTIONS DISCORD
@@ -2070,7 +2043,7 @@ export function registerEmbedTools(server: FastMCP) {
         // Collection des fichiers à attacher (PNG convertis depuis SVG)
         const attachmentsToUpload: Map<string, string> = new Map(); // attachmentName -> filePath
 
-        // Convertir authorIcon SVG → PNG
+        // Convertir authorIcon SVG → PNG (SKIP on failure for stability)
         if (dataToUse.authorIcon && checkIsSvgUrl(dataToUse.authorIcon)) {
           Logger.info(`[EMBED] Converting authorIcon SVG to PNG: ${dataToUse.authorIcon}`);
           try {
@@ -2079,12 +2052,12 @@ export function registerEmbedTools(server: FastMCP) {
             attachmentsToUpload.set(pngData.attachmentName, pngData.path);
             Logger.info(`[EMBED] authorIcon converted to: ${pngData.attachmentUrl}`);
           } catch (error) {
-            Logger.error(`[EMBED] Failed to convert authorIcon:`, error);
-            return `❌ Erreur lors de la conversion SVG→PNG pour authorIcon: ${error}`;
+            Logger.error(`[EMBED] Failed to convert authorIcon, SKIPPING:`, error);
+            delete dataToUse.authorIcon; // 🛡️ SKIP: On supprime l'icône au lieu de crasher
           }
         }
 
-        // Convertir footerIcon SVG → PNG
+        // Convertir footerIcon SVG → PNG (SKIP on failure for stability)
         if (dataToUse.footerIcon && checkIsSvgUrl(dataToUse.footerIcon)) {
           Logger.info(`[EMBED] Converting footerIcon SVG to PNG: ${dataToUse.footerIcon}`);
           try {
@@ -2093,8 +2066,8 @@ export function registerEmbedTools(server: FastMCP) {
             attachmentsToUpload.set(pngData.attachmentName, pngData.path);
             Logger.info(`[EMBED] footerIcon converted to: ${pngData.attachmentUrl}`);
           } catch (error) {
-            Logger.error(`[EMBED] Failed to convert footerIcon:`, error);
-            return `❌ Erreur lors de la conversion SVG→PNG pour footerIcon: ${error}`;
+            Logger.error(`[EMBED] Failed to convert footerIcon, SKIPPING:`, error);
+            delete dataToUse.footerIcon; // 🛡️ SKIP: On supprime l'icône au lieu de crasher
           }
         }
 
@@ -2118,15 +2091,27 @@ export function registerEmbedTools(server: FastMCP) {
         // Vérifier authorIcon (domaine de confiance)
         if (dataToUse.authorIcon) {
           if (!isLocalLogoUrl(dataToUse.authorIcon) && !dataToUse.authorIcon.startsWith('attachment://')) {
-            return generateGuidanceMessage('authorIcon', dataToUse.authorIcon);
+            // ⚠️ WARNING SEULEMENT: On accepte l'URL, mais on prévient l'agent
+            const msg = generateGuidanceMessage('authorIcon', dataToUse.authorIcon);
+            warnings.push(msg);
+            Logger.warn(`[EMBED] URL non fiable pour authorIcon: ${dataToUse.authorIcon}. Acceptée avec avertissement.`);
           }
         }
 
         // Vérifier footerIcon (domaine de confiance)
         if (dataToUse.footerIcon) {
           if (!isLocalLogoUrl(dataToUse.footerIcon) && !dataToUse.footerIcon.startsWith('attachment://')) {
-            return generateGuidanceMessage('footerIcon', dataToUse.footerIcon);
+             // ⚠️ WARNING SEULEMENT: On accepte l'URL, mais on prévient l'agent
+            const msg = generateGuidanceMessage('footerIcon', dataToUse.footerIcon);
+            warnings.push(msg);
+            Logger.warn(`[EMBED] URL non fiable pour footerIcon: ${dataToUse.footerIcon}. Acceptée avec avertissement.`);
           }
+        }
+
+        if (dataToUse.authorIcon && !dataToUse.authorName) {
+          // 🛡️ FIX BUG: Si authorIcon est présent mais pas authorName, Discord ignore l'icône.
+          // On force un nom invisible pour afficher l'icône DANS l'embed (et pas en attachment externe).
+          dataToUse.authorName = '\u200b'; 
         }
 
         if (dataToUse.authorName) {
@@ -2135,6 +2120,12 @@ export function registerEmbedTools(server: FastMCP) {
             url: dataToUse.authorUrl,
             iconURL: dataToUse.authorIcon,
           });
+        }
+
+        if (dataToUse.footerIcon && !dataToUse.footerText) {
+          // 🛡️ FIX BUG: Si footerIcon est présent mais pas footerText, Discord ignore l'icône.
+          // On force un texte invisible pour afficher l'icône DANS l'embed.
+          dataToUse.footerText = '\u200b';
         }
 
         if (dataToUse.footerText) {
@@ -2586,10 +2577,23 @@ export function registerEmbedTools(server: FastMCP) {
           });
         }
 
-        return `✅ Embed créé | ID: ${message.id} | EmbedId: ${embedId}${args.autoUpdate?.enabled ? ' | Auto-update: ON' : ''}${args.saveAsTemplate ? ` | Template: ${args.saveAsTemplate}` : ''}`;
+        let finalMessage = `✅ Embed créé | ID: ${message.id} | EmbedId: ${embedId}`;
+        if (args.autoUpdate?.enabled) finalMessage += ' | Auto-update: ON';
+        if (args.saveAsTemplate) finalMessage += ` | Template: ${args.saveAsTemplate}`;
+
+        // Ajouter les warnings s'il y en a
+        if (warnings.length > 0) {
+          finalMessage += `\n\n⚠️ AVERTISSEMENTS:\n${warnings.join('\n\n')}`;
+        }
+
+        return finalMessage;
       } catch (error: any) {
+        // 🔍 DEBUG: Log full error details for troubleshooting
         Logger.error(`❌ [creer_embed]`, error.message);
-        return `❌ Erreur: ${error.message}`;
+        if (error.code) Logger.error(`[creer_embed] Discord API Code:`, error.code);
+        if (error.rawError) Logger.error(`[creer_embed] Raw Error:`, JSON.stringify(error.rawError));
+        if (error.errors) Logger.error(`[creer_embed] Errors:`, JSON.stringify(error.errors));
+        return `❌ Erreur: ${error.message}${error.code ? ` (Code: ${error.code})` : ''}`;
       }
     },
   });

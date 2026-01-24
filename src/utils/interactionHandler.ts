@@ -113,7 +113,7 @@ export class InteractionHandler {
     Logger.info(`🎯 Traitement interaction sondage: ${action} par ${user.username}`);
 
     // Récupérer le sondage
-    let poll = this.polls.get(pollId) || this.polls.get(`poll_${pollId}`);
+    const poll = this.polls.get(pollId) || this.polls.get(`poll_${pollId}`);
     if (!poll) {
       Logger.warn(`❌ Sondage non trouvé: ${pollId}`);
       return;
@@ -275,6 +275,48 @@ export class InteractionHandler {
         messageId
       });
       return true;
+    }
+
+    // Gestion des sondages (poll_ID_option_INDEX)
+    if (customId.includes('_option_') || customId.startsWith('poll_')) {
+      const parts = customId.split('_option_');
+      
+      // Cas standard: poll_ID_option_INDEX
+      if (parts.length === 2) {
+        const pollId = parts[0];
+        const action = parts[1];
+        
+        await this.handlePollInteraction({
+          pollId,
+          action,
+          user,
+          channelId,
+          messageId
+        });
+        return true;
+      }
+      
+      // Cas spéciaux (end, results) si implémentés plus tard
+      // Exemple: poll_ID_end
+      // On vérifie juste le préfixe poll_ pour être sûr
+      if (customId.startsWith('poll_')) {
+        // Tentative d'extraction d'action simple
+        // Format: poll_ID_ACTION
+        const lastUnderscore = customId.lastIndexOf('_');
+        if (lastUnderscore > 4) { // poll_ est au début
+            const pollId = customId.substring(0, lastUnderscore);
+            const action = customId.substring(lastUnderscore + 1);
+            
+            await this.handlePollInteraction({
+                pollId,
+                action,
+                user,
+                channelId,
+                messageId
+            });
+            return true;
+        }
+      }
     }
 
     // 🔒 GESTION DES BOUTONS PERSISTANTS (dist/data/)

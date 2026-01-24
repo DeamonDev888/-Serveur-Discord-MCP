@@ -1,15 +1,9 @@
 #!/usr/bin/env node
 
 import { FastMCP } from 'fastmcp';
-import { z } from 'zod';
 import {
   Client,
   EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder,
 } from 'discord.js';
 import { config } from 'dotenv';
 import * as fs from 'fs';
@@ -20,13 +14,6 @@ import Logger from './utils/logger.js';
 // ============================================================================
 // 🛡️ PROTECTION DU PROTOCOLE MCP & GESTION DES ERREURS
 // ============================================================================
-
-// 1. Redirection de STDOUT vers STDERR
-// Le protocole MCP utilise stdout pour la communication JSON-RPC.
-// Si une librairie (comme discord.js) écrit sur stdout via console.log, cela corrompt le message JSON.
-// Nous monkeys-patchons console.log pour rediriger ces sorties vers notre Logger (qui écrit sur stderr).
-const originalConsoleLog = console.log;
-const originalConsoleError = console.error;
 
 console.log = (...args) => {
   // Logger.info utilise process.stderr, donc c'est sûr pour le protocole MCP.
@@ -47,7 +34,9 @@ process.on('uncaughtException', (error) => {
   // pour voir les logs.
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason, _promise) => {
+  // Ignorer les erreurs EPIPE (stderr cassé) pour éviter les boucles infinies
+  if ((reason as any)?.code === 'EPIPE') return;
   Logger.error('🔥 CRITIQUE: Promesse rejetée non gérée (Unhandled Rejection):', reason);
 });
 
@@ -57,37 +46,20 @@ process.on('unhandledRejection', (reason, promise) => {
 
 
 // Imports des utilitaires de logos
-import {
-  getUniversalLogo,
-  buildClearbitLogoUrl,
-  getCryptoLogo,
-  getCryptoInfo,
-  buildCryptoLogoUrl
-} from './utils/logoUtils.js';
+// Utils logos non utilisés dans index.ts mais fournis par logoUtils.js
+// getUniversalLogo, buildClearbitLogoUrl, getCryptoLogo, getCryptoInfo, buildCryptoLogoUrl
 
 // Imports des utilitaires de jeux
-import {
-  generateConfirmationMessage,
-  generateAnimation,
-  generateGameResult,
-  generateMinigame
-} from './utils/gameUtils.js';
+// Utils jeux non utilisés dans index.ts mais fournis par gameUtils.js
+// generateConfirmationMessage, generateAnimation, generateGameResult, generateMinigame
 
 // Imports des données de jeux
-import {
-  VISUAL_SEPARATORS,
-  VISUAL_BADGES,
-  SUCCESS_ANIMATIONS,
-  FAILURE_ANIMATIONS,
-  CONFIRMATION_MESSAGES
-} from './utils/gameData.js';
+// Données jeux non utilisées dans index.ts mais fournies par gameData.js
+// VISUAL_SEPARATORS, VISUAL_BADGES, SUCCESS_ANIMATIONS, FAILURE_ANIMATIONS, CONFIRMATION_MESSAGES
 
 // Imports des données de logos
-import {
-  CRYPTO_LOGOS,
-  COMPANY_LOGOS,
-  MISC_LOGOS
-} from './data/logos.js';
+// Données logos non utilisées dans index.ts mais fournies par logos.js
+// CRYPTO_LOGOS, COMPANY_LOGOS, MISC_LOGOS
 
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -95,6 +67,12 @@ import { fileURLToPath } from 'url';
 // ============================================================================
 // IMPORTS DES OUTILS MCP UNIFIÉS (STRUCTURE 40 OUTILS)
 // ============================================================================
+
+// Outil unifié pour le serveur
+const server = new FastMCP({
+  name: 'discord-mcp-server',
+  version: '2.0.0',
+});
 
 // Outils unifiés principaux
 import { registerMemberTools } from './tools/members.js';
@@ -113,37 +91,8 @@ import { registerSystemTools } from './tools/registerSystem.js';
 import { registerButtonFunctionTools } from './tools/registerButtonFunctions.js';
 import { registerCodePreviewTools } from './tools/codePreview.js';
 import { registerFileUploadTools } from './tools/fileUpload.js';
+import { registerFileDownloadTools } from './tools/fileDownload.js';
 import { registerEditEmbedTools } from './tools/editEmbed.js';
-
-// Imports des utilitaires (compilés en JS)
-// Ces imports sont résolus au moment de l'exécution avec cache
-let toolsCodePreview: any = null;
-let toolsFileUpload: any = null;
-let toolsPolls: any = null;
-let toolsEmbedBuilder: any = null;
-const toolsCache = new Map<string, any>();
-
-// Import des types pour éviter les erreurs TypeScript
-import type { CustomButton } from './utils/buttonPersistence.js';
-import type { CustomMenu } from './utils/menuPersistence.js';
-
-// Fonction pour charger les utilitaires à la demande avec cache
-async function loadTools() {
-  // IMPORTANT: CodePreview rechargé à chaque appel (pas de cache) pour prendre en compte les rebuilds
-  // Supprimer le cache existant pour forcer le rechargement
-  if (toolsCache.has('codePreview')) {
-    toolsCache.delete('codePreview');
-  }
-  toolsCodePreview = await import('./tools/codePreview.js');
-  toolsCache.set('codePreview', toolsCodePreview);
-
-  if (!toolsFileUpload && !toolsCache.has('fileUpload')) {
-    toolsFileUpload = await import('./tools/fileUpload.js');
-    toolsCache.set('fileUpload', toolsFileUpload);
-  } else if (toolsCache.has('fileUpload')) {
-    toolsFileUpload = toolsCache.get('fileUpload');
-  }
-}
 
 // Logger.info est d├⌐j├á s├╗r car il utilise process.stderr.write dans utils/logger.ts
 
@@ -190,19 +139,13 @@ const botConfig = {
 
 // Debug: Afficher les variables d'environnement au démarrage
 // Logger.error('🔍 Debug ENV:');
-const tokenPreview =
-  botConfig.token && botConfig.token !== 'YOUR_BOT_TOKEN'
-    ? `${botConfig.token.substring(0, 5)}...${botConfig.token.substring(botConfig.token.length - 5)}`
-    : 'NON DÉFINI/DEFAULT';
+//   : 'NON DÉFINI/DEFAULT';
 // Logger.error(`  Token Status: ${tokenPreview}`);
 // Logger.error('  DISCORD_BOT_TOKEN:', process.env.DISCORD_BOT_TOKEN ? '✅ Présent' : '❌ Absent');
 // Logger.error('  NODE_ENV:', process.env.NODE_ENV);
 
 // Initialisation du serveur MCP
-const server = new FastMCP({
-  name: 'discord-mcp-server',
-  version: '2.0.0',
-});
+// (Déjà fait plus haut)
 
 // État global avec persistance fichier
 const globalState = {
@@ -236,13 +179,7 @@ const autoUpdateEmbeds = new Map<string, {
   updateCount: number;
 }>();
 
-// Map pour stocker les analytics des embeds
-const embedAnalytics = new Map<string, {
-  views: number;
-  clicks: number;
-  lastInteraction: number;
-  reactions: Map<string, number>;
-}>();
+
 
 // Fonction pour mettre à jour un embed automatiquement
 async function updateEmbed(embedId: string): Promise<void> {
@@ -272,7 +209,7 @@ async function updateEmbed(embedId: string): Promise<void> {
     }
 
     // Mettre à jour les variables dynamiques si nécessaire
-    let updatedEmbedData = { ...embedInfo.embedData };
+    const updatedEmbedData = { ...embedInfo.embedData };
 
     // Re-remplacer les variables pour obtenir des valeurs свежиes
     if (updatedEmbedData.title) {
@@ -371,167 +308,18 @@ function startAutoUpdate(): void {
 // SYSTÈME DE THÈMES 🎨
 // ============================================================================
 
-const EMBED_THEMES = {
-  cyberpunk: {
-    name: 'Cyberpunk',
-    color: '#FF00FF',
-    description: 'Style futuriste néon',
-    gradient: ['#FF00FF', '#00FFFF'],
-    emojis: ['⚡', '🔮', '🌆', '🤖'],
-  },
-  minimal: {
-    name: 'Minimal',
-    color: '#2C2C2C',
-    description: 'Style épuré et moderne',
-    gradient: ['#2C2C2C', '#4A4A4A'],
-    emojis: ['◼️', '▫️', '●', '■'],
-  },
-  gaming: {
-    name: 'Gaming',
-    color: '#7289DA',
-    description: 'Style gaming coloré',
-    gradient: ['#7289DA', '#5B6EBD'],
-    emojis: ['🎮', '🎯', '🏆', '⚔️'],
-  },
-  corporate: {
-    name: 'Corporate',
-    color: '#0066CC',
-    description: 'Style professionnel',
-    gradient: ['#0066CC', '#004C99'],
-    emojis: ['💼', '📊', '📈', '💼'],
-  },
-  sunset: {
-    name: 'Sunset',
-    color: '#FF6B6B',
-    description: 'Style coucher de soleil',
-    gradient: ['#FF6B6B', '#FFA07A'],
-    emojis: ['🌅', '🌇', '🌄', '☀️'],
-  },
-  ocean: {
-    name: 'Ocean',
-    color: '#00CED1',
-    description: 'Style océan bleu',
-    gradient: ['#00CED1', '#4169E1'],
-    emojis: ['🌊', '🐋', '🐬', '🦈'],
-  },
-};
 
-// Fonction pour appliquer un thème
-function applyTheme(themeName: string, customizations: any = {}): any {
-  const theme = EMBED_THEMES[themeName as keyof typeof EMBED_THEMES];
-  if (!theme) return customizations;
 
-  return {
-    ...customizations,
-    color: customizations.color || theme.color,
-    // ⚠️ Ne pas assigner d'emojis à authorIcon/footerIcon - Discord exige des URLs d'images valides
-    // Les emojis sont utilisés uniquement pour les titres et descriptions
-  };
-}
 
-// ============================================================================
-// SYSTÈME D'ANALYTICS 📊
-// ============================================================================
 
-// Fonction pour track une vue d'embed
-function trackEmbedView(embedId: string): void {
-  const analytics = embedAnalytics.get(embedId) || {
-    views: 0,
-    clicks: 0,
-    lastInteraction: 0,
-    reactions: new Map(),
-  };
-  analytics.views++;
-  analytics.lastInteraction = Date.now();
-  embedAnalytics.set(embedId, analytics);
-}
 
-// Fonction pour track un clic sur embed
-function trackEmbedClick(embedId: string, buttonId?: string): void {
-  const analytics = embedAnalytics.get(embedId) || {
-    views: 0,
-    clicks: 0,
-    lastInteraction: 0,
-    reactions: new Map(),
-  };
-  analytics.clicks++;
-  analytics.lastInteraction = Date.now();
-  if (buttonId) {
-    analytics.reactions.set(buttonId, (analytics.reactions.get(buttonId) || 0) + 1);
-  }
-  embedAnalytics.set(embedId, analytics);
-}
 
-// Fonction pour obtenir les analytics d'un embed
-function getEmbedAnalytics(embedId: string): any {
-  return embedAnalytics.get(embedId) || {
-    views: 0,
-    clicks: 0,
-    lastInteraction: 0,
-    reactions: {},
-  };
-}
 
-// Fonction pour générer un rapport d'analytics
-function generateAnalyticsReport(embedId: string): string {
-  const analytics = getEmbedAnalytics(embedId);
-  const reactions = Array.from(analytics.reactions.entries())
-    .map((item: any) => `  • ${item[0]}: ${item[1]} clics`)
-    .join('\n');
-
-  return `📊 **Analytics Embed ${embedId}**
-👀 Vues: ${analytics.views}
-🖱️ Clics: ${analytics.clics}
-📈 Taux d'engagement: ${analytics.views > 0 ? ((analytics.clicks / analytics.views) * 100).toFixed(1) : 0}%
-⏰ Dernière interaction: ${analytics.lastInteraction ? new Date(analytics.lastInteraction).toLocaleString('fr-FR') : 'Jamais'}
-${reactions ? `🎯 **Boutons:**\n${reactions}` : ''}`;
-}
-
-// Fonction pour sauvegarder les analytics
-async function saveAnalytics(): Promise<void> {
-  const analyticsData = Object.fromEntries(
-    Array.from(embedAnalytics.entries()).map(([id, data]) => [
-      id,
-      {
-        ...data,
-        reactions: Object.fromEntries(data.reactions),
-      },
-    ])
-  );
-
-  const analyticsPath = path.join(__dirname, '../embed-analytics.json');
-  await fs.promises.writeFile(analyticsPath, JSON.stringify(analyticsData, null, 2));
-}
-
-// Fonction pour charger les analytics
-async function loadAnalytics(): Promise<void> {
-  const analyticsPath = path.join(__dirname, '../embed-analytics.json');
-
-  try {
-    const content = await fs.promises.readFile(analyticsPath, 'utf-8');
-    const data = JSON.parse(content);
-
-    Object.entries(data).forEach(([id, analytics]: [string, any]) => {
-      embedAnalytics.set(id, {
-        ...analytics,
-        reactions: new Map(Object.entries(analytics.reactions || {})),
-      });
-    });
-
-    Logger.info(`📊 Analytics chargées: ${Object.keys(data).length} embeds`);
-  } catch (e) {
-    Logger.info('📊 Aucune analytics sauvegardée trouvée');
-  }
-}
 
 // Démarrer le système d'auto-update (délayé pour éviter erreur top-level await)
 setTimeout(startAutoUpdate, 1000);
 
-// Sauvegarder les analytics toutes les 5 minutes
-setInterval(saveAnalytics, 5 * 60 * 1000);
 
-// Charger les analytics au démarrage (délayé pour éviter erreur top-level await)
-setTimeout(() => loadAnalytics().catch(Logger.error), 500);
 
 
 
@@ -551,7 +339,7 @@ function saveStateToFile() {
       };
       await fs.promises.writeFile(STATUS_FILE, JSON.stringify(state, null, 2));
       // Logger.debug('💾 État sauvegardé (async):', state);
-    } catch (error) {
+    } catch {
       // Logger.error('❌ Erreur sauvegarde async:', error);
     }
   }, 2000);
@@ -572,7 +360,7 @@ async function updateGlobalState(connected: boolean, error?: string) {
         globalState.guilds = client.guilds.cache.size;
         globalState.uptime = client.uptime || 0;
       }
-    } catch (e) {
+    } catch {
       // Ignore errors if we can't get client details
     }
   }
@@ -581,7 +369,8 @@ async function updateGlobalState(connected: boolean, error?: string) {
   saveStateToFile();
 }
 
-// Templates d'embeds
+// Templates d'embeds (Non utilisés localement dans index.ts)
+/*
 const EMBED_TEMPLATES: Record<string, { title: string; color: number; description: string }> = {
   success: {
     title: '✅ Succès',
@@ -609,6 +398,7 @@ const EMBED_TEMPLATES: Record<string, { title: string; color: number; descriptio
     description: 'Annonce officielle',
   },
 };
+*/
 
 // Fonction de connexion unifiée via DiscordBridge
 async function ensureDiscordConnection(): Promise<Client> {
@@ -636,36 +426,34 @@ const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW = 60000; // 1 minute
 const RATE_LIMIT_MAX = 30; // Max 30 requêtes par minute par outil
 
-// Fonction de rate limiting
-function checkRateLimit(toolName: string): boolean {
-  const now = Date.now();
-  const toolLimit = rateLimitMap.get(toolName);
+// function checkRateLimit(toolName: string): boolean {
+//   const now = Date.now();
+//   const toolLimit = rateLimitMap.get(toolName);
+// 
+//   if (!toolLimit || now > toolLimit.resetTime) {
+//     // Nouvelle fenêtre ou premier appel
+//     rateLimitMap.set(toolName, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+//     return true;
+//   }
+// 
+//   if (toolLimit.count >= RATE_LIMIT_MAX) {
+//     // Limite atteinte
+//     return false;
+//   }
+// 
+//   // Incrémenter le compteur
+//   toolLimit.count++;
+//   return true;
+// }
 
-  if (!toolLimit || now > toolLimit.resetTime) {
-    // Nouvelle fenêtre ou premier appel
-    rateLimitMap.set(toolName, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
-    return true;
-  }
-
-  if (toolLimit.count >= RATE_LIMIT_MAX) {
-    // Limite atteinte
-    return false;
-  }
-
-  // Incrémenter le compteur
-  toolLimit.count++;
-  return true;
-}
-
-// Wrapper pour les outils avec rate limiting
-function withRateLimit<T extends any[], R>(toolName: string, fn: (...args: T) => Promise<R>) {
-  return async (...args: T): Promise<R> => {
-    if (!checkRateLimit(toolName)) {
-      throw new Error(`Rate limit atteint pour ${toolName}. Réessayez dans 1 minute.`);
-    }
-    return fn(...args);
-  };
-}
+// function withRateLimit<T extends any[], R>(_toolName: string, fn: (...args: T) => Promise<R>) {
+//   return async (...args: T): Promise<R> => {
+//     if (!checkRateLimit(_toolName)) {
+//       throw new Error(`Rate limit atteint pour ${_toolName}. Réessayez dans 1 minute.`);
+//     }
+//     return fn(...args);
+//   };
+// }
 
 // ============================================================================
 // OUTILS MCP
@@ -760,265 +548,8 @@ function replaceVariables(text: string, variables: Record<string, string> = {}):
   return result;
 }
 
-// Fonction pour créer une barre de progression
-function createProgressBar(value: number, max: number, length: number = 10): string {
-  const percentage = Math.min((value / max) * 100, 100);
-  const filled = Math.round((percentage / 100) * length);
-  const empty = length - filled;
-  return '█'.repeat(filled) + '░'.repeat(empty);
-}
+// REMOVED: Unused utilities (createProgressBar, saveTemplate, loadTemplate, validateFieldLength, generateAsciiChart, adaptLinkForUser, applyLayout, generateVisualEffectsDescription)
 
-// Fonction pour sauvegarder un template
-async function saveTemplate(name: string, embedData: any): Promise<void> {
-  const templatesPath = path.join(__dirname, '../embed-templates.json');
-  let templates: Record<string, any> = {};
-
-  try {
-    const content = await fs.promises.readFile(templatesPath, 'utf-8');
-    templates = JSON.parse(content);
-  } catch (e) {
-    // Fichier n'existe pas encore
-  }
-
-  templates[name] = embedData;
-  await fs.promises.writeFile(templatesPath, JSON.stringify(templates, null, 2));
-}
-
-// Fonction pour charger un template
-async function loadTemplate(name: string): Promise<any | null> {
-  const templatesPath = path.join(__dirname, '../embed-templates.json');
-
-  try {
-    const content = await fs.promises.readFile(templatesPath, 'utf-8');
-    const templates = JSON.parse(content);
-    return templates[name] || null;
-  } catch (e) {
-    return null;
-  }
-}
-
-// Fonction pour valider la longueur des champs
-function validateFieldLength(fields: any[]): { valid: boolean; warnings: string[] } {
-  const warnings: string[] = [];
-
-  fields?.forEach((field, index) => {
-    if (field.name.length > 256) {
-      warnings.push(`Champ #${index + 1}: Le nom dépasse 256 caractères (${field.name.length})`);
-    }
-    if (field.value.length > 1024) {
-      warnings.push(`Champ #${index + 1}: La valeur dépasse 1024 caractères (${field.value.length}) ⚠️`);
-    }
-    if (field.value.length > 800) {
-      warnings.push(`Champ #${index + 1}: La valeur est longue (${field.value.length} chars), considérez la pagination`);
-    }
-  });
-
-  return { valid: warnings.filter(w => w.includes('⚠️')).length === 0, warnings };
-}
-
-// ============================================================================
-// NOUVELLES FONCTIONS UTILITAIRES POUR LES GRAPHIQUES 📊
-// ============================================================================
-
-// Fonction pour générer un graphique en ASCII art
-function generateAsciiChart(type: string, data: number[], labels?: string[], options: any = {}): string {
-  const maxValue = Math.max(...data);
-  const minValue = Math.min(...data);
-  const range = maxValue - minValue;
-  const height = options.height || 10;
-  const width = data.length;
-
-  let chart = '';
-
-  switch (type) {
-    case 'sparkline':
-      // Graphique sparkline compact
-      const points = data.map((value, index) => {
-        const position = Math.round(((value - minValue) / range) * 4);
-        return '▁▂▃▄▅▆▇█'[Math.min(position, 7)];
-      });
-      chart = `\`\`\`\n${points.join('')}\n\`\`\``;
-      break;
-
-    case 'line':
-      // Graphique en ligne
-      chart = '```\n';
-      for (let i = height; i >= 0; i--) {
-        let line = '';
-        for (let j = 0; j < width; j++) {
-          const value = data[j];
-          const position = Math.round(((value - minValue) / range) * height);
-          line += position >= i ? '●' : ' ';
-        }
-        chart += line + '\n';
-      }
-      chart += '```';
-      break;
-
-    case 'bar':
-      // Graphique en barres
-      chart = '```\n';
-      for (let i = height; i >= 0; i--) {
-        let line = '';
-        for (let j = 0; j < width; j++) {
-          const value = data[j];
-          const barHeight = Math.round(((value - minValue) / range) * height);
-          line += barHeight >= i ? '█' : ' ';
-        }
-        chart += line + '\n';
-      }
-      chart += '```';
-      break;
-
-    case 'area':
-      // Graphique en aires
-      chart = '```\n';
-      for (let i = height; i >= 0; i--) {
-        let line = '';
-        for (let j = 0; j < width; j++) {
-          const value = data[j];
-          const position = Math.round(((value - minValue) / range) * height);
-          if (position >= i) {
-            line += i === 0 ? '▔' : '▀';
-          } else if (position + 1 >= i) {
-            line += '▁';
-          } else {
-            line += ' ';
-          }
-        }
-        chart += line + '\n';
-      }
-      chart += '```';
-      break;
-
-    case 'pie':
-      // Camembert en ASCII (simplifié)
-      const total = data.reduce((sum, val) => sum + val, 0);
-      let pieChart = '```\n';
-      data.forEach((value, index) => {
-        const percentage = ((value / total) * 100).toFixed(1);
-        const barLength = Math.round(parseFloat(percentage) / 2);
-        const bar = '█'.repeat(barLength);
-        const label = labels?.[index] || `Partie ${index + 1}`;
-        pieChart += `${label}: ${bar} ${percentage}%\n`;
-      });
-      pieChart += '```';
-      chart = pieChart;
-      break;
-
-    default:
-      chart = 'Type de graphique non supporté';
-  }
-
-  return chart;
-}
-
-// NOUVELLES FONCTIONS UTILITAIRES POUR LES LIENS ADAPTATIFS 🔗
-// ============================================================================
-
-// Fonction pour adapter les liens selon l'utilisateur
-function adaptLinkForUser(link: any, userId: string): string {
-  let adaptedUrl = link.url;
-
-  // Adapter selon l'utilisateur si demandé
-  if (link.userSpecific) {
-    adaptedUrl += `?user=${userId}&ref=discord`;
-  }
-
-  // Ajouter les paramètres conditionnels
-  if (link.conditions) {
-    const params = new URLSearchParams();
-    Object.entries(link.conditions).forEach(([key, value]) => {
-      params.append(key, value as string);
-    });
-    adaptedUrl += `${adaptedUrl.includes('?') ? '&' : '?'}${params.toString()}`;
-  }
-
-  return `[${link.label}](${adaptedUrl})`;
-}
-
-// ============================================================================
-// NOUVELLES FONCTIONS UTILITAIRES POUR LES LAYOUTS 🎨
-// ============================================================================
-
-// Fonction pour appliquer un layout
-function applyLayout(fields: any[], layout: any): any[] {
-  if (!layout || layout.type === 'stack') {
-    return fields; // Layout par défaut
-  }
-
-  switch (layout.type) {
-    case 'grid':
-      // Réorganiser en grille
-      const columns = layout.columns || 2;
-      const gridFields: any[] = [];
-      for (let i = 0; i < fields.length; i += columns) {
-        const row = fields.slice(i, i + columns);
-        gridFields.push({
-          name: row.map((f: any) => f.name).join(' | '),
-          value: row.map((f: any) => f.value).join(' | '),
-          inline: true,
-        });
-      }
-      return gridFields;
-
-    case 'sidebar':
-      // Séparer en sidebar + contenu principal
-      const sidebarField = fields.slice(0, 1);
-      const mainFields = fields.slice(1);
-      return [
-        ...sidebarField.map(f => ({ ...f, inline: false })),
-        ...mainFields.map(f => ({ ...f, inline: true })),
-      ];
-
-    case 'centered':
-      // Centrer les champs
-      return fields.map(f => ({ ...f, inline: false }));
-
-    case 'masonry':
-      // Layout en briques (alternance inline)
-      return fields.map((f, i) => ({
-        ...f,
-        inline: i % 2 === 0,
-      }));
-
-    default:
-      return fields;
-  }
-}
-
-// ============================================================================
-// NOUVELLES FONCTIONS UTILITAIRES POUR LES EFFETS VISUELS 🌟
-// ============================================================================
-
-// Fonction pour générer les descriptions d'effets visuels
-function generateVisualEffectsDescription(effects: any): string {
-  if (!effects) return '';
-
-  let description = '';
-
-  if (effects.animations && effects.animations.length > 0) {
-    description += `✨ Animations: ${effects.animations.join(', ')}\n`;
-  }
-
-  if (effects.particles) {
-    description += `✨ Particules activées\n`;
-  }
-
-  if (effects.transitions) {
-    description += `✨ Transitions fluides\n`;
-  }
-
-  if (effects.hoverEffects && effects.hoverEffects.length > 0) {
-    description += `✨ Effets hover: ${effects.hoverEffects.join(', ')}\n`;
-  }
-
-  if (effects.intensity && effects.intensity !== 'medium') {
-    description += `✨ Intensité: ${effects.intensity}\n`;
-  }
-
-  return description.trim();
-}
 
 // creer_embed tool removed. Now registered via registerEmbedTools(server) in tools/embeds.ts
 
@@ -1163,8 +694,6 @@ async function cleanup() {
       await DiscordBridge.getInstance(botConfig.token).destroy();
     }
 
-    // Nettoyer le cache des outils
-    toolsCache.clear();
 
     // Nettoyer la map de rate limiting
     rateLimitMap.clear();
@@ -1197,21 +726,15 @@ process.on('uncaughtException', error => {
   // Ne pas quitter, laisser le serveur continuer
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  // Ignorer les erreurs EPIPE (stderr cassé) pour éviter les boucles infinies
-  if ((reason as any)?.code === 'EPIPE') return;
-  Logger.error('❌ Promesse rejetée non gérée:', reason);
-  Logger.error('Promise:', promise);
-  // Ne pas quitter, laisser le serveur continuer
-});
+
 
 // Limite de mémoire pour éviter les freezes
 const MEMORY_LIMIT = 512 * 1024 * 1024; // 512 MB
 if (process.memoryUsage().heapUsed > MEMORY_LIMIT) {
   Logger.error('⚠️ Limite de mémoire atteinte:', process.memoryUsage());
   // Forcer le garbage collection si disponible
-  if (global.gc) {
-    global.gc();
+  if ((global as any).gc) {
+    (global as any).gc();
   }
 }
 
@@ -1360,6 +883,7 @@ registerSystemTools(server);
 registerButtonFunctionTools(server);
 registerCodePreviewTools(server);
 registerFileUploadTools(server);
+registerFileDownloadTools(server);
 
 // ============================================================================
 // FONCTION PRINCIPALE

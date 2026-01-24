@@ -134,7 +134,7 @@ function validateDiscordMentions(text: string): {
  * Génère le message d'erreur pour les mentions invalides
  */
 function generateMentionErrorMessage(validation: ReturnType<typeof validateDiscordMentions>, fieldName: string): string {
-  let message = `❌ **Format de mention invalide détecté dans ${fieldName} !**\n\n`;
+  const message = `❌ **Format de mention invalide détecté dans ${fieldName} !**\n\n`;
 
   const parts: string[] = [];
 
@@ -595,7 +595,7 @@ ${JSON.stringify(details, null, 2)}
         }
 
         // Créer le nouvel embed à partir de l'original
-        let embedData = originalEmbed.toJSON();
+        const embedData = originalEmbed.toJSON();
 
         // Appliquer le thème si demandé
         if (args.theme) {

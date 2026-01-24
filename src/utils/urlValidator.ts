@@ -52,7 +52,7 @@ export class UrlValidator {
     isHealthy: boolean;
     lastChecked: number;
   }>();
-  private healthCheckTimer?: NodeJS.Timeout;
+  private healthCheckTimer?: ReturnType<typeof setInterval>;
 
   constructor(
     validationConfig: Partial<ValidationConfig> = {},
@@ -122,7 +122,7 @@ export class UrlValidator {
 
     try {
       // Vérifier le format de l'URL
-      const urlObj = new URL(url);
+      const _urlObj = new URL(url);
 
       // Health check
       const health = this.healthStatus.get(url);

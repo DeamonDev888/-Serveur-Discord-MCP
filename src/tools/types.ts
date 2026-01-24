@@ -143,55 +143,55 @@ export interface PollButtonConfig {
  * Types de composants supportés
  */
 export type ComponentType =
-  (typeof import('./interactions').COMPONENT_TYPES)[keyof typeof import('./interactions').COMPONENT_TYPES];
+  (typeof import('./interactions.js').COMPONENT_TYPES)[keyof typeof import('./interactions.js').COMPONENT_TYPES];
 
 /**
  * Styles de boutons
  */
 export type ButtonStyle =
-  (typeof import('./interactions').BUTTON_STYLES)[keyof typeof import('./interactions').BUTTON_STYLES];
+  (typeof import('./interactions.js').BUTTON_STYLES)[keyof typeof import('./interactions.js').BUTTON_STYLES];
 
 /**
  * Schéma pour bouton
  */
-export type ButtonParams = z.infer<typeof import('./interactions').ButtonSchema>;
+export type ButtonParams = z.infer<typeof import('./interactions.js').ButtonSchema>;
 
 /**
  * Schéma pour menu de sélection
  */
-export type StringSelectParams = z.infer<typeof import('./interactions').StringSelectSchema>;
+export type StringSelectParams = z.infer<typeof import('./interactions.js').StringSelectSchema>;
 
 /**
  * Schéma pour sélecteur d'utilisateurs
  */
-export type UserSelectParams = z.infer<typeof import('./interactions').UserSelectSchema>;
+export type UserSelectParams = z.infer<typeof import('./interactions.js').UserSelectSchema>;
 
 /**
  * Schéma pour sélecteur de rôles
  */
-export type RoleSelectParams = z.infer<typeof import('./interactions').RoleSelectSchema>;
+export type RoleSelectParams = z.infer<typeof import('./interactions.js').RoleSelectSchema>;
 
 /**
  * Schéma pour sélecteur de canaux
  */
-export type ChannelSelectParams = z.infer<typeof import('./interactions').ChannelSelectSchema>;
+export type ChannelSelectParams = z.infer<typeof import('./interactions.js').ChannelSelectSchema>;
 
 /**
  * Schéma pour sélecteur mentionnable
  */
 export type MentionableSelectParams = z.infer<
-  typeof import('./interactions').MentionableSelectSchema
+  typeof import('./interactions.js').MentionableSelectSchema
 >;
 
 /**
  * Schéma pour modal
  */
-export type ModalParams = z.infer<typeof import('./interactions').ModalSchema>;
+export type ModalParams = z.infer<typeof import('./interactions.js').ModalSchema>;
 
 /**
  * Schéma principal pour interactions
  */
-export type InteractionParams = z.infer<typeof import('./interactions').InteractionSchema>;
+export type InteractionParams = z.infer<typeof import('./interactions.js').InteractionSchema>;
 
 /**
  * Résultat de validation de composants
@@ -208,7 +208,7 @@ export interface ComponentValidationResult {
 /**
  * Schéma pour upload de fichier
  */
-export type FileUploadParams = z.infer<typeof import('./fileUpload').FileUploadSchema>;
+export type FileUploadParams = z.infer<typeof import('./fileUpload.js').FileUploadSchema>;
 
 /**
  * Types de fichiers supportés
@@ -308,12 +308,12 @@ export interface UserInfo {
 /**
  * Schéma pour affichage de code
  */
-export type CodePreviewParams = z.infer<typeof import('./codePreview').CodePreviewSchema>;
+export type CodePreviewParams = z.infer<typeof import('./codePreview.js').CodePreviewSchema>;
 
 /**
  * Langage de programmation supporté
  */
-export type SupportedLanguage = keyof typeof import('./codePreview').SUPPORTED_LANGUAGES;
+export type SupportedLanguage = keyof typeof import('./codePreview.js').SUPPORTED_LANGUAGES;
 
 /**
  * Résultat de création de messages de code

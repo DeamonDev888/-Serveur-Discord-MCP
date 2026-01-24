@@ -1,7 +1,5 @@
-import { Client, GatewayIntentBits, InteractionType, ButtonStyle, EmbedBuilder, ActionRowBuilder, ButtonBuilder } from 'discord.js';
+import { Client, GatewayIntentBits, InteractionType, EmbedBuilder, ActionRowBuilder, ButtonBuilder } from 'discord.js';
 import Logger from './utils/logger.js';
-import * as fs from 'fs';
-import * as path from 'path';
 
 import { interactionHandler } from './utils/interactionHandler.js';
 
@@ -10,7 +8,7 @@ import { interactionHandler } from './utils/interactionHandler.js';
 // ============================================================================
 
 // Activer/désactiver le mode auto-handler (répond automatiquement aux interactions orphelines)
-export let AUTO_HANDLER_ENABLED = true;
+export const AUTO_HANDLER_ENABLED = true;
 
 // Messages de réponse automatique
 const AUTO_RESPONSES = {
@@ -137,7 +135,7 @@ export class DiscordBridge {
 
         for (const [id, button] of buttons.entries()) {
             if (button.functionCode) {
-                const func = async (interaction: any, buttonData: any) => {
+                const func = async (interaction: any, _buttonData: any) => {
                     // Reconstruire le contexte (ctx) identique à celui de registerButtonFunctions
                     const context = {
                         channelId: interaction.channelId,
@@ -296,7 +294,6 @@ export class DiscordBridge {
     const channelId = interaction.channelId;
     const messageId = interaction.message.id;
     let wasHandled = false;
-    let deferred = false; // 🔥 Suivre si on a déjà fait deferReply
 
     // 🔥 VÉRIFIER L'ÉTAT DE L'INTERACTION dès le début
     Logger.debug(`🔍 [Bridge] État interaction - replied: ${interaction.replied}, deferred: ${interaction.deferred}`);

@@ -140,8 +140,8 @@ export function clearSvgCache(): void {
       fs.unlinkSync(filePath);
     });
     Logger.info(`[SVG Converter] Cache cleared: ${files.length} files deleted`);
-  } catch (error) {
-    Logger.error('[SVG Converter] Error clearing cache:', error);
+  } catch {
+    Logger.error('[SVG Converter] Error clearing cache');
   }
 }
 
@@ -158,7 +158,7 @@ export function getCacheStats(): { count: number; size: number } {
       totalSize += stats.size;
     });
     return { count: files.length, size: totalSize };
-  } catch (error) {
+  } catch {
     return { count: 0, size: 0 };
   }
 }
