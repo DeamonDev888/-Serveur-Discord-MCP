@@ -50,7 +50,7 @@ function withRateLimit<T extends any[], R>(toolName: string, fn: (...args: T) =>
 
 const StatutBotSchema = z.object({});
 
-const DeployRpgSchema = z.object({});
+
 
 const LogsExplorerSchema = z.object({
   lines: z.number().min(1).max(100).default(20).describe('Nombre de lignes à afficher'),
@@ -76,21 +76,7 @@ export function registerSystemTools(server: FastMCP): void {
     }),
   });
 
-  server.addTool({
-    name: 'deploy_rpg',
-    description: 'Déploie le mini-RPG persistant dans le canal spécifié',
-    parameters: DeployRpgSchema,
-    execute: async () => {
-      try {
-        const { deployRPG } = await import('../utils/rpgDeploy.js');
-        const result = await deployRPG(botConfig.token);
-        return result;
-      } catch (error: any) {
-        Logger.error('❌ [deploy_rpg]', error.message);
-        return `❌ Erreur: ${error.message}`;
-      }
-    },
-  });
+
 
   server.addTool({
     name: 'logs_explorer',

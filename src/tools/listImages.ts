@@ -298,7 +298,7 @@ function getImageUrl(symbol: string, mode: 'logo' | 'photo' = 'logo'): { name: s
 }
 
 function getAllImages(category: string = 'all', sector: string = 'all', subcategory: string = 'all', search: string = '', limit: number = 50, mode: 'logo' | 'photo' = 'logo') {
-  let results: Array<{ symbol: string; name: string; url: string; type: string; mode: string; sector?: string }> = [];
+  const results: Array<{ symbol: string; name: string; url: string; type: string; mode: string; sector?: string }> = [];
 
   // Cryptos
   if (category === 'all' || category === 'crypto') {
@@ -1567,7 +1567,7 @@ export function registerListImagesTools(server: FastMCP): void {
             return `⚠️ ATTENTION: Vous utilisez mode: "photo" pour la catégorie "${catName}"\n\n💡 Les images seront ALEATOIRES (Picsum), pas thématiques !\n\n✅ Solution: Utilisez mode: "auto" ou mode: "real" pour les vraies images Unsplash thématiques.`;
           }
 
-          let results: Array<{ symbol: string; name: string; url: string; type: string; mode: string }> = [];
+          const results: Array<{ symbol: string; name: string; url: string; type: string; mode: string }> = [];
           const seedBase = Date.now(); // Seed pour variation
 
           // Si des symboles spécifiques sont demandés
@@ -1636,7 +1636,7 @@ export function registerListImagesTools(server: FastMCP): void {
         // MODE GIF: Picsum avec blur (simulation d'effets animés)
         // ============================================================================
         if (mode === 'gif') {
-          let gifResults: Array<{ symbol: string; name: string; url: string; type: string; mode: string }> = [];
+          const gifResults: Array<{ symbol: string; name: string; url: string; type: string; mode: string }> = [];
           const seedBase = Date.now(); // Seed pour variation
 
           // Si des symboles spécifiques sont demandés

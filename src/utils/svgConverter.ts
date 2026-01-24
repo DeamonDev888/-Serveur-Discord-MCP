@@ -43,23 +43,32 @@ async function downloadImage(url: string): Promise<Buffer> {
  * Convertit un SVG en PNG
  */
 async function convertSvgToPng(svgBuffer: Buffer, size: number = 64): Promise<Buffer> {
-  // Sharp ne gère pas le SVG directement, on utilise une méthode alternative
-  // On crée un SVG avec un viewBox fixe et on le convertit
-
-  // Pour l'instant, on utilise une méthode simple:
-  // Créer un SVG avec les dimensions fixées
-  const svgString = svgBuffer.toString('utf-8');
-
-  // Parser la taille demandée
-  const png = await sharp(Buffer.from(`
-    <svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
-      <image href="data:image/svg+xml;base64,${Buffer.from(svgString).toString('base64')}" width="${size}" height="${size}"/>
-    </svg>
-  `))
-    .png()
-    .toBuffer();
-
-  return png;
+  try {
+    // Sharp gère le SVG directement si libvips est compilé avec librsvg
+    // On redimensionne pour correspondre à la taille demandée
+    return await sharp(svgBuffer)
+      .resize(size, size, {
+        fit: 'contain',
+        background: { r: 0, g: 0, b: 0, alpha: 0 }
+      })
+      .png()
+      .toBuffer();
+  } catch (error) {
+    Logger.warn(`[SVG Converter] Direct conversion failed, falling back to wrapper method: ${error instanceof Error ? error.message : String(error)}`);
+    
+    // Fallback: Si la conversion directe échoue (ex: SVG mal formé), 
+    // on l'encapsule dans un nouveau SVG
+    const svgString = svgBuffer.toString('utf-8');
+    const base64Svg = Buffer.from(svgString).toString('base64');
+    
+    return await sharp(Buffer.from(`
+      <svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+        <image href="data:image/svg+xml;base64,${base64Svg}" width="${size}" height="${size}"/>
+      </svg>
+    `))
+      .png()
+      .toBuffer();
+  }
 }
 
 /**
@@ -131,8 +140,8 @@ export function clearSvgCache(): void {
       fs.unlinkSync(filePath);
     });
     Logger.info(`[SVG Converter] Cache cleared: ${files.length} files deleted`);
-  } catch (error) {
-    Logger.error('[SVG Converter] Error clearing cache:', error);
+  } catch {
+    Logger.error('[SVG Converter] Error clearing cache');
   }
 }
 
@@ -149,7 +158,7 @@ export function getCacheStats(): { count: number; size: number } {
       totalSize += stats.size;
     });
     return { count: files.length, size: totalSize };
-  } catch (error) {
+  } catch {
     return { count: 0, size: 0 };
   }
 }

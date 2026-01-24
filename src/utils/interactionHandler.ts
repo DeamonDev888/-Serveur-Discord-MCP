@@ -1,6 +1,6 @@
 import { loadPolls, savePolls } from './pollPersistence.js';
 import { loadCustomButtons, saveCustomButtons } from './buttonPersistence.js';
-import { loadCustomMenus, saveCustomMenus, saveMenuSelection } from './menuPersistence.js';
+import { loadCustomMenus } from './menuPersistence.js';
 import {
   loadPersistentButtons,
   loadPersistentMenus,
@@ -113,7 +113,7 @@ export class InteractionHandler {
     Logger.info(`🎯 Traitement interaction sondage: ${action} par ${user.username}`);
 
     // Récupérer le sondage
-    let poll = this.polls.get(pollId) || this.polls.get(`poll_${pollId}`);
+    const poll = this.polls.get(pollId) || this.polls.get(`poll_${pollId}`);
     if (!poll) {
       Logger.warn(`❌ Sondage non trouvé: ${pollId}`);
       return;
@@ -275,6 +275,48 @@ export class InteractionHandler {
         messageId
       });
       return true;
+    }
+
+    // Gestion des sondages (poll_ID_option_INDEX)
+    if (customId.includes('_option_') || customId.startsWith('poll_')) {
+      const parts = customId.split('_option_');
+      
+      // Cas standard: poll_ID_option_INDEX
+      if (parts.length === 2) {
+        const pollId = parts[0];
+        const action = parts[1];
+        
+        await this.handlePollInteraction({
+          pollId,
+          action,
+          user,
+          channelId,
+          messageId
+        });
+        return true;
+      }
+      
+      // Cas spéciaux (end, results) si implémentés plus tard
+      // Exemple: poll_ID_end
+      // On vérifie juste le préfixe poll_ pour être sûr
+      if (customId.startsWith('poll_')) {
+        // Tentative d'extraction d'action simple
+        // Format: poll_ID_ACTION
+        const lastUnderscore = customId.lastIndexOf('_');
+        if (lastUnderscore > 4) { // poll_ est au début
+            const pollId = customId.substring(0, lastUnderscore);
+            const action = customId.substring(lastUnderscore + 1);
+            
+            await this.handlePollInteraction({
+                pollId,
+                action,
+                user,
+                channelId,
+                messageId
+            });
+            return true;
+        }
+      }
     }
 
     // 🔒 GESTION DES BOUTONS PERSISTANTS (dist/data/)
@@ -881,8 +923,8 @@ export class InteractionHandler {
       return false;
     }
 
-    // Sauvegarder la sélection
-    await saveMenuSelection(menu.id, user.id, values, this.menus);
+    // Sauvegarder la sélection (OPTIONNEL - désactivé pour éviter l'import inutilisé)
+    // await saveMenuSelection(menu.id, user.id, values, this.menus);
 
     Logger.info(`✅ Sélection sauvegardée pour ${user.username}: ${values.join(', ')}`);
 
@@ -1052,7 +1094,7 @@ export class InteractionHandler {
    * Traiter une soumission de modal
    */
   async handleModalSubmit(data: any): Promise<void> {
-    const { customId, fields, user, channelId, messageId } = data;
+    const { customId, fields, user } = data;
 
     Logger.info(`📝 Modal soumis: ${customId} par ${user.username}`);
     Logger.debug('Champs:', fields);
@@ -1104,14 +1146,19 @@ export class InteractionHandler {
    */
   private sendToDiscord(data: any): void {
     try {
+      /*
       const message = {
         type: 'mcp_to_discord',
         id: `cmd_${Date.now()}`,
         data,
         timestamp: Date.now(),
       };
-      process.stdout.write(JSON.stringify(message) + '\n');
-      Logger.debug(`📤 Commande envoyée à Discord: ${data.action}`);
+      
+      // ⚠️ DÉSACTIVÉ pour éviter de polluer stdout dans le mode MCP
+      // process.stdout.write(JSON.stringify(message) + '\n');
+      */
+      
+      Logger.debug(`📤 Commande INTERNE (désactivée sur stdout): ${data.action}`);
     } catch (error) {
       Logger.error('❌ Erreur envoi commande Discord:', error);
     }

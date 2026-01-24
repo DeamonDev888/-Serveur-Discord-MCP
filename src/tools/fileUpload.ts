@@ -190,7 +190,7 @@ export function registerFileUploadTools(server: FastMCP) {
     }),
     execute: async (args) => {
       try {
-        console.error(`📤 [file_upload] Fichier: ${args.filePath}`);
+        Logger.error(`📤 [file_upload] Fichier: ${args.filePath}`);
         const client = await ensureDiscordConnection();
         const channel = await client.channels.fetch(args.channelId);
 
@@ -233,7 +233,7 @@ export function registerFileUploadTools(server: FastMCP) {
 
         return `✅ Fichier uploadé | Taille: ${(attachmentResult.size! / 1024 / 1024).toFixed(2)} MB | ID: ${message.id}`;
       } catch (error: any) {
-        console.error(`❌ [file_upload]`, error.message);
+        Logger.error(`❌ [file_upload]`, error.message);
         return `❌ Erreur: ${error.message}`;
       }
     },

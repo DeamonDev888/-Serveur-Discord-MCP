@@ -51,77 +51,7 @@ export const SUPPORTED_LANGUAGES: { [key: string]: string } = {
   properties: 'properties',
 };
 
-// Fonction pour envelopper automatiquement le code dans des blocs markdown
-const formatCodeBlocks = (content: string): string => {
-  const lines = content.split('\n');
-  const formattedLines: string[] = [];
-  let inCodeBlock = false;
-  let codeBuffer: string[] = [];
-  let currentLang = 'bash';
 
-  const flushCodeBuffer = (lang: string) => {
-    if (codeBuffer.length > 0) {
-      const BACKTICK = '\x60';
-      formattedLines.push(BACKTICK + BACKTICK + BACKTICK + lang);
-      formattedLines.push(...codeBuffer);
-      formattedLines.push(BACKTICK + BACKTICK + BACKTICK);
-      formattedLines.push(''); // Ligne vide après le bloc
-      codeBuffer = [];
-    }
-  };
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    // Détecter une ligne de commande bash
-    // - Commandes shell : chmod, echo, cd, npm, node, bash, sh, etc.
-    // - Appels de fonctions : create_channel(...), edit_message(...)
-    // - Variables : SESSION_ID=, $(), etc.
-    const isCommandLine = /^(\s*)(chmod|echo|cd|npm|node|pnpm|yarn|bash|sh|\$\s*\(|SESSION[_A-Z]*|create_|edit_|delete_|get_|send_|add_|move_|vote_|appuyer_|selectionner_)/.test(line) ||
-                         /\w+\([^)]*\)/.test(line) || // Détecte les appels de fonction avec ()
-                         /^(\s*)([A-Z_]{2,})(\s*[:=])/.test(line); // Détecte les constantes comme "BASH:"
-
-    // Détecter une ligne de code JS/TS (import, const, let, class, async, etc.)
-    const isJSLine = /^(\s*)(import|export|const|let|var|function|class|async|await|interface|type)/.test(line);
-
-    // Si on n'est pas dans un bloc et qu'on trouve une commande ou du code
-    if (!inCodeBlock && (isCommandLine || isJSLine)) {
-      // Terminer le markdown précédent si nécessaire
-      if (formattedLines.length > 0 && formattedLines[formattedLines.length - 1] !== '') {
-        formattedLines.push('');
-      }
-
-      // Commencer un bloc de code
-      inCodeBlock = true;
-      currentLang = isJSLine ? 'javascript' : 'bash';
-      codeBuffer = [line];
-    }
-    // Si on est dans un bloc de code et qu'on trouve une ligne qui n'est pas du code
-    else if (inCodeBlock && !isCommandLine && !isJSLine && line.trim() !== '' && !/^#{1,6}\s+/.test(line)) {
-      // Fin du bloc de code (mais continuer si c'est un header markdown)
-      flushCodeBuffer(currentLang);
-      inCodeBlock = false;
-
-      // Ajouter la ligne actuelle au markdown
-      formattedLines.push(line);
-    }
-    // Si on est dans un bloc de code, ajouter à la buffer
-    else if (inCodeBlock) {
-      codeBuffer.push(line);
-    }
-    // Sinon, ajouter au markdown normal
-    else {
-      formattedLines.push(line);
-    }
-  }
-
-  // Flush le dernier bloc de code s'il existe
-  if (inCodeBlock) {
-    flushCodeBuffer(currentLang);
-  }
-
-  return formattedLines.join('\n');
-};
 
 // Créer un ou plusieurs messages avec code (division automatique si trop long)
 export const createCodePreviewMessages = (code: string, language: string): string[] => {
@@ -158,17 +88,17 @@ Lignes: ${lineCount}
   const totalWithHeader = baseHeader.length + totalCodeLength;
 
   // DEBUG: Afficher les informations de calcul
-  console.log('[CODE_PREVIEW] DEBUG - Longueur du code:', code.length);
-  console.log('[CODE_PREVIEW] DEBUG - Longueur après formatage:', formattedContent.length);
-  console.log('[CODE_PREVIEW] DEBUG - maxTotalLength:', maxTotalLength);
-  console.log('[CODE_PREVIEW] DEBUG - baseHeader.length:', baseHeader.length);
-  console.log('[CODE_PREVIEW] DEBUG - codeBlockStart:', JSON.stringify(codeBlockStart));
-  console.log('[CODE_PREVIEW] DEBUG - codeBlockEnd:', JSON.stringify(codeBlockEnd));
-  console.log('[CODE_PREVIEW] DEBUG - totalWithHeader:', totalWithHeader);
-  console.log('[CODE_PREVIEW] DEBUG - totalWithHeader <= maxTotalLength?', totalWithHeader <= maxTotalLength);
+  Logger.info('[CODE_PREVIEW] DEBUG - Longueur du code:', code.length);
+  Logger.info('[CODE_PREVIEW] DEBUG - Longueur après formatage:', formattedContent.length);
+  Logger.info('[CODE_PREVIEW] DEBUG - maxTotalLength:', maxTotalLength);
+  Logger.info('[CODE_PREVIEW] DEBUG - baseHeader.length:', baseHeader.length);
+  Logger.info('[CODE_PREVIEW] DEBUG - codeBlockStart:', JSON.stringify(codeBlockStart));
+  Logger.info('[CODE_PREVIEW] DEBUG - codeBlockEnd:', JSON.stringify(codeBlockEnd));
+  Logger.info('[CODE_PREVIEW] DEBUG - totalWithHeader:', totalWithHeader);
+  Logger.info('[CODE_PREVIEW] DEBUG - totalWithHeader <= maxTotalLength?', totalWithHeader <= maxTotalLength);
   // DEBUG: Afficher le message complet qui sera envoyé
   const fullMessage = `${baseHeader}${codeBlockStart}${formattedContent}${codeBlockEnd}`;
-  console.log('[CODE_PREVIEW] DEBUG - Message complet:', JSON.stringify(fullMessage));
+  Logger.info('[CODE_PREVIEW] DEBUG - Message complet:', JSON.stringify(fullMessage));
 
   // Si le contenu tient dans un seul message
   if (totalWithHeader <= maxTotalLength) {
@@ -289,7 +219,7 @@ export function registerCodePreviewTools(server: FastMCP) {
     }),
     execute: async (args) => {
       try {
-        console.error(
+        Logger.error(
           `🔍 [code_preview] Langage: ${args.language}, Taille: ${args.code.length} chars`
         );
         const client = await ensureDiscordConnection();
@@ -306,7 +236,7 @@ export function registerCodePreviewTools(server: FastMCP) {
 
         // Créer les messages avec division automatique
         const messages = createCodePreviewMessages(args.code, args.language);
-        console.error(`📤 [code_preview] ${messages.length} message(s) à envoyer`);
+        Logger.error(`📤 [code_preview] ${messages.length} message(s) à envoyer`);
 
         // Envoyer tous les messages
         const sentMessages = [];
@@ -317,7 +247,7 @@ export function registerCodePreviewTools(server: FastMCP) {
 
         return `✅ Code affiché | ${messages.length} message(s) | IDs: ${sentMessages.join(', ')}`;
       } catch (error: any) {
-        console.error(`❌ [code_preview]`, error.message);
+        Logger.error(`❌ [code_preview]`, error.message);
         return `❌ Erreur: ${error.message}`;
       }
     },

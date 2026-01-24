@@ -96,7 +96,7 @@ export class IntroManager {
             // Ici on a juste channelId. On envoie un message normal temporaire.
             const msg = await channel.send(`⚠️ <@${userId}> Je ne trouve pas ta session. Clique sur 'Commencer' !`);
             setTimeout(() => msg.delete().catch(() => {}), 5000);
-        } catch (e) {}
+        } catch { }
         return;
     }
 
@@ -116,7 +116,7 @@ export class IntroManager {
              try {
                  const msg = await channel.messages.fetch(messageId);
                  if (msg) await msg.delete();
-             } catch (e) { /* ignore */ }
+             } catch { /* ignore */ }
         }
 
         if (state.currentStep >= QUESTIONS.length) {
@@ -137,7 +137,7 @@ export class IntroManager {
         .setColor('#0099ff')
         .setFooter({ text: `Pour: ${state.username}` });
 
-    let components: any[] = [];
+    const components: any[] = [];
     
     if (question.type === 'button') {
         const row = new ActionRowBuilder<ButtonBuilder>();

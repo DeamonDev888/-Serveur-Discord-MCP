@@ -31,7 +31,7 @@ const DATA_DIR = join(__dirname, '../../data');
 export async function ensureDataDir(): Promise<void> {
   try {
     await fs.mkdir(DATA_DIR, { recursive: true });
-  } catch (error) {
+  } catch {
     // Le répertoire existe déjà ou erreur non critique
   }
 }
@@ -50,7 +50,7 @@ export async function loadFromFile<T>(filename: string, defaultValue: T): Promis
   try {
     const content = await fs.readFile(filepath, 'utf-8');
     return JSON.parse(content) as T;
-  } catch (error) {
+  } catch {
     // Fichier n'existe pas ou erreur de parsing
     return defaultValue;
   }
@@ -74,7 +74,7 @@ export async function deleteFile(filename: string): Promise<void> {
 
   try {
     await fs.unlink(filepath);
-  } catch (error) {
+  } catch {
     // Fichier n'existe pas - pas grave
   }
 }
@@ -88,7 +88,7 @@ export async function listDataFiles(): Promise<string[]> {
   try {
     const files = await fs.readdir(DATA_DIR);
     return files.filter(f => f.endsWith('.json'));
-  } catch (error) {
+  } catch {
     return [];
   }
 }

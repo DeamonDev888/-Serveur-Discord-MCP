@@ -31,12 +31,28 @@ import {
 } from '../utils/svgConverter.js';
 import {
   ensureDiscordConnection,
-  EMBED_THEMES,
-  applyTheme,
   VISUAL_SEPARATORS,
   VISUAL_BADGES,
   formatDuration,
 } from './common.js';
+import {
+  validateDiscordMentions,
+  generateMentionErrorMessage,
+  replaceVariables,
+  createProgressBar,
+  saveTemplate,
+  loadTemplate,
+  validateFieldLength,
+  generateAsciiChart,
+  adaptLinkForUser,
+  applyLayout,
+  generateVisualEffectsDescription,
+  parseTable,
+  generateGuidanceMessage,
+  generateSvgFooterMessage,
+  generateSvgAuthorMessage,
+  applyTheme,
+} from './embeds_utils.js';
 import {
   getUniversalLogo,
   getCryptoInfo,
@@ -78,433 +94,21 @@ import { interactionHandler } from '../utils/interactionHandler.js';
 // Utilise le pipeline serveur_discord/src/data/logos.ts
 // ============================================================================
 
-// Mapping des images de thèmes depuis THEME_IMAGES (logos.ts)
-const THEME_IMAGE_MAP = {
-  CYBERPUNK: {
-    author: THEME_IMAGES.CYBERPUNK_AUTHOR.logo,
-    thumbnail: THEME_IMAGES.CYBERPUNK_THUMBNAIL.logo,
-    image: THEME_IMAGES.CYBERPUNK_IMAGE.logo,
-    footer: THEME_IMAGES.CYBERPUNK_FOOTER.logo,
-  },
-  GAMING: {
-    author: THEME_IMAGES.GAMING_AUTHOR.logo,
-    thumbnail: THEME_IMAGES.GAMING_THUMBNAIL.logo,
-    image: THEME_IMAGES.GAMING_IMAGE.logo,
-    footer: THEME_IMAGES.GAMING_FOOTER.logo,
-  },
-  CORPORATE: {
-    author: THEME_IMAGES.CORPORATE_AUTHOR.logo,
-    thumbnail: THEME_IMAGES.CORPORATE_THUMBNAIL.logo,
-    image: THEME_IMAGES.CORPORATE_IMAGE.logo,
-    footer: THEME_IMAGES.CORPORATE_FOOTER.logo,
-  },
-  SUNSET: {
-    author: THEME_IMAGES.SUNSET_AUTHOR.logo,
-    thumbnail: THEME_IMAGES.SUNSET_THUMBNAIL.logo,
-    image: THEME_IMAGES.SUNSET_IMAGE.logo,
-    footer: THEME_IMAGES.SUNSET_FOOTER.logo,
-  },
-  OCEAN: {
-    author: THEME_IMAGES.OCEAN_AUTHOR.logo,
-    thumbnail: THEME_IMAGES.OCEAN_THUMBNAIL.logo,
-    image: THEME_IMAGES.OCEAN_IMAGE.logo,
-    footer: THEME_IMAGES.OCEAN_FOOTER.logo,
-  },
-  MINIMAL: {
-    author: THEME_IMAGES.MINIMAL_AUTHOR.logo,
-    thumbnail: THEME_IMAGES.MINIMAL_THUMBNAIL.logo,
-    footer: THEME_IMAGES.MINIMAL_FOOTER.logo,
-  },
-  NOEL: {
-    author: THEME_IMAGES.NOEL_AUTHOR.logo,
-    thumbnail: THEME_IMAGES.NOEL_THUMBNAIL.logo,
-    image: THEME_IMAGES.NOEL_IMAGE.logo,
-    footer: THEME_IMAGES.NOEL_FOOTER.logo,
-  },
-};
+
 
 // ============================================================================
 // FONCTIONS UTILITAIRES
 // ============================================================================
 
-function parseTable(tableText: string): string {
-  const lines = tableText.trim().split('\n');
-  if (lines.length < 2) return tableText;
 
-  const rows = lines.map(line =>
-    line.split('|').map(cell => cell.trim()).filter(cell => cell !== '')
-  );
 
-  if (rows.length < 2) return tableText;
 
-  const colWidths = rows[0].map((_, colIndex) =>
-    Math.max(...rows.map(row => (row[colIndex] || '').length))
-  );
 
-  let formatted = '```\n';
-  const header = rows[0].map((cell, i) => cell.padEnd(colWidths[i])).join(' │ ');
-  formatted += header + '\n';
-  const separator = colWidths.map(w => '─'.repeat(w)).join('─┼─');
-  formatted += separator + '\n';
 
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i].map((cell, j) => (cell || '').padEnd(colWidths[j])).join(' │ ');
-    formatted += row + '\n';
-  }
 
-  formatted += '```';
-  return formatted;
-}
 
-/**
- * Type d'erreur de mention
- */
-type MentionErrorType = 'user' | 'channel' | 'role' | 'unknown';
 
-/**
- * Analyse une mention invalide et retourne son type probable
- */
-function analyzeInvalidMention(mention: string): MentionErrorType {
-  if (mention.startsWith('<@') || mention.startsWith('<@!')) {
-    return 'user';
-  } else if (mention.startsWith('<#')) {
-    return 'channel';
-  } else if (mention.startsWith('<@&')) {
-    return 'role';
-  }
-  return 'unknown';
-}
 
-/**
- * Valide que les mentions Discord respectent les formats valides
- * Formats acceptés: <@ID>, <@!ID>, <#ID>, <@&ID>
- * Renvoie un objet détaillé avec les erreurs par type
- */
-function validateDiscordMentions(text: string): {
-  valid: boolean;
-  errors: {
-    user: string[];
-    channel: string[];
-    role: string[];
-    other: string[];
-  };
-  allInvalid: string[];
-} {
-  // Regex pour détecter les mentions (valides ET invalides)
-  const mentionPattern = /<[@!&][^>]+>/g;
-  const mentions = text.match(mentionPattern) || [];
-
-  const errors = {
-    user: [] as string[],
-    channel: [] as string[],
-    role: [] as string[],
-    other: [] as string[],
-  };
-
-  const validFormats = [
-    { pattern: /^<@\d+>$/, type: 'user' as const, name: '<@USER_ID>' },
-    { pattern: /^<@!\d+>$/, type: 'user' as const, name: '<@!USER_ID>' },
-    { pattern: /^<#\d+>$/, type: 'channel' as const, name: '<#CHANNEL_ID>' },
-    { pattern: /^<@&\d+>$/, type: 'role' as const, name: '<@&ROLE_ID>' },
-  ];
-
-  for (const mention of mentions) {
-    let isValid = false;
-    for (const format of validFormats) {
-      if (format.pattern.test(mention)) {
-        isValid = true;
-        break;
-      }
-    }
-
-    if (!isValid) {
-      const errorType = analyzeInvalidMention(mention);
-      if (errorType === 'user') {
-        errors.user.push(mention);
-      } else if (errorType === 'channel') {
-        errors.channel.push(mention);
-      } else if (errorType === 'role') {
-        errors.role.push(mention);
-      } else {
-        errors.other.push(mention);
-      }
-    }
-  }
-
-  const allInvalid = [
-    ...errors.user,
-    ...errors.channel,
-    ...errors.role,
-    ...errors.other,
-  ];
-
-  return {
-    valid: allInvalid.length === 0,
-    errors,
-    allInvalid,
-  };
-}
-
-/**
- * Génère le message d'erreur pour les mentions invalides
- */
-function generateMentionErrorMessage(validation: ReturnType<typeof validateDiscordMentions>, fieldName: string): string {
-  let message = `❌ **Format de mention invalide détecté dans ${fieldName} !**\n\n`;
-
-  const parts: string[] = [];
-
-  if (validation.errors.user.length > 0) {
-    parts.push(`**Mentions utilisateur invalides :** ${validation.errors.user.join(', ')}`);
-    parts.push(`  ✅ Format correct : \`<@293572859941617674>\` ou \`<@!293572859941617674>\``);
-  }
-
-  if (validation.errors.channel.length > 0) {
-    parts.push(`**Mentions de canal invalides :** ${validation.errors.channel.join(', ')}`);
-    parts.push(`  ✅ Format correct : \`<#1442317829998383235>\``);
-  }
-
-  if (validation.errors.role.length > 0) {
-    parts.push(`**Mentions de rôle invalides :** ${validation.errors.role.join(', ')}`);
-    parts.push(`  ✅ Format correct : \`<@&ROLE_ID>\``);
-  }
-
-  if (validation.errors.other.length > 0) {
-    parts.push(`**Autres mentions invalides :** ${validation.errors.other.join(', ')}`);
-  }
-
-  return message + parts.join('\n\n');
-}
-
-function replaceVariables(text: string, variables: Record<string, string> = {}): string {
-  let result = text;
-
-  const autoVars = {
-    '{timestamp}': new Date().toLocaleString('fr-FR'),
-    '{date}': new Date().toLocaleDateString('fr-FR'),
-    '{time}': new Date().toLocaleTimeString('fr-FR'),
-    '{year}': new Date().getFullYear().toString(),
-    '{month}': (new Date().getMonth() + 1).toString(),
-    '{day}': new Date().getDate().toString(),
-    '{weekday}': new Date().toLocaleDateString('fr-FR', { weekday: 'long' }),
-  };
-
-  Object.entries(autoVars).forEach(([key, value]) => {
-    result = result.replace(new RegExp(key, 'g'), value);
-  });
-
-  Object.entries(variables).forEach(([key, value]) => {
-    result = result.replace(new RegExp(`{${key}}`, 'g'), value);
-  });
-
-  result = result.replace(/{spoiler:([^}]+)}/g, '|| $1 ||');
-
-  return result;
-}
-
-function createProgressBar(value: number, max: number, length: number = 10): string {
-  const percentage = Math.min((value / max) * 100, 100);
-  const filled = Math.round((percentage / 100) * length);
-  const empty = length - filled;
-  return '█'.repeat(filled) + '░'.repeat(empty);
-}
-
-async function saveTemplate(name: string, embedData: any): Promise<void> {
-  const templatesPath = path.join(process.cwd(), 'embed-templates.json');
-  let templates: Record<string, any> = {};
-
-  try {
-    const content = await fs.promises.readFile(templatesPath, 'utf-8');
-    templates = JSON.parse(content);
-  } catch (e) {
-    // Fichier n'existe pas encore
-  }
-
-  templates[name] = embedData;
-  await fs.promises.writeFile(templatesPath, JSON.stringify(templates, null, 2));
-}
-
-async function loadTemplate(name: string): Promise<any | null> {
-  const templatesPath = path.join(process.cwd(), 'embed-templates.json');
-
-  try {
-    const content = await fs.promises.readFile(templatesPath, 'utf-8');
-    const templates = JSON.parse(content);
-    return templates[name] || null;
-  } catch (e) {
-    return null;
-  }
-}
-
-function validateFieldLength(fields: any[]): { valid: boolean; warnings: string[] } {
-  const warnings: string[] = [];
-
-  fields?.forEach((field, index) => {
-    if (field.name.length > 256) {
-      warnings.push(`Champ #${index + 1}: Le nom dépasse 256 caractères (${field.name.length})`);
-    }
-    if (field.value.length > 1024) {
-      warnings.push(`Champ #${index + 1}: La valeur dépasse 1024 caractères (${field.value.length}) ⚠️`);
-    }
-    if (field.value.length > 800) {
-      warnings.push(`Champ #${index + 1}: La valeur est longue (${field.value.length} chars), considérez la pagination`);
-    }
-  });
-
-  return { valid: warnings.filter(w => w.includes('⚠️')).length === 0, warnings };
-}
-
-function generateAsciiChart(type: string, data: number[], labels?: string[], options: any = {}): string {
-  const maxValue = Math.max(...data);
-  const minValue = Math.min(...data);
-  const range = maxValue - minValue;
-  const height = options.height || 10;
-
-  let chart = '';
-
-  switch (type) {
-    case 'sparkline':
-      const points = data.map((value, index) => {
-        const position = Math.round(((value - minValue) / range) * 4);
-        return '▁▂▃▄▅▆▇█'[Math.min(position, 7)];
-      });
-      chart = `\`\`\`\n${points.join('')}\n\`\`\``;
-      break;
-
-    case 'line':
-      chart = '```\n';
-      for (let i = height; i >= 0; i--) {
-        let line = '';
-        for (let j = 0; j < data.length; j++) {
-          const value = data[j];
-          const position = Math.round(((value - minValue) / range) * height);
-          line += position >= i ? '●' : ' ';
-        }
-        chart += line + '\n';
-      }
-      chart += '```';
-      break;
-
-    case 'bar':
-      chart = '```\n';
-      for (let i = height; i >= 0; i--) {
-        let line = '';
-        for (let j = 0; j < data.length; j++) {
-          const value = data[j];
-          const barHeight = Math.round(((value - minValue) / range) * height);
-          line += barHeight >= i ? '█' : ' ';
-        }
-        chart += line + '\n';
-      }
-      chart += '```';
-      break;
-
-    case 'pie':
-      const total = data.reduce((sum, val) => sum + val, 0);
-      let pieChart = '```\n';
-      data.forEach((value, index) => {
-        const percentage = ((value / total) * 100).toFixed(1);
-        const barLength = Math.round(parseFloat(percentage) / 2);
-        const bar = '█'.repeat(barLength);
-        const label = labels?.[index] || `Partie ${index + 1}`;
-        pieChart += `${label}: ${bar} ${percentage}%\n`;
-      });
-      pieChart += '```';
-      chart = pieChart;
-      break;
-
-    default:
-      chart = 'Type de graphique non supporté';
-  }
-
-  return chart;
-}
-
-function adaptLinkForUser(link: any, userId: string): string {
-  let adaptedUrl = link.url;
-
-  if (link.userSpecific) {
-    adaptedUrl += `?user=${userId}&ref=discord`;
-  }
-
-  if (link.conditions) {
-    const params = new URLSearchParams();
-    Object.entries(link.conditions).forEach(([key, value]) => {
-      params.append(key, value as string);
-    });
-    adaptedUrl += `${adaptedUrl.includes('?') ? '&' : '?'}${params.toString()}`;
-  }
-
-  return `[${link.label}](${adaptedUrl})`;
-}
-
-function applyLayout(fields: any[], layout: any): any[] {
-  if (!layout || layout.type === 'stack') {
-    return fields;
-  }
-
-  switch (layout.type) {
-    case 'grid':
-      const columns = layout.columns || 2;
-      const gridFields: any[] = [];
-      for (let i = 0; i < fields.length; i += columns) {
-        const row = fields.slice(i, i + columns);
-        gridFields.push({
-          name: row.map((f: any) => f.name).join(' | '),
-          value: row.map((f: any) => f.value).join(' | '),
-          inline: true,
-        });
-      }
-      return gridFields;
-
-    case 'sidebar':
-      const sidebarField = fields.slice(0, 1);
-      const mainFields = fields.slice(1);
-      return [
-        ...sidebarField.map(f => ({ ...f, inline: false })),
-        ...mainFields.map(f => ({ ...f, inline: true })),
-      ];
-
-    case 'centered':
-      return fields.map(f => ({ ...f, inline: false }));
-
-    case 'masonry':
-      return fields.map((f, i) => ({
-        ...f,
-        inline: i % 2 === 0,
-      }));
-
-    default:
-      return fields;
-  }
-}
-
-function generateVisualEffectsDescription(effects: any): string {
-  if (!effects) return '';
-
-  let description = '';
-
-  if (effects.animations && effects.animations.length > 0) {
-    description += `✨ Animations: ${effects.animations.join(', ')}\n`;
-  }
-
-  if (effects.particles) {
-    description += `✨ Particules activées\n`;
-  }
-
-  if (effects.transitions) {
-    description += `✨ Transitions fluides\n`;
-  }
-
-  if (effects.hoverEffects && effects.hoverEffects.length > 0) {
-    description += `✨ Effets hover: ${effects.hoverEffects.join(', ')}\n`;
-  }
-
-  if (effects.intensity && effects.intensity !== 'medium') {
-    description += `✨ Intensité: ${effects.intensity}\n`;
-  }
-
-  return description.trim();
-}
 
 // ============================================================================
 // VÉRIFICATION DES URLs D'IMAGES - SYSTÈME DE LISTE LOCALE
@@ -534,6 +138,9 @@ export function isLocalLogoUrl(url: string | undefined): boolean {
     'upload.wikimedia.org',
     'pbs.twimg.com',
     'abs.twimg.com',
+    'i.imgur.com',
+    'imgur.com',
+    'assets.coingecko.com', // Added for crypto logos
   ];
 
   // Vérifier si l'URL provient d'un CDN fiable
@@ -591,54 +198,7 @@ export function isLocalLogoUrl(url: string | undefined): boolean {
   return false;
 }
 
-/**
- * Génère un message d'erreur qui guide l'agent IA vers list_images()
- */
-export function generateGuidanceMessage(urlType: string, providedUrl: string): string {
-  return `❌ URL externe détectée pour ${urlType}: ${providedUrl}
 
-🤖 **GUIDE POUR L'AGENT IA:**
-
-⚠️ Les URLs externes directes ne sont pas autorisées. Utilisez l'outil **list_images** pour obtenir des URLs valides depuis la base de données locale.
-
-✅ **UTILISEZ list_images() AVANT creer_embed():**
-
-1. **Logos crypto/entreprises (mode par défaut):**
-   list_images({symbols: "BTC"}) → Retourne l'URL locale du logo Bitcoin
-
-2. **Photos HD immersives (mode="photo"):**
-   list_images({symbols: "AAPL", mode: "photo"}) → Photo HD Apple pour embeds Discord
-
-3. **GIFs animés (mode="gif"):**
-   list_images({symbols: "BTC", mode: "gif"}) → GIF animé Bitcoin
-
-4. **Lister toutes les cryptos:**
-   list_images({category: "crypto", limit: 50}) → Liste des 50 premières cryptos
-
-5. **Recherche par nom:**
-   list_images({search: "bitcoin"}) → Recherche dans la base locale
-
-📝 **EXEMPLE D'USAGE CORRECT:**
-
-// ÉTAPE 1: Obtenir l'URL via list_images
-const btcLogoUrl = list_images({symbols: "BTC"});  // → "https://assets.coingecko.com/coins/images/1/small/bitcoin.png"
-
-// ÉTAPE 2: Utiliser l'URL retournée dans creer_embed
-creer_embed({
-  channelId: "1442317829998383235",
-  title: "Bitcoin Price",
-  thumbnail: btcLogoUrl,  // ✅ URL locale valide
-  description: "Le prix du Bitcoin..."
-})
-
-🗂️ **SYMBOLS DISPONIBLES:**
-• Cryptos: BTC, ETH, SOL, ADA, AVAX, DOT, MATIC, UNI, LINK, DOGE, SHIB, etc.
-• Entreprises: AAPL, TSLA, MSFT, GOOGL, AMZN, META, NVDA, etc.
-• Services: DISCORD, TELEGRAM, YOUTUBE, OPENAI, etc.
-
-💡 Pour voir tous les symbols disponibles, utilisez:
-list_images({category: "all", limit: 100})`;
-}
 
 /**
  * Détecte si une URL est un SVG
@@ -650,66 +210,9 @@ export function isSvgUrl(url: string): boolean {
          lowerUrl.includes('simpleicons.org'); // SimpleIcons renvoie du SVG
 }
 
-/**
- * Génère un message d'erreur spécifique pour les SVG dans le footer
- */
-export function generateSvgFooterMessage(providedUrl: string): string {
-  return `❌ URL SVG détectée pour footerIcon: ${providedUrl}
 
-🚫 **PROBLÈME: Discord ne supporte pas les SVG pour footerIcon !**
 
-Le format SVG n'est pas supporté par Discord dans les footers. L'icône ne s'affichera pas.
 
-✅ **SOLUTIONS:**
-
-1. **Utilisez CoinGecko (PNG garanti):**
-   list_images({symbols: "BTC"}) → URL PNG valide pour footer
-
-2. **Utilisez la base locale (thèmes):**
-   theme: "cyberpunk" | "noel" | "gaming" → Images PNG intégrées
-
-3. **Pour SimpleIcons, utilisez thumbnail à la place:**
-   // SimpleIcons fonctionne pour thumbnail (mais pas footer/author)
-   thumbnail: "https://cdn.simpleicons.org/discord"  // ❌ SVG ne s'affiche pas
-   footerIcon: "https://cdn.simpleicons.org/discord"   // ❌ SVG ne s'affiche pas
-
-📋 **FOOTER ICON DOIT ÊTRE:**
-• Format: PNG, JPG, ou WebP
-• Source: CoinGecko, base locale, ou autres domaines PNG
-• SimpleIcons: ❌ SVG non supporté dans footer
-
-💡 Utilisez list_images() pour obtenir des URLs PNG garanties.`;
-}
-
-/**
- * Génère un message d'erreur spécifique pour les SVG dans l'author
- */
-export function generateSvgAuthorMessage(providedUrl: string): string {
-  return `❌ URL SVG détectée pour authorIcon: ${providedUrl}
-
-🚫 **PROBLÈME: Discord ne supporte pas les SVG pour authorIcon !**
-
-Le format SVG n'est pas supporté par Discord dans les authors. L'icône ne s'affichera pas.
-
-✅ **SOLUTIONS:**
-
-1. **Utilisez CoinGecko (PNG garanti):**
-   list_images({symbols: "BTC"}) → URL PNG valide pour author
-
-2. **Utilisez la base locale (thèmes):**
-   theme: "cyberpunk" | "noel" | "gaming" → Images PNG intégrées
-
-3. **Pour SimpleIcons, utilisez uniquement PNG:**
-   // SimpleIcons SVG ne fonctionne PAS pour authorIcon
-   authorIcon: "https://cdn.simpleicons.org/discord"  // ❌ SVG ne s'affiche pas
-
-📋 **AUTHOR ICON DOIT ÊTRE:**
-• Format: PNG, JPG, ou WebP
-• Source: CoinGecko, base locale, ou autres domaines PNG
-• SimpleIcons: ❌ SVG non supporté dans author
-
-💡 Utilisez list_images() pour obtenir des URLs PNG garanties.`;
-}
 
 // ============================================================================
 // GÉNÉRATEUR DE CODE TYPESCRIPT
@@ -741,6 +244,20 @@ function buildButtonActionFromCreerEmbed(btn: any): any {
       }
       return { type: 'message', content: 'Rôle non configuré', ephemeral: true };
 
+    case 'message':
+      return {
+        type: 'message',
+        content: btn.customData?.message || btn.value || `${btn.label} cliqué !`,
+        ephemeral: btn.customData?.ephemeral !== false,
+      };
+
+    case 'embed':
+      return {
+        type: 'embed',
+        embed: btn.customData?.embed,
+        ephemeral: btn.customData?.ephemeral !== false,
+      };
+
     case 'custom':
       if (btn.customData?.embed) {
         return {
@@ -751,7 +268,7 @@ function buildButtonActionFromCreerEmbed(btn: any): any {
       }
       return {
         type: 'message',
-        content: btn.customData?.message || `${btn.label} cliqué !`,
+        content: btn.customData?.message || btn.value || `${btn.label} cliqué !`,
         ephemeral: btn.customData?.ephemeral !== false,
       };
 
@@ -838,283 +355,7 @@ function buildMenuActionFromCreerEmbed(menu: any): any {
  * {day} - Jour
  * {weekday} - Jour de la semaine
  */
-function applyThemeToParams(theme: string | undefined, args: any): any {
-  if (!theme) return args;
 
-  const themedArgs = { ...args };
-
-  switch (theme) {
-    // ========================================================================
-    // 📚 THÈME BASIC - Structure d'embed simple (à personnaliser)
-    // ========================================================================
-    case 'basic': {
-      themedArgs.color = 0x5865F2; // Bleu Discord par défaut
-      if (!args.title) themedArgs.title = '📝 Titre de votre embed';
-      if (!args.description) {
-        themedArgs.description = `
-📌 **Description personnalisée ici**
-
-• Point 1
-• Point 2
-• Point 3
-
-💡 Modifiez ce contenu selon vos besoins !
-        `.trim();
-      }
-      if (!args.fields) {
-        themedArgs.fields = [
-          { name: '📊 Champ 1', value: 'Valeur ou information', inline: true },
-          { name: '📈 Champ 2', value: 'Autre donnée', inline: true },
-          { name: '📋 Champ 3', value: 'Détails supplémentaires', inline: false }
-        ];
-      }
-      break;
-    }
-
-    // ========================================================================
-    // 📊 THÈME DATA_REPORT - Rapport avec données (à personnaliser)
-    // ========================================================================
-    case 'data_report': {
-      themedArgs.color = 0x00FF00; // Vert pour données/succès
-      if (!args.title) themedArgs.title = '📊 Rapport de Données';
-      if (!args.description) {
-        themedArgs.description = `
-📈 **Résultats et analyses**
-
-Ce rapport présente les données principales :
-• Métrique 1: Valeur actuelle
-• Métrique 2: Évolution
-• Métrique 3: Comparaison
-
-💡 Adaptez ce contenu selon vos données !
-        `.trim();
-      }
-      if (!args.fields) {
-        themedArgs.fields = [
-          { name: '📊 Indicateur 1', value: '1,234 (↑ 12%)', inline: true },
-          { name: '📈 Indicateur 2', value: '567 (↓ 3%)', inline: true },
-          { name: '📉 Indicateur 3', value: '890 (→ stable)', inline: true },
-          { name: '📋 Analyse', value: 'Détails de l\'analyse ici...', inline: false }
-        ];
-      }
-      break;
-    }
-
-    // ========================================================================
-    // 🔄 THÈME STATUS_UPDATE - Mise à jour de statut (à personnaliser)
-    // ========================================================================
-    case 'status_update': {
-      themedArgs.color = 0xFFA500; // Orange pour attention/status
-      if (!args.title) themedArgs.title = '🔄 Mise à jour de Statut';
-      if (!args.description) {
-        themedArgs.description = `
-🟢 **État actuel du système**
-
-Dernière vérification : {timestamp}
-Tous les services fonctionnent normalement.
-
-💡 Adaptez ce statut selon votre contexte !
-        `.trim();
-      }
-      if (!args.fields) {
-        themedArgs.fields = [
-          { name: '🟢 Service A', value: 'OPÉRATIONNEL\nTemps de réponse: 45ms', inline: true },
-          { name: '🟢 Service B', value: 'OPÉRATIONNEL\nUptime: 99.9%', inline: true },
-          { name: '🟢 Service C', value: 'OPÉRATIONNEL\nVersion: v2.1.0', inline: true },
-          { name: '📝 Notes', value: 'Prochaine maintenance: {date}', inline: false }
-        ];
-      }
-      break;
-    }
-
-    // ========================================================================
-    // 🚀 THÈME PRODUCT_SHOWCASE - Présentation produit (à personnaliser)
-    // ========================================================================
-    case 'product_showcase': {
-      themedArgs.color = 0x9B59B6; // Violet pour premium/nouveau
-      if (!args.title) themedArgs.title = '🚀 Nouveau Produit';
-      if (!args.description) {
-        themedArgs.description = `
-✨ **Présentation de votre produit/service**
-
-Découvrez les caractéristiques principales :
-• Fonctionnalité clé 1
-• Fonctionnalité clé 2
-• Fonctionnalité clé 3
-
-💡 Adaptez cette description selon votre produit !
-        `.trim();
-      }
-      if (!args.fields) {
-        themedArgs.fields = [
-          { name: '⭐ Fonctionnalité 1', value: 'Description détaillée...', inline: true },
-          { name: '⭐ Fonctionnalité 2', value: 'Description détaillée...', inline: true },
-          { name: '⭐ Fonctionnalité 3', value: 'Description détaillée...', inline: true },
-          { name: '💰 Prix', value: 'XX.XX€', inline: true },
-          { name: '📦 Disponibilité', value: 'En stock / Disponible', inline: true },
-          { name: '📋 Plus d\'infos', value: 'Contactez-nous pour plus de détails', inline: false }
-        ];
-      }
-      break;
-    }
-
-    // ========================================================================
-    // 🏆 THÈME LEADERBOARD - Classement/scores (à personnaliser)
-    // ========================================================================
-    case 'leaderboard': {
-      themedArgs.color = 0xE74C3C; // Rouge pour compétition
-      if (!args.title) themedArgs.title = '🏆 Classement';
-      if (!args.description) {
-        themedArgs.description = `
-📊 **Top performers**
-
-Classement mis à jour : {timestamp}
-
-💡 Adaptez ce classement selon votre contexte !
-        `.trim();
-      }
-      if (!args.fields) {
-        themedArgs.fields = [
-          { name: '🥇 #1', value: 'Nom - Score', inline: true },
-          { name: '🥈 #2', value: 'Nom - Score', inline: true },
-          { name: '🥉 #3', value: 'Nom - Score', inline: true },
-          { name: '📊 Détails', value: '• Participants: XX\n• Moyenne: XX\n• Évolution: +X%', inline: false }
-        ];
-      }
-      break;
-    }
-
-    // ========================================================================
-    // ⚡ THÈME TECH_ANNOUNCEMENT - Annonce technique (à personnaliser)
-    // ========================================================================
-    case 'tech_announcement': {
-      themedArgs.color = 0x3498DB; // Bleu tech
-      if (!args.title) themedArgs.title = '⚡ Nouvelle Fonctionnalité';
-      if (!args.description) {
-        themedArgs.description = `
-🚀 **Mise à jour disponible**
-
-Découvrez les nouveautés de cette version :
-
-💡 Adaptez cette annonce selon vos features !
-        `.trim();
-      }
-      if (!args.fields) {
-        themedArgs.fields = [
-          { name: '✨ Amélioration 1', value: 'Description de l\'amélioration...', inline: true },
-          { name: '🔧 Amélioration 2', value: 'Description de l\'amélioration...', inline: true },
-          { name: '📅 Date', value: '{date}', inline: true },
-          { name: '📝 Détails', value: '• Correction bug #123\n• Nouvelle API\n• Amélioration perf', inline: false }
-        ];
-      }
-      break;
-    }
-
-    // ========================================================================
-    // 📱 THÈME SOCIAL_FEED - Contenu social/média (à personnaliser)
-    // ========================================================================
-    case 'social_feed': {
-      themedArgs.color = 0xE91E63; // Rose social
-      if (!args.title) themedArgs.title = '💬 Dernières Actualités';
-      if (!args.description) {
-        themedArgs.description = `
-📱 **Ce qui se passe maintenant**
-
-Dernière mise à jour : {timestamp}
-
-💡 Adaptez ce contenu social selon votre contexte !
-        `.trim();
-      }
-      if (!args.fields) {
-        themedArgs.fields = [
-          { name: '👍 Réactions', value: '1,234', inline: true },
-          { name: '💬 Comments', value: '89', inline: true },
-          { name: '🔄 Shares', value: '45', inline: true },
-          { name: '📅 Posté le', value: '{date} à {time}', inline: false }
-        ];
-      }
-      break;
-    }
-
-    // ========================================================================
-    // 🎄 THÈME NOËL - Thème saisonnier (à personnaliser)
-    // ========================================================================
-    case 'noel': {
-      themedArgs.color = 0xC41E3A; // Rouge Noël
-      if (!args.title) themedArgs.title = '🎄 Joyeuses Fêtes ! 🎅';
-      if (!args.description) {
-        themedArgs.description = `
-✨ **spirit de Noël**
-
-Que cette période soit remplie de joie et de magie !
-
-🎁🎅❄️🔔🕯️
-
-💡 Adaptez ce message selon votre contexte festif !
-        `.trim();
-      }
-      if (!args.footerText) themedArgs.footerText = '🎄 Joyeuses fêtes de la part de toute l\'équipe ! 🎄';
-      break;
-    }
-
-    // ========================================================================
-    // 🌊 THÈME DASHBOARD - Tableau de bord (à personnaliser)
-    // ========================================================================
-    case 'dashboard': {
-      themedArgs.color = 0x1ABC9C; // Cyan dashboard
-      if (!args.title) themedArgs.title = '📊 Tableau de Bord';
-      if (!args.description) {
-        themedArgs.description = `
-📈 **Métriques en temps réel**
-
-Dernière mise à jour : {timestamp}
-
-💡 Adaptez ce dashboard selon vos métriques !
-        `.trim();
-      }
-      if (!args.fields) {
-        themedArgs.fields = [
-          { name: '👥 Utilisateurs', value: '1,234', inline: true },
-          { name: '📈 Croissance', value: '+12%', inline: true },
-          { name: '💰 Revenus', value: '4,567€', inline: true },
-          { name: '⏱️ Latence', value: '45ms', inline: true },
-          { name: '📊 Performance', value: '▓▓▓▓▓▓▓▓▓░ 90%', inline: false }
-        ];
-      }
-      break;
-    }
-
-    // ========================================================================
-    // ⬛ THÈME MINIMAL - Design épuré (à personnaliser)
-    // ========================================================================
-    case 'minimal': {
-      themedArgs.color = 0x2C2C2C; // Gris foncé
-      if (!args.title) themedArgs.title = 'Titre Minimal';
-      if (!args.description) {
-        themedArgs.description = `
-Design épuré et moderne.
-
-**Points clés :**
-• Simplicité
-• Clarté
-• Efficacité
-
-💡 Adaptez ce style selon vos besoins !
-        `.trim();
-      }
-      if (!args.fields) {
-        themedArgs.fields = [
-          { name: 'Element 1', value: 'Information concise', inline: true },
-          { name: 'Element 2', value: 'Donnée précise', inline: true },
-          { name: 'Element 3', value: 'Détails supplémentaires', inline: false }
-        ];
-      }
-      break;
-    }
-  }
-
-  return themedArgs;
-}
 
 /**
  * Génère le code TypeScript complet pour créer un embed avec ses boutons
@@ -1124,7 +365,7 @@ function generateTypeScriptCode(args: any): string {
   const code: string[] = [];
 
   // Appliquer le thème si spécifié
-  const params = applyThemeToParams(args.theme, args);
+  const params = applyTheme(args.theme, args);
 
   // Préparer les boutons (avant la génération du code pour les imports)
   let buttons = params.buttons || [];
@@ -1273,6 +514,47 @@ function generateTypeScriptCode(args: any): string {
     code.push(`  `);
   }
 
+  // Charts (NEW)
+  if (params.charts && params.charts.length > 0) {
+    code.push(`  // Graphiques ASCII (NEW)`);
+    params.charts.forEach((chart: any) => {
+      code.push(`  const asciiChart${params.charts.indexOf(chart)} = generateAsciiChart('${chart.type}', ${JSON.stringify(chart.data)}, ${JSON.stringify(chart.labels)}, { height: ${chart.size === 'small' ? 5 : chart.size === 'large' ? 15 : 10} });`);
+      code.push(`  embed.addFields({ name: '📊 ${chart.title}', value: asciiChart${params.charts.indexOf(chart)}, inline: ${chart.size === 'small'} });`);
+    });
+    code.push(`  `);
+  }
+
+  // Adaptive Links (NEW)
+  if (params.adaptiveLinks && params.adaptiveLinks.length > 0) {
+    code.push(`  // Liens adaptatifs (NEW)`);
+    code.push(`  const linksText = ${JSON.stringify(params.adaptiveLinks)}.map(link => adaptLinkForUser(link, 'USER_ID')).join('\\n');`);
+    code.push(`  embed.addFields({ name: '🔗 Liens', value: linksText, inline: false });`);
+    code.push(`  `);
+  }
+
+  // Progress Bars (NEW)
+  if (params.progressBars && params.progressBars.length > 0) {
+    code.push(`  // Barres de progression (NEW)`);
+    params.progressBars.forEach((progress: any) => {
+      code.push(`  const bar${params.progressBars.indexOf(progress)} = createProgressBar(${progress.value}, ${progress.max}, ${progress.length || 10});`);
+      code.push(`  const pct${params.progressBars.indexOf(progress)} = Math.round((${progress.value} / ${progress.max}) * 100);`);
+      code.push(`  embed.addFields({ name: '${progress.label}', value: \`\${bar${params.progressBars.indexOf(progress)}} \${pct${params.progressBars.indexOf(progress)}}% (\${${progress.value}}/\${${progress.max}})\`, inline: false });`);
+    });
+    code.push(`  `);
+  }
+
+  // Crypto List (NEW)
+  if (params.cryptoList && params.cryptoList.length > 0) {
+    code.push(`  // Liste de cryptos (NEW)`);
+    code.push(`  const cryptoLines = ${JSON.stringify(params.cryptoList)}.map((crypto, index) => {`);
+    code.push(`    const displayName = crypto.name || crypto.symbol;`);
+    code.push(`    const value = crypto.value ? ' - ' + crypto.value : '';`);
+    code.push(`    return \`\${index + 1}. **\${displayName.toUpperCase()}** (\${crypto.symbol.toUpperCase()})\${value}\`;`);
+    code.push(`  });`);
+    code.push(`  embed.addFields({ name: '🪙 Crypto-monnaies', value: cryptoLines.join('\\n'), inline: false });`);
+    code.push(`  `);
+  }
+
   // ============================================================================
   // COMPOSANTS (BOUTONS)
   // ============================================================================
@@ -1323,7 +605,7 @@ function generateTypeScriptCode(args: any): string {
   code.push(`    components: ${buttons.length > 0 ? 'components' : 'undefined'},`);
   code.push(`  });`);
   code.push(`  `);
-  code.push(`  console.log(\`✅ Embed créé | ID: \${message.id}\`);`);
+  code.push(`  Logger.info(\`✅ Embed créé | ID: \${message.id}\`);`);
   code.push(`  return message;`);
   code.push(`}`);
   code.push(``);
@@ -1488,10 +770,10 @@ function generateTypeScriptCode(args: any): string {
 // ============================================================================
 
 export function registerEmbedTools(server: FastMCP) {
-  console.log('[EMBEDS] === DÉBUT ENREGISTREMENT DES OUTILS EMBEDS ===');
+  Logger.info('[EMBEDS] === DÉBUT ENREGISTREMENT DES OUTILS EMBEDS ===');
 
   // 1. Créer Embed
-  console.log('[EMBEDS] Ajout de l\'outil creer_embed...');
+  Logger.info('[EMBEDS] Ajout de l\'outil creer_embed...');
   server.addTool({
     name: 'creer_embed',
     description: `🎯 ULTRA-INTUITIF - Créer un embed Discord en 3 étapes SIMPLES !
@@ -1568,7 +850,7 @@ export function registerEmbedTools(server: FastMCP) {
         label: z.string(),
         style: z.enum(['Primary', 'Secondary', 'Success', 'Danger']).default('Primary'),
         emoji: z.string().optional(),
-        action: z.enum(['none', 'refresh', 'link', 'custom', 'delete', 'edit', 'role', 'modal']).default('none'),
+        action: z.enum(['none', 'refresh', 'link', 'custom', 'delete', 'edit', 'role', 'modal', 'message', 'embed']).default('none'),
         value: z.string().optional().describe('URL pour action link'),
         roleId: z.string().optional().describe('ID du rôle pour action role (toggle)'),
         custom_id: z.string().describe('🔒 OBLIGATOIRE - ID personnalisé unique pour le bouton (ex: "noel_2024_surprise", "btn_refresh_1"). Cet ID fixe garantit que le bouton fonctionnera toujours même après modification de l\'embed.'),
@@ -1624,7 +906,9 @@ export function registerEmbedTools(server: FastMCP) {
         start: z.string().describe('Couleur de début (#RRGGBB)'),
         end: z.string().describe('Couleur de fin (#RRGGBB)'),
       }).optional().describe('Dégradé de couleurs'),
-      theme: z.enum(['basic', 'data_report', 'status_update', 'product_showcase', 'leaderboard', 'tech_announcement', 'social_feed', 'dashboard', 'noel', 'minimal']).optional().describe('Thème prédéfini (EXEMPLES À PERSONNALISER - voir EXEMPLES_THEMES_EMBED.md)'),
+      theme: z.enum(['basic', 'data_report', 'status_update', 'product_showcase', 'leaderboard', 'tech_announcement', 'social_feed', 'dashboard', 'noel', 'minimal', 'cyberpunk', 'gaming', 'corporate', 'sunset', 'ocean'])
+        .optional()
+        .describe('Thème visuel (Couleurs & template texte). NOTE: Les images/icones ne sont PLUS automatiques. CONSEIL: Utilisez list_images({category: "nom_du_theme"}) pour trouver les assets visuels appropriés (ex: cyberpunk, gaming, minimal, etc.)'),
       enableAnalytics: z.boolean().optional().default(true).describe('Activer le tracking analytics'),
       charts: z.array(z.object({
         type: z.enum(['line', 'bar', 'pie', 'sparkline', 'area']).describe('Type de graphique'),
@@ -1647,13 +931,6 @@ export function registerEmbedTools(server: FastMCP) {
         spacing: z.enum(['compact', 'normal', 'spacious']).optional().default('normal').describe('Espacement'),
         alignment: z.enum(['left', 'center', 'right']).optional().default('left').describe('Alignement'),
       }).optional().describe('Système de mise en page'),
-      visualEffects: z.object({
-        animations: z.array(z.enum(['fade_in', 'slide_up', 'pulse', 'glow', 'bounce', 'shimmer'])).optional().describe('Animations CSS'),
-        particles: z.boolean().optional().default(false).describe('Activer les particules'),
-        transitions: z.boolean().optional().default(true).describe('Transitions fluides'),
-        hoverEffects: z.array(z.enum(['scale', 'rotate', 'glow', 'shadow', 'color_shift'])).optional().describe('Effets au survol'),
-        intensity: z.enum(['low', 'medium', 'high']).optional().default('medium').describe('Intensité des effets'),
-      }).optional().describe('Effets visuels et animations'),
       cryptoLogo: z.object({
         symbol: z.string().describe('Symbole crypto (BTC, ETH, SOL, etc.) - utilise list_images() en interne'),
         position: z.enum(['thumbnail', 'author', 'footer', 'image']).optional().default('thumbnail').describe('Position: thumbnail (haut-droite), author (haut-gauche), image (bas), footer (bas-gauche)'),
@@ -1666,17 +943,14 @@ export function registerEmbedTools(server: FastMCP) {
         value: z.string().optional().describe('Valeur/Prix'),
         showLogo: z.boolean().optional().default(true).describe('Afficher le logo'),
       })).optional().describe('Liste de cryptos avec logos'),
-      visualDesign: z.object({
-        separator: z.enum(['line', 'dots', 'stars', 'arrows', 'wave', 'sparkles', 'fire', 'diamonds']).optional().default('line').describe('Style de séparateur'),
-        badge: z.enum(['hot', 'new', 'trending', 'vip', 'verified', 'premium', 'live', 'beta']).optional().describe('Badge visuel'),
-        headerStyle: z.enum(['minimal', 'boxed', 'banner', 'neon']).optional().default('minimal').describe('Style de l\'en-tête'),
-        showBorders: z.boolean().optional().default(false).describe('Afficher des bordures ASCII'),
-      }).optional().describe('Options de design visuel'),
       strictValidation: z.boolean().optional().default(true).describe('Validation stricte 1024 chars'),
       generateCode: z.boolean().optional().default(false).describe('Génère le code TypeScript complet au lieu d\'envoyer l\'embed sur Discord'),
       includeHandler: z.boolean().optional().default(true).describe('Inclut le code de gestion des boutons dans la génération (si generateCode=true)'),
     }),
     execute: async (args) => {
+      Logger.info(`📡 [DEBUG] creer_embed execute called for channel ${args.channelId}`);
+      Logger.debug(`🔍 [TRACE] args keys: ${Object.keys(args).join(', ')}`);
+
       // ============================================================================
       // 🎯 SYSTÈME D'AIDE INTUITIF POUR AGENTS AVEC PERTE DE MÉMOIRE
       // ============================================================================
@@ -1696,7 +970,7 @@ export function registerEmbedTools(server: FastMCP) {
       // Afficher le guide interactif si demandé (mode debug)
       if (process.env.EMBED_DEBUG === 'true') {
         const guide = embedHelper.INTERACTIVE_GUIDE.generateGuide(args);
-        console.log('\n' + guide.join('\n'));
+        Logger.info('\n' + guide.join('\n'));
       }
 
       // Si erreurs critiques, afficher l'aide et arrêter
@@ -1706,9 +980,9 @@ export function registerEmbedTools(server: FastMCP) {
 
       // Afficher les conseils même si valide
       if (validation.warnings.length > 0 || validation.tips.length > 0) {
-        console.log('\n📝 Conseils pour améliorer votre embed:');
-        validation.warnings.forEach(w => console.log(`   ⚠️ ${w}`));
-        validation.tips.forEach(t => console.log(`   💡 ${t}`));
+        Logger.info('\n📝 Conseils pour améliorer votre embed:');
+        validation.warnings.forEach((w: string) => Logger.info(`   ⚠️ ${w}`));
+        validation.tips.forEach((t: string) => Logger.info(`   💡 ${t}`));
       }
 
       // ============================================================================
@@ -1721,16 +995,35 @@ export function registerEmbedTools(server: FastMCP) {
       // ============================================================================
       // MODE NORMAL (ENVOI SUR DISCORD)
       // ============================================================================
-      console.log('[EMBEDS] 🚀 DÉBUT EXECUTION creer_embed');
-      console.log('[EMBEDS] Args reçus:', JSON.stringify(args, null, 2));
+      Logger.info('[EMBEDS] 🚀 DÉBUT EXECUTION creer_embed');
+      Logger.info('[EMBEDS] Args reçus:', JSON.stringify(args, null, 2));
       try {
-        console.error(`🚀 [creer_embed] Titre: ${args.title || 'N/A'}`);
+        Logger.info(`🚀 [creer_embed] Titre: ${args.title || 'N/A'}`);
         const client = await ensureDiscordConnection();
-        const channel = await client.channels.fetch(args.channelId);
+        // ============================================================================
+        // 🚨 OVERRIDE SENTINEL POLLS
+        // Utilisation directe du canal dédié 1421701551080345710 pour Sentinel
+        // ============================================================================
+        let finalChannelId = args.channelId;
+        
+        // 1. Détection par l'auteur (Si le message vient du système Sentinel)
+        if (args.authorName && typeof args.authorName === 'string' && args.authorName.toUpperCase().includes('SENTINEL')) {
+          Logger.info('🚨 [SENTINEL] Détection Sentinel (Author) - Force Canal: 1460428956518846466');
+          finalChannelId = '1460428956518846466';
+        }
+
+        // 2. Détection par contenu (Backup)
+        else if (args.title && typeof args.title === 'string' && args.title.includes('ALERTE DE CAPITULATION')) {
+             Logger.info('🚨 [SENTINEL] Détection Sentinel (Titre) - Force Canal: 1460428956518846466');
+             finalChannelId = '1460428956518846466';
+        }
+
+        const channel = await client.channels.fetch(finalChannelId);
 
         if (!channel || !('send' in channel)) {
           throw new Error('Canal invalide ou inaccessible');
         }
+
 
         let embedData = {};
         if (args.templateName) {
@@ -1742,43 +1035,44 @@ export function registerEmbedTools(server: FastMCP) {
         }
 
         if (args.theme) {
-          // Utilise applyThemeToParams qui contient tous les nouveaux contenus riches
-          embedData = applyThemeToParams(args.theme, embedData);
+          // Utilise applyTheme qui contient tous les nouveaux contenus riches
+          embedData = applyTheme(args.theme, embedData);
         }
 
         const embed = new EmbedBuilder();
         const dataToUse = { ...embedData, ...args };
 
-        let titlePrefix = '';
-        let descriptionPrefix = '';
-        let descriptionSuffix = '';
+        // ============================================================================
+        // 🔒 SÉCURITÉ CONTENU (CONTENT SAFETY)
+        // Empêcher l'injection d'images via le texte (Markdown)
+        // ============================================================================
+        const markdownImageRegex = /!\[.*?\]\(.*?\)|\[Image:.*?\]/i;
+        const imageExtensionRegex = /\.(jpg|jpeg|png|gif|webp)/i;
 
-        if (args.visualDesign) {
-          if (args.visualDesign.badge) {
-            titlePrefix = `${VISUAL_BADGES[args.visualDesign.badge]} `;
-          }
+        const validateNoImagesInText = (text: string | undefined, fieldName: string) => {
+            if (!text) return;
+            // On vérifie si ça ressemble à une image markdown OU si ça contient une URL d'image entre crochets
+            if (markdownImageRegex.test(text) && imageExtensionRegex.test(text)) {
+                 throw new Error(`⛔ SÉCURITÉ: Vous essayez d'insérer une image via le texte dans '${fieldName}'.\nDISCORD NE RENDERISE PAS LES IMAGES MARKDOWN DANS LES EMBEDS.\n❌ INTERDIT: ![img](url) ou [Image: url]\n✅ SOLUTION: Utilisez les paramètres 'image' (grande image bas) ou 'thumbnail' (petite image haut-droite).`);
+            }
+        };
 
-          const separator = VISUAL_SEPARATORS[args.visualDesign.separator || 'line'];
-          switch (args.visualDesign.headerStyle) {
-            case 'boxed':
-              descriptionPrefix = `\`\`\`\n╔══════════════════════════════════╗\n║ \`\`\``;
-              descriptionSuffix = `\`\`\`\n╚══════════════════════════════════╝\n\`\`\``;
-              break;
-            case 'banner':
-              descriptionPrefix = `${separator}\n`;
-              descriptionSuffix = `\n${separator}`;
-              break;
-            case 'neon':
-              descriptionPrefix = `✨━━━━━━━━━✨\n`;
-              descriptionSuffix = `\n✨━━━━━━━━━✨`;
-              break;
-          }
+        validateNoImagesInText(dataToUse.title, 'title');
+        validateNoImagesInText(dataToUse.description, 'description');
+        validateNoImagesInText(dataToUse.authorName, 'authorName');
+        validateNoImagesInText(dataToUse.footerText, 'footerText');
 
-          if (args.visualDesign.showBorders) {
-            descriptionPrefix = `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n┃ `;
-            descriptionSuffix = ` ┃\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`;
-          }
+        if (dataToUse.fields) {
+            dataToUse.fields.forEach((f: any, i: number) => {
+                validateNoImagesInText(f.name, `fields[${i}].name`);
+                validateNoImagesInText(f.value, `fields[${i}].value`);
+            });
         }
+
+        const titlePrefix = '';
+        const descriptionPrefix = '';
+        const descriptionSuffix = '';
+        const warnings: string[] = []; // Collection des avertissements non-bloquants
 
         // ============================================================================
         // VALIDATION DES MENTIONS DISCORD
@@ -1898,7 +1192,7 @@ export function registerEmbedTools(server: FastMCP) {
         // Collection des fichiers à attacher (PNG convertis depuis SVG)
         const attachmentsToUpload: Map<string, string> = new Map(); // attachmentName -> filePath
 
-        // Convertir authorIcon SVG → PNG
+        // Convertir authorIcon SVG → PNG (SKIP on failure for stability)
         if (dataToUse.authorIcon && checkIsSvgUrl(dataToUse.authorIcon)) {
           Logger.info(`[EMBED] Converting authorIcon SVG to PNG: ${dataToUse.authorIcon}`);
           try {
@@ -1907,12 +1201,12 @@ export function registerEmbedTools(server: FastMCP) {
             attachmentsToUpload.set(pngData.attachmentName, pngData.path);
             Logger.info(`[EMBED] authorIcon converted to: ${pngData.attachmentUrl}`);
           } catch (error) {
-            Logger.error(`[EMBED] Failed to convert authorIcon:`, error);
-            return `❌ Erreur lors de la conversion SVG→PNG pour authorIcon: ${error}`;
+            Logger.error(`[EMBED] Failed to convert authorIcon, SKIPPING:`, error);
+            delete dataToUse.authorIcon; // 🛡️ SKIP: On supprime l'icône au lieu de crasher
           }
         }
 
-        // Convertir footerIcon SVG → PNG
+        // Convertir footerIcon SVG → PNG (SKIP on failure for stability)
         if (dataToUse.footerIcon && checkIsSvgUrl(dataToUse.footerIcon)) {
           Logger.info(`[EMBED] Converting footerIcon SVG to PNG: ${dataToUse.footerIcon}`);
           try {
@@ -1921,8 +1215,8 @@ export function registerEmbedTools(server: FastMCP) {
             attachmentsToUpload.set(pngData.attachmentName, pngData.path);
             Logger.info(`[EMBED] footerIcon converted to: ${pngData.attachmentUrl}`);
           } catch (error) {
-            Logger.error(`[EMBED] Failed to convert footerIcon:`, error);
-            return `❌ Erreur lors de la conversion SVG→PNG pour footerIcon: ${error}`;
+            Logger.error(`[EMBED] Failed to convert footerIcon, SKIPPING:`, error);
+            delete dataToUse.footerIcon; // 🛡️ SKIP: On supprime l'icône au lieu de crasher
           }
         }
 
@@ -1946,15 +1240,27 @@ export function registerEmbedTools(server: FastMCP) {
         // Vérifier authorIcon (domaine de confiance)
         if (dataToUse.authorIcon) {
           if (!isLocalLogoUrl(dataToUse.authorIcon) && !dataToUse.authorIcon.startsWith('attachment://')) {
-            return generateGuidanceMessage('authorIcon', dataToUse.authorIcon);
+            // ⚠️ WARNING SEULEMENT: On accepte l'URL, mais on prévient l'agent
+            const msg = generateGuidanceMessage('authorIcon', dataToUse.authorIcon);
+            warnings.push(msg);
+            Logger.warn(`[EMBED] URL non fiable pour authorIcon: ${dataToUse.authorIcon}. Acceptée avec avertissement.`);
           }
         }
 
         // Vérifier footerIcon (domaine de confiance)
         if (dataToUse.footerIcon) {
           if (!isLocalLogoUrl(dataToUse.footerIcon) && !dataToUse.footerIcon.startsWith('attachment://')) {
-            return generateGuidanceMessage('footerIcon', dataToUse.footerIcon);
+             // ⚠️ WARNING SEULEMENT: On accepte l'URL, mais on prévient l'agent
+            const msg = generateGuidanceMessage('footerIcon', dataToUse.footerIcon);
+            warnings.push(msg);
+            Logger.warn(`[EMBED] URL non fiable pour footerIcon: ${dataToUse.footerIcon}. Acceptée avec avertissement.`);
           }
+        }
+
+        if (dataToUse.authorIcon && !dataToUse.authorName) {
+          // 🛡️ FIX BUG: Si authorIcon est présent mais pas authorName, Discord ignore l'icône.
+          // On force un nom invisible pour afficher l'icône DANS l'embed (et pas en attachment externe).
+          dataToUse.authorName = '\u200b'; 
         }
 
         if (dataToUse.authorName) {
@@ -1963,6 +1269,12 @@ export function registerEmbedTools(server: FastMCP) {
             url: dataToUse.authorUrl,
             iconURL: dataToUse.authorIcon,
           });
+        }
+
+        if (dataToUse.footerIcon && !dataToUse.footerText) {
+          // 🛡️ FIX BUG: Si footerIcon est présent mais pas footerText, Discord ignore l'icône.
+          // On force un texte invisible pour afficher l'icône DANS l'embed.
+          dataToUse.footerText = '\u200b';
         }
 
         if (dataToUse.footerText) {
@@ -2026,17 +1338,6 @@ export function registerEmbedTools(server: FastMCP) {
             : replaceVariables(field.value, args.variables),
         }));
 
-        if (args.visualEffects) {
-          const effectsDesc = generateVisualEffectsDescription(args.visualEffects);
-          if (effectsDesc) {
-            processedFields.push({
-              name: '🌟 Effets Visuels',
-              value: effectsDesc,
-              inline: false,
-            });
-          }
-        }
-
         if (args.cryptoList && args.cryptoList.length > 0) {
           const cryptoLines = args.cryptoList.map((crypto, index) => {
             const cryptoInfo = getCryptoInfo(crypto.symbol);
@@ -2069,7 +1370,7 @@ export function registerEmbedTools(server: FastMCP) {
         }
 
         if (args.strictValidation) {
-          const validation = validateFieldLength(processedFields);
+          const validation = validateFieldLength(processedFields, dataToUse.title, dataToUse.description, dataToUse.footerText);
           if (validation.warnings.length > 0) {
             console.warn('⚠️ Avertissements:', validation.warnings);
           }
@@ -2077,7 +1378,7 @@ export function registerEmbedTools(server: FastMCP) {
 
         if (args.saveAsTemplate) {
           await saveTemplate(args.saveAsTemplate, embed.data);
-          console.log(`💾 Template '${args.saveAsTemplate}' sauvegardé`);
+          Logger.info(`💾 Template '${args.saveAsTemplate}' sauvegardé`);
         }
 
         const embedId = `embed_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -2100,6 +1401,50 @@ export function registerEmbedTools(server: FastMCP) {
 
           for (let index = 0; index < args.buttons.length; index++) {
             const btn = args.buttons[index];
+
+            // ==================================================================================
+            // 🛡️ GARDE-FOUS (SAFETY CHECKS) - DEMANDE UTILISATEUR
+            // ==================================================================================
+            
+            // 1. Validation du format custom_id (Crucial pour le routing interne)
+            if (btn.custom_id) {
+               const safeIdRegex = /^[a-zA-Z0-9_-]+$/;
+               if (!safeIdRegex.test(btn.custom_id)) {
+                   throw new Error(`🛡️ GARDE-FOU: L'ID '${btn.custom_id}' est invalide. Utilisez uniquement lettres, chiffres, tirets (-) et underscores (_).`);
+               }
+               // Vérifier la longueur (Discord limite à 100, mais restons prudents à 50)
+               if (btn.custom_id.length > 50) {
+                   throw new Error(`🛡️ GARDE-FOU: L'ID '${btn.custom_id}' est trop long (max 50 caractères).`);
+               }
+            }
+
+            // 2. Validation de l'action LINK
+            if (btn.action === 'link') {
+                if (!btn.value || (!btn.value.startsWith('http') && !btn.value.startsWith('discord://'))) {
+                    throw new Error(`🛡️ GARDE-FOU: Le bouton '${btn.label}' (link) nécessite une URL valide dans 'value' (http... ou discord://...).`);
+                }
+            }
+
+            // 3. Validation de l'action ROLE
+            if (btn.action === 'role') {
+                if (!btn.roleId) {
+                    throw new Error(`🛡️ GARDE-FOU: Le bouton '${btn.label}' (role) nécessite un 'roleId' valide.`);
+                }
+            }
+
+            // 4. Validation de l'action MESSAGE/CUSTOM (Pour éviter les interactions vides)
+            if (btn.action === 'message' || btn.action === 'custom') {
+                const hasContent = btn.customData?.message || btn.value || btn.customData?.embed;
+                if (!hasContent) {
+                     // On injecte un contenu par défaut pour éviter le crash "Empty Message"
+                     Logger.warn(`[GARDE-FOU] Le bouton '${btn.label}' n'avait pas de contenu. Ajout d'un contenu par défaut.`);
+                     if (!btn.customData) btn.customData = {};
+                     btn.customData.message = `Action ${btn.label} effectuée ✅`;
+                }
+            }
+
+            // ==================================================================================
+
             // Créer un ID unique pour le bouton
             // 1. Si custom_id fourni → utilise l'ID fixe personnalisé
             // 2. Si persistant: pb_<messageId>_<index>
@@ -2141,7 +1486,21 @@ export function registerEmbedTools(server: FastMCP) {
                 createdAt: new Date().toISOString(),
               };
               await upsertPersistentButton(persistentBtn);
-              console.log(`[EMBEDS] 🔒 Bouton persistant créé: ${buttonId} → ${btn.label}`);
+              
+              // ==================================================================================
+              // 🕵️‍♂️ AUTO-VALIDATION (READ-AFTER-WRITE) - DEMANDE UTILISATEUR
+              // ==================================================================================
+              // On vérifie immédiatement si le bouton est bien inscrit sur le disque
+              const { getPersistentButton } = await import('../utils/distPersistence.js');
+              const checkParams = await getPersistentButton(buttonId);
+              
+              if (!checkParams) {
+                  throw new Error(`⛔ CRITIQUE: Le bouton '${btn.label}' a été créé mais la persistance a échoué lors de la vérification. Le fichier JSON est peut-être verrouillé.`);
+              }
+              Logger.info(`[EMBEDS] ✅ Persistance vérifiée et validée pour ${buttonId}`);
+              // ==================================================================================
+
+              Logger.info(`[EMBEDS] 🔒 Bouton persistant créé: ${buttonId} → ${btn.label}`);
             }
 
             // Bouton STANDARD → Sauvegarder dans l'ancien système (compatibilité)
@@ -2176,7 +1535,7 @@ export function registerEmbedTools(server: FastMCP) {
 
           const persistentCount = args.buttons.filter(b => b.persistent).length;
           const standardCount = args.buttons.length - persistentCount;
-          console.log(`[EMBEDS] ${args.buttons.length} bouton(s) créé(s): ${persistentCount} persistant(s), ${standardCount} standard(s)`);
+          Logger.info(`[EMBEDS] ${args.buttons.length} bouton(s) créé(s): ${persistentCount} persistant(s), ${standardCount} standard(s)`);
 
           components.push(row);
         }
@@ -2245,13 +1604,13 @@ export function registerEmbedTools(server: FastMCP) {
                 createdAt: new Date().toISOString(),
               };
               await upsertPersistentMenu(persistentMenu);
-              console.log(`[EMBEDS] 🔒 Menu persistant créé: ${menuId} → ${menu.action}`);
+              Logger.info(`[EMBEDS] 🔒 Menu persistant créé: ${menuId} → ${menu.action}`);
             }
           }
 
           const menuPersistentCount = args.selectMenus.filter(m => m.persistent).length;
           const menuStandardCount = args.selectMenus.length - menuPersistentCount;
-          console.log(`[EMBEDS] ${args.selectMenus.length} menu(s) créé(s): ${menuPersistentCount} persistant(s), ${menuStandardCount} standard(s)`);
+          Logger.info(`[EMBEDS] ${args.selectMenus.length} menu(s) créé(s): ${menuPersistentCount} persistant(s), ${menuStandardCount} standard(s)`);
         }
 
         if (args.adaptiveLinks && args.adaptiveLinks.length > 0) {
@@ -2290,11 +1649,11 @@ export function registerEmbedTools(server: FastMCP) {
           files: attachmentFiles,
         });
 
-        console.log(`[EMBEDS] Message envoyé avec ID: ${message.id}`);
+        Logger.info(`[EMBEDS] Message envoyé avec ID: ${message.id}`);
 
         // Mettre à jour les messageId des boutons embed
         if (args.buttons && args.buttons.length > 0) {
-          console.log(`[EMBEDS] Mise à jour des messageId pour ${args.buttons.length} bouton(s)`);
+          Logger.info(`[EMBEDS] Mise à jour des messageId pour ${args.buttons.length} bouton(s)`);
 
           // Charger les boutons depuis la persistance
           const buttonsMap = await loadCustomButtons();
@@ -2308,9 +1667,9 @@ export function registerEmbedTools(server: FastMCP) {
               if (buttonData) {
                 buttonData.messageId = message.id;
                 buttonsMap.set(buttonId, buttonData);
-                console.log(`[EMBEDS] messageId mis à jour pour ${buttonId} -> ${message.id}`);
+                Logger.info(`[EMBEDS] messageId mis à jour pour ${buttonId} -> ${message.id}`);
               } else {
-                console.error(`[EMBEDS] ERREUR: Bouton ${buttonId} non trouvé dans la persistance!`);
+                Logger.error(`[EMBEDS] ERREUR: Bouton ${buttonId} non trouvé dans la persistance!`);
               }
             }
           }
@@ -2318,12 +1677,12 @@ export function registerEmbedTools(server: FastMCP) {
           // Sauvegarder les modifications
           await saveCustomButtons(buttonsMap);
           await interactionHandler.refreshButtons();
-          console.log(`[EMBEDS] Sauvegarde finalisée`);
+          Logger.info(`[EMBEDS] Sauvegarde finalisée`);
         }
 
         // Mettre à jour les messageId des menus persistants
         if (args.selectMenus && args.selectMenus.length > 0) {
-          console.log(`[EMBEDS] Mise à jour des messageId pour ${args.selectMenus.length} menu(s) persistant(s)`);
+          Logger.info(`[EMBEDS] Mise à jour des messageId pour ${args.selectMenus.length} menu(s) persistant(s)`);
 
           const { loadPersistentMenus, savePersistentMenus, upsertPersistentMenu } = await import('../utils/distPersistence.js');
 
@@ -2341,7 +1700,7 @@ export function registerEmbedTools(server: FastMCP) {
               // Supprimer l'ancienne entrée avec TEMP
               allMenus.delete(menuId);
 
-              console.log(`[EMBEDS] Menu persistant mis à jour: ${menuId} → ${newMenuId}`);
+              Logger.info(`[EMBEDS] Menu persistant mis à jour: ${menuId} → ${newMenuId}`);
             }
           }
         }
@@ -2367,10 +1726,23 @@ export function registerEmbedTools(server: FastMCP) {
           });
         }
 
-        return `✅ Embed créé | ID: ${message.id} | EmbedId: ${embedId}${args.autoUpdate?.enabled ? ' | Auto-update: ON' : ''}${args.saveAsTemplate ? ` | Template: ${args.saveAsTemplate}` : ''}`;
+        let finalMessage = `✅ Embed créé | ID: ${message.id} | EmbedId: ${embedId}`;
+        if (args.autoUpdate?.enabled) finalMessage += ' | Auto-update: ON';
+        if (args.saveAsTemplate) finalMessage += ` | Template: ${args.saveAsTemplate}`;
+
+        // Ajouter les warnings s'il y en a
+        if (warnings.length > 0) {
+          finalMessage += `\n\n⚠️ AVERTISSEMENTS:\n${warnings.join('\n\n')}`;
+        }
+
+        return finalMessage;
       } catch (error: any) {
-        console.error(`❌ [creer_embed]`, error.message);
-        return `❌ Erreur: ${error.message}`;
+        // 🔍 DEBUG: Log full error details for troubleshooting
+        Logger.error(`❌ [creer_embed]`, error.message);
+        if (error.code) Logger.error(`[creer_embed] Discord API Code:`, error.code);
+        if (error.rawError) Logger.error(`[creer_embed] Raw Error:`, JSON.stringify(error.rawError));
+        if (error.errors) Logger.error(`[creer_embed] Errors:`, JSON.stringify(error.errors));
+        return `❌ Erreur: ${error.message}${error.code ? ` (Code: ${error.code})` : ''}`;
       }
     },
   });
@@ -2442,5 +1814,5 @@ export function registerEmbedTools(server: FastMCP) {
     },
   });
 
-  console.log('[EMBEDS] === FIN ENREGISTREMENT DES OUTILS EMBEDS ===');
+  Logger.info('[EMBEDS] === FIN ENREGISTREMENT DES OUTILS EMBEDS ===');
 }

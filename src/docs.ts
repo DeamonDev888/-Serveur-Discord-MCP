@@ -1,3 +1,4 @@
+import Logger from './utils/logger.js';
 /**
  * DOCUMENTATION EMBEDS DISCORD - COMPILÉE
  * Fichiers de documentation essentiels inclus dans la compilation
@@ -51,11 +52,11 @@ function loadDocFile(filePath: string): string {
       const content = fs.readFileSync(filePath, 'utf-8');
       return content;
     } else {
-      console.warn(`[DOCS] Fichier non trouvé: ${filePath}`);
+      Logger.warn(`[DOCS] Fichier non trouvé: ${filePath}`);
       return `# Documentation non disponible\n\nLe fichier ${filePath} n'a pas été trouvé.`;
     }
   } catch (error: any) {
-    console.error(`[DOCS] Erreur lecture ${filePath}:`, error.message);
+    Logger.error(`[DOCS] Erreur lecture ${filePath}:`, error.message);
     return `# Erreur de chargement\n\nImpossible de charger le fichier ${filePath}.`;
   }
 }
@@ -238,11 +239,10 @@ ${getTemplatesSummary()}
 export default DOCUMENTATION;
 
 // ============================================================================
-// LOGS AU CHARGEMENT
+// LOGS AU CHARGEMENT - DISABLED for MCP protocol compatibility
+// Using stderr instead to avoid corrupting stdout JSON protocol
 // ============================================================================
 
-console.log('[DOCS] Documentation intégrée chargée:');
-console.log(`   • Templates: ${DOCUMENTATION.templates.title}`);
-console.log(`   • Exemples: ${DOCUMENTATION.exemples.title}`);
-console.log(`   • Guide: ${DOCUMENTATION.guide.title}`);
-console.log(`   📂 Localisation: ${DOCS_DIR}`);
+// Logs moved to stderr to not corrupt MCP protocol
+process.stderr.write('[DOCS] Documentation intégrée chargée\n');
+

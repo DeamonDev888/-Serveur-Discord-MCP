@@ -12,6 +12,9 @@ import {
   ModalBuilder,
   TextInputBuilder,
 } from 'discord.js';
+import { addPoll, type PollResult, loadPolls } from '../utils/pollPersistence.js';
+import { applyTheme } from './embeds_utils.js';
+import { isLocalLogoUrl } from './embeds.js';
 
 // Types de composants supportés
 export const COMPONENT_TYPES = {
@@ -535,7 +538,8 @@ export function registerInteractionTools(server: FastMCP) {
           placeholder: args.placeholder,
           minValues: args.minValues,
           maxValues: args.maxValues,
-          options: args.options,
+          options: args.options.map(opt => ({ ...opt, default: false })),
+          disabled: false,
         };
 
         const menu = buildStringSelect(menuData);
@@ -560,13 +564,18 @@ export function registerInteractionTools(server: FastMCP) {
 
   server.addTool({
     name: 'create_poll',
-    description: 'Crée un sondage interactif avec boutons',
+    description: 'Crée un sondage interactif riche et persistant (avec boutons fonctionnels et gestion du temps)',
     parameters: z.object({
       channelId: z.string().describe('ID du canal'),
       question: z.string().describe('Question du sondage'),
       options: z.array(z.string()).min(2).max(10).describe('Options de réponse'),
-      duration: z.number().optional().describe('Durée en minutes (optionnel)'),
+      duration: z.number().optional().default(60).describe('Durée en minutes (défaut: 60)'),
       allowMultiple: z.boolean().optional().default(false).describe('Autoriser plusieurs choix'),
+      title: z.string().optional().describe('Titre du sondage (override "📊 Sondage")'),
+      theme: z.enum(['basic', 'cyberpunk', 'gaming', 'corporate', 'sunset', 'ocean', 'noel', 'minimal']).optional().describe('Thème visuel prédéfini'),
+      image: z.string().optional().describe('URL image (grande - en bas)'),
+      thumbnail: z.string().optional().describe('URL thumbnail (petite - haut droite)'),
+      color: z.string().optional().describe('Couleur personnalisée (Hex #RRGGBB)'),
     }),
     execute: async (args) => {
       try {
@@ -577,32 +586,92 @@ export function registerInteractionTools(server: FastMCP) {
           throw new Error('Canal invalide');
         }
 
+        // 1. Initialiser les données du sondage
         const pollId = `poll_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+        const endTime = new Date(Date.now() + (args.duration || 60) * 60 * 1000);
 
+        // 2. Construire l'Embed Riche
+        // Correction des sauts de ligne échappés (supporte \n et /n)
+        const cleanQuestion = args.question
+          .split('\\n').join('\n')
+          .split('/n').join('\n');
+        
         const embed = new EmbedBuilder()
-          .setTitle('📊 Sondage')
-          .setDescription(`**${args.question}**\n\n${args.options.map((opt, i) => `${i + 1}. ${opt}`).join('\n')}`)
-          .setColor(0x5865f2)
-          .setFooter({ text: args.duration ? `Durée: ${args.duration} min` : 'Votez en cliquant sur les boutons' })
+          .setTitle(args.title || '📊 Sondage')
+          .setDescription(`**${cleanQuestion}**\n\n${args.options.map((opt, i) => `**${i + 1}.** ${opt}`).join('\n')}`)
           .setTimestamp();
 
-        const row = new ActionRowBuilder<ButtonBuilder>();
-        const buttonStyles = [BUTTON_STYLES.PRIMARY, BUTTON_STYLES.SUCCESS, BUTTON_STYLES.SECONDARY, BUTTON_STYLES.DANGER];
+        // Appliquer le thème si fourni
+        let themeColor = null;
+        if (args.theme) {
+          const themeData = applyTheme(args.theme, {});
+          if (themeData.color) themeColor = themeData.color;
+        }
 
-        args.options.slice(0, 5).forEach((opt, index) => {
+        // Overrides manuels (Prioritaires sur le thème)
+        if (args.color) embed.setColor(args.color as any);
+        else if (themeColor) embed.setColor(themeColor);
+        else embed.setColor(0x5865f2);
+
+        if (args.image && isLocalLogoUrl(args.image)) embed.setImage(args.image);
+        if (args.thumbnail && isLocalLogoUrl(args.thumbnail)) embed.setThumbnail(args.thumbnail);
+
+        // Footer avec temps restant
+        embed.setFooter({ 
+          text: `Fin du vote: ${endTime.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})} • ${args.allowMultiple ? 'Choix multiples' : 'Choix unique'}` 
+        });
+
+        // 3. Créer les boutons
+        const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+        let currentRow = new ActionRowBuilder<ButtonBuilder>();
+        
+        args.options.forEach((opt, index) => {
           const button = new ButtonBuilder()
             .setCustomId(`${pollId}_option_${index}`)
-            .setLabel(`${index + 1}`)
-            .setStyle(Object.values(BUTTON_STYLES)[index % 4]);
-          row.addComponents(button);
+            .setLabel(`${index + 1}`) // Chiffres pour gagner de la place, le texte est dans l'embed
+            .setStyle(BUTTON_STYLES.PRIMARY);
+          
+          currentRow.addComponents(button);
+
+          // Max 5 boutons par ligne
+          if (currentRow.components.length >= 5) {
+            rows.push(currentRow);
+            currentRow = new ActionRowBuilder<ButtonBuilder>();
+          }
         });
 
+        if (currentRow.components.length > 0) {
+          rows.push(currentRow);
+        }
+
+        // 4. Envoyer le message
         const msg = await channel.send({
           embeds: [embed],
-          components: [row],
+          components: rows,
         });
 
-        return `✅ Sondage créé | ID: ${msg.id} | pollId: ${pollId}`;
+        // 5. Sauvegarder le sondage (Persistance)
+        const pollData: PollResult = {
+          id: pollId,
+          question: args.question,
+          options: args.options.map(text => ({ text, votes: 0, percentage: 0 })),
+          totalVotes: 0,
+          endTime: endTime,
+          ended: false,
+          allowMultiple: args.allowMultiple || false,
+          anonymous: false,
+          messageId: msg.id,
+          channelId: args.channelId,
+          createdAt: new Date(),
+        };
+
+        // Charger et sauvegarder via le gestionnaire de persistance
+        const polls = await loadPolls();
+        await addPoll(pollData, polls);
+
+        Logger.info(`✅ Sondage créé et persisté: ${pollId} (Message: ${msg.id})`);
+
+        return `✅ Sondage créé | ID: ${msg.id} | pollId: ${pollId} | Fin: ${endTime.toLocaleTimeString()}`;
       } catch (error: any) {
         Logger.error('❌ [create_poll]', error.message);
         return `❌ Erreur: ${error.message}`;

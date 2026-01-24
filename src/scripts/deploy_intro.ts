@@ -1,3 +1,4 @@
+import Logger from '../utils/logger.js';
 
 import { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { config } from 'dotenv';
@@ -10,7 +11,7 @@ const TOKEN = process.env.DISCORD_BOT_TOKEN || process.env.DISCORD_TOKEN;
 const CHANNEL_ID = '1453196450849620019';
 
 if (!TOKEN) {
-    console.error('❌ Token manquant dans .env');
+    Logger.error('❌ Token manquant dans .env');
     process.exit(1);
 }
 
@@ -19,7 +20,7 @@ const client = new Client({
 });
 
 client.once('ready', async () => {
-    console.log(`✅ Connecté en tant que ${client.user?.tag}`);
+    Logger.info(`✅ Connecté en tant que ${client.user?.tag}`);
 
     try {
         const channel = await client.channels.fetch(CHANNEL_ID);
@@ -27,7 +28,7 @@ client.once('ready', async () => {
             throw new Error(`Canal ${CHANNEL_ID} introuvable ou non textuel`);
         }
 
-        console.log(`📢 Envoi dans #${('name' in channel ? channel.name : channel.id)}...`);
+        Logger.info(`📢 Envoi dans #${('name' in channel ? channel.name : channel.id)}...`);
 
         const embed = new EmbedBuilder()
             .setTitle('🚀 Bienvenue sur le Serveur !')
@@ -55,10 +56,10 @@ client.once('ready', async () => {
             components: [row]
         });
 
-        console.log('✅ Message d\'intro envoyé avec succès !');
+        Logger.info('✅ Message d\'intro envoyé avec succès !');
 
     } catch (error) {
-        console.error('❌ Erreur:', error);
+        Logger.error('❌ Erreur:', error);
     } finally {
         client.destroy();
         process.exit(0);
@@ -66,3 +67,4 @@ client.once('ready', async () => {
 });
 
 client.login(TOKEN);
+

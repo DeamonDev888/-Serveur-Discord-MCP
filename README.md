@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://readme-typing-svg.herokuapp.com?font=JetBrains+Mono&size=30&duration=3000&color=5865F2&center=true&vCenter=true&multiline=true&height=50&lines=%F0%9F%A4%96+Discord+MCP+Server;%E2%9C%A8+23+outils+pour+automatiser+Discord" alt="Discord MCP Server">
+  <img src="https://readme-typing-svg.herokuapp.com?font=JetBrains+Mono&size=30&duration=3000&color=5865F2&center=true&vCenter=true&multiline=true&height=50&lines=%F0%9F%A4%96+Discord+MCP+Server;%E2%9C%A8+50+outils+pour+automatiser+Discord" alt="Discord MCP Server">
 </p>
 
 <br>
@@ -39,95 +39,122 @@ Discord MCP Server est un **pont** entre votre intelligence artificielle et Disc
 
 **En résumé :** Parlez à votre IA, et votre bot Discord exécute. C'est aussi simple que ça ! 🚀
 
-Avec **26 outils puissants**, vous pouvez faire absolument tout sur Discord :
+Avec **50 outils puissants**, vous pouvez faire absolument tout sur Discord :
 
 - Envoyer des messages
-- Créer des sondages interactifs, menu et boutons
-- Gérer votre serveur
+- Créer des sondages interactifs, menus et boutons
+- Gérer votre serveur (Membres, Rôles, Canaux)
 - Et bien plus encore !
+
+👉 **[Consulter la liste complète des 50 outils ici](./docs/LISTE_OUTILS.md)**
 
 ---
 
-## 🛠️ Fonctionnalités
+## 🛠️ Fonctionnalités (50 Outils)
 
 <details>
-<summary>💬 Gestion des Messages (7 outils)</summary>
+<summary>💬 Gestion des Messages & Réactions (5 outils)</summary>
 
-| Outil               | Description                           |
-| ------------------- | ------------------------------------- |
-| **discord_status**  | Vérifie le statut de connexion du bot |
-| **envoyer_message** | Envoie un message texte simple        |
-| **read_messages**   | Lit l'historique des messages         |
-| **edit_message**    | Modifie un message existant           |
-| **delete_message**  | Supprime un message                   |
-| **add_reaction**    | Ajoute une réaction emoji             |
-| **creer_sondage**   | Crée un sondage interactif            |
+| Outil               | Description                          |
+| ------------------- | ------------------------------------ |
+| **envoyer_message** | Envoie un message texte simple       |
+| **read_messages**   | Lit l'historique d'un canal          |
+| **edit_message**    | Modifie un message envoyé par le bot |
+| **delete_message**  | Supprime un message spécifique       |
+| **add_reaction**    | Ajoute une réaction emoji            |
 
 </details>
 
 <details>
-<summary>📎 Fichiers et Médias (1 outil)</summary>
+<summary>🖼️ Embeds Riches & Édition (7 outils)</summary>
 
-| Outil                | Description                          |
-| -------------------- | ------------------------------------ |
-| **uploader_fichier** | Upload un fichier local vers Discord |
-
-</details>
-
-<details>
-<summary>🎨 Embeds (3 outils)</summary>
-
-| Outil                | Description                           |
-| -------------------- | ------------------------------------- |
-| **creer_embed**      | Crée un embed enrichi personnalisable |
-| **lister_templates** | Liste tous les templates disponibles  |
+| Outil                       | Description                                |
+| --------------------------- | ------------------------------------------ |
+| **creer_embed**             | Création d'embeds avec thèmes et boutons   |
+| **list_embeds**             | Scanne un canal pour lister les embeds     |
+| **get_embed_details**       | Récupère la structure JSON pour édition    |
+| **update_embed**            | Modification dynamique d'un embed existant |
+| **get_embed_analytics**     | Statistiques d'interaction                 |
+| **list_auto_update_embeds** | Liste les embeds à mise à jour auto        |
+| **stop_embed_auto_update**  | Arrête le cycle de mise à jour             |
 
 </details>
 
 <details>
-<summary>💻 Code (1 outil)</summary>
+<summary>🔘 Interactions & Sondages (7 outils)</summary>
 
-| Outil            | Description                                |
-| ---------------- | ------------------------------------------ |
-| **code_preview** | Affiche du code avec coloration syntaxique |
-
-</details>
-
-<details>
-<summary>🔗 Webhooks (3 outils)</summary>
-
-| Outil              | Description                   |
-| ------------------ | ----------------------------- |
-| **create_webhook** | Crée un webhook sur un canal  |
-| **list_webhooks**  | Liste les webhooks d'un canal |
-| **send_webhook**   | Envoie un message via webhook |
+| Outil                           | Description                                   |
+| ------------------------------- | --------------------------------------------- |
+| **create_button**               | Crée un bouton interactif simple              |
+| **create_menu**                 | Crée un menu déroulant                        |
+| **create_poll**                 | Génère un sondage interactif avec persistance |
+| **enregistrer_fonction_bouton** | Lie un script JS à un bouton                  |
+| **attacher_fonction_embed**     | Lie un script à un bouton d'embed             |
+| **lister_fonctions_boutons**    | Affiche tous les scripts enregistrés          |
+| **supprimer_fonction_bouton**   | Supprime le script d'un bouton                |
 
 </details>
 
 <details>
-<summary>🏢 Serveur et Membres (5 outils)</summary>
+<summary>👥 Membres & Modération (11 outils)</summary>
 
-| Outil               | Description                        |
-| ------------------- | ---------------------------------- |
-| **get_server_info** | Informations détaillées du serveur |
-| **get_channels**    | Liste tous les canaux              |
-| **list_members**    | Liste les membres et leurs rôles   |
-| **get_user_info**   | Informations sur un utilisateur    |
-| **statut_bot**      | Statut actuel du bot               |
+| Outil                       | Description                            |
+| --------------------------- | -------------------------------------- |
+| **list_members**            | Liste les membres avec filtres         |
+| **get_user_info**           | Détails complets du profil utilisateur |
+| **kick_member**             | Expulse un membre                      |
+| **ban_member**              | Bannit un membre (avec raison)         |
+| **unban_member**            | Débannit un utilisateur                |
+| **timeout_member**          | Applique une sourdine temporaire       |
+| **remove_timeout**          | Retire le time-out d'un membre         |
+| **warn_member**             | Enregistre un avertissement            |
+| **move_member**             | Déplace un membre vers un salon vocal  |
+| **add_role_to_member**      | Assigne un rôle à un utilisateur       |
+| **remove_role_from_member** | Retire un rôle d'un utilisateur        |
 
 </details>
 
 <details>
-<summary>🎮 Interactions (6 outils)</summary>
+<summary>🏷️ Rôles & Canaux (10 outils)</summary>
 
-| Outil                     | Description                    |
-| ------------------------- | ------------------------------ |
-| **create_custom_buttons** | Crée des boutons personnalisés |
-| **create_custom_menu**    | Crée un menu déroulant         |
-| **creer_sondage**         | Crée un sondage interactif     |
-| **vote_sondage**          | Vote dans un sondage           |
-| **appuyer_bouton**        | Appuie sur un bouton           |
-| **selectionner_menu**     | Sélectionne dans un menu       |
+| Outil                       | Description                         |
+| --------------------------- | ----------------------------------- |
+| **list_roles**              | Liste tous les rôles et permissions |
+| **create_role**             | Crée un nouveau rôle                |
+| **edit_role**               | Modifie un rôle existant            |
+| **delete_role**             | Supprime un rôle                    |
+| **set_role_permissions**    | Définit massivement les permissions |
+| **list_channels**           | Liste les salons et catégories      |
+| **create_channel**          | Crée un nouveau salon               |
+| **edit_channel**            | Modifie un salon existant           |
+| **delete_channel**          | Supprime un salon                   |
+| **set_channel_permissions** | Configure les accès par rôle        |
+
+</details>
+
+<details>
+<summary>📸 Images & Fichiers (3 outils)</summary>
+
+| Outil                   | Description                                |
+| ----------------------- | ------------------------------------------ |
+| **list_images**         | Recherche de logos et photos HD (Unsplash) |
+| **uploader_fichier**    | Envoie un fichier local vers Discord       |
+| **telecharger_fichier** | Télécharge un fichier Discord en local     |
+
+</details>
+
+<details>
+<summary>💻 Système & Webhooks (7 outils)</summary>
+
+| Outil               | Description                                |
+| ------------------- | ------------------------------------------ |
+| **get_server_info** | Statistiques globales de la guilde         |
+| **statut_bot**      | Santé, uptime et latence du bot            |
+| **logs_explorer**   | Consultation des logs du serveur           |
+| **code_preview**    | Affiche du code avec coloration syntaxique |
+| **create_webhook**  | Crée un webhook sur un canal               |
+| **list_webhooks**   | Liste les webhooks d'un canal              |
+| **send_webhook**    | Envoie un message via webhook              |
 
 </details>
 
@@ -250,7 +277,7 @@ Avec Discord MCP Server, vous pouvez :
 
 ## 🤖 Prompt System Optimisé
 
-Pour exploiter pleinement les 26 outils de Discord MCP Server, utilisez le **prompt système dédié** :
+Pour exploiter pleinement les **50 outils** de Discord MCP Server, utilisez le **prompt système dédié** :
 
 👉 **[Accéder au prompt ou skill système ici](https://hackmd.io/@1-f9TrSqR0iVfHGkGYO3zw/rk8_YHVQZl)**
 
@@ -261,7 +288,7 @@ Un prompt système spécialement conçu pour permettre à votre IA de :
 - 🎯 **Utiliser automatiquement** les bons outils Discord selon vos demandes
 - 🔧 **Comprendre** les interactions complexes (boutons, menus, sondages)
 - 📋 **Générer** des réponses adaptées à chaque contexte Discord
-- 🚀 **Optimiser** l'utilisation des 26 outils disponibles
+- 🚀 **Optimiser** l'utilisation des 50 outils disponibles
 
 ### Comment l'utiliser ?
 
