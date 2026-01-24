@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, InteractionType, EmbedBuilder, ActionRowBuilder, ButtonBuilder } from 'discord.js';
+import { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder } from 'discord.js';
 import Logger from './utils/logger.js';
 
 import { interactionHandler } from './utils/interactionHandler.js';
@@ -135,7 +135,7 @@ export class DiscordBridge {
 
         for (const [id, button] of buttons.entries()) {
             if (button.functionCode) {
-                const func = async (interaction: any, _buttonData: any) => {
+                const func = async (interaction: any) => {
                     // Reconstruire le contexte (ctx) identique à celui de registerButtonFunctions
                     const context = {
                         channelId: interaction.channelId,

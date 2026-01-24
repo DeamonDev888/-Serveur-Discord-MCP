@@ -101,9 +101,6 @@ export type AllowedDomain = typeof ALLOWED_IMAGE_DOMAINS;
 // Fonction pour vérifier si un domaine est autorisé
 export function isDomainAllowed(url: string): boolean {
   try {
-    const urlObj = new URL(url);
-    const hostname = urlObj.hostname;
-
     // D'abord, utiliser getDomainCategory pour vérifier rapidement
     const category = getDomainCategory(url);
     if (category) return true;

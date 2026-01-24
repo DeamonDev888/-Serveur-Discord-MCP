@@ -63,7 +63,7 @@ export const VoteManager = {
             }
             
             return { valid, invalid };
-        } catch (_unused) {
+        } catch {
             return { valid: 0, invalid: 0 };
         }
     }

@@ -289,7 +289,7 @@ export async function loadAnalytics(): Promise<void> {
     });
 
     Logger.info(`📊 Analytics chargées: ${Object.keys(data).length} embeds`);
-  } catch (e) {
+  } catch {
     Logger.info('📊 Aucune analytics sauvegardée trouvée');
   }
 }

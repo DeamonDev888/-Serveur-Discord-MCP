@@ -4,7 +4,7 @@
  */
 
 import Logger from './logger.js';
-import { imageCache } from './imageCache.js';
+// import { imageCache } from './imageCache.js';
 
 export interface UrlValidationResult {
   url: string;
@@ -122,7 +122,7 @@ export class UrlValidator {
 
     try {
       // Vérifier le format de l'URL
-      const _urlObj = new URL(url);
+      new URL(url);
 
       // Health check
       const health = this.healthStatus.get(url);

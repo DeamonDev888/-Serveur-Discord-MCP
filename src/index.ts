@@ -84,7 +84,7 @@ import { registerInteractionTools } from './tools/interactions.js';
 import { registerEmbedTools } from './tools/embeds.js';
 import { registerMessageTools } from './tools/messages.js';
 import { registerListImagesTools } from './tools/listImages.js';
-import { registerGameTools } from './tools/games.js';
+
 import { registerServerTools } from './tools/registerServer.js';
 import { registerWebhooksTools } from './tools/registerWebhooks.js';
 import { registerSystemTools } from './tools/registerSystem.js';
@@ -418,13 +418,13 @@ async function ensureDiscordConnection(): Promise<Client> {
 }
 
 // ============================================================================
-// SYSTÈME DE RATE LIMITING
+// SYSTÈME DE RATE LIMITING (Désactivé)
 // ============================================================================
 
 // Map pour stocker les compteurs de requêtes par outil
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_WINDOW = 60000; // 1 minute
-const RATE_LIMIT_MAX = 30; // Max 30 requêtes par minute par outil
+// const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+// const RATE_LIMIT_WINDOW = 60000; // 1 minute
+// const RATE_LIMIT_MAX = 30; // Max 30 requêtes par minute par outil
 
 // function checkRateLimit(toolName: string): boolean {
 //   const now = Date.now();
@@ -696,7 +696,7 @@ async function cleanup() {
 
 
     // Nettoyer la map de rate limiting
-    rateLimitMap.clear();
+    // rateLimitMap.clear();
 
     Logger.info('✅ Nettoyage terminé');
   } catch (e) {
@@ -743,123 +743,12 @@ if (process.memoryUsage().heapUsed > MEMORY_LIMIT) {
 // ============================================================================
 
 // Importer le gestionnaire d'interactions
-import { interactionHandler } from './utils/interactionHandler.js';
 
-// Écouter les interactions depuis le processus Discord
-// NOTE: Le hijacking de stdin est supprimé car il casse le transport MCP.
-// Si une communication avec un autre processus est nécessaire, 
-// utilisez un IPC plus robuste (Sockets, Named Pipes, etc).
 
-// Traiter les messages du processus Discord
-function handleDiscordMessage(message: any) {
-  switch (message.id) {
-    case 'poll_interaction':
-      Logger.error(
-        `🎯 [Poll Interaction] ${message.data.action} par ${message.data.user.username}`
-      );
-      interactionHandler.handlePollInteraction(message.data);
-      break;
 
-    case 'custom_button_interaction':
-      Logger.error(
-        `🔘 [Custom Button] ${message.data.customId} par ${message.data.user.username}`
-      );
-      interactionHandler.handleCustomButton(message.data);
-      break;
 
-    case 'select_menu':
-      Logger.error(`📋 [Select Menu] ${message.data.customId} par ${message.data.user.username}`);
-      interactionHandler.handleSelectMenu(message.data);
-      break;
 
-    case 'modal_submit':
-      Logger.error(`📝 [Modal Submit] ${message.data.customId} par ${message.data.user.username}`);
-      interactionHandler.handleModalSubmit(message.data);
-      break;
 
-    case 'guild_member_add':
-      Logger.error(
-        `👋 [Member Add] ${message.data.member.username} sur ${message.data.guildName}`
-      );
-      handleWelcomeMessage(message.data);
-      break;
-
-    case 'guild_member_remove':
-      Logger.error(
-        `👋 [Member Remove] ${message.data.member.username} de ${message.data.guildName}`
-      );
-      handleGoodbyeMessage(message.data);
-      break;
-
-    case 'message_delete':
-      Logger.error(`🗑️ [Message Delete] dans ${message.data.channelId}`);
-      logMessageAction('delete', message.data);
-      break;
-
-    case 'message_update':
-      Logger.error(`✏️ [Message Update] dans ${message.data.channelId}`);
-      logMessageAction('update', message.data);
-      break;
-
-    case 'channel_create':
-      Logger.error(`📝 [Channel Create] ${message.data.channelName}`);
-      logChannelAction('create', message.data);
-      break;
-
-    case 'channel_delete':
-      Logger.error(`🗑️ [Channel Delete] ${message.data.channelName}`);
-      logChannelAction('delete', message.data);
-      break;
-
-    case 'role_create':
-      Logger.error(`🎭 [Role Create] ${message.data.roleName}`);
-      logRoleAction('create', message.data);
-      break;
-
-    case 'role_delete':
-      Logger.error(`🗑️ [Role Delete] ${message.data.roleName}`);
-      logRoleAction('delete', message.data);
-      break;
-
-    default:
-      Logger.error(`ℹ️ [Discord Message] ${message.id}:`, message.data);
-  }
-}
-
-// Gérer les messages de bienvenue
-async function handleWelcomeMessage(data: any) {
-  // TODO: Implémenter la logique de bienvenue
-  // - Vérifier la config du serveur
-  // - Envoyer un message de bienvenue
-  // - Donner un rôle automatique
-  Logger.error(`✅ Logique de bienvenue à implémenter pour ${data.member.username}`);
-}
-
-// Gérer les messages d'au revoir
-async function handleGoodbyeMessage(data: any) {
-  // TODO: Implémenter la logique d'au revoir
-  // - Vérifier la config du serveur
-  // - Envoyer un message d'au revoir
-  Logger.error(`✅ Logique d'au revoir à implémenter pour ${data.member.username}`);
-}
-
-// Logger les actions sur les messages
-async function logMessageAction(action: string, data: any) {
-  // TODO: Implémenter le logging des messages
-  Logger.error(`✅ Logging ${action} pour message ${data.messageId}`);
-}
-
-// Logger les actions sur les canaux
-async function logChannelAction(action: string, data: any) {
-  // TODO: Implémenter le logging des canaux
-  Logger.error(`✅ Logging ${action} pour canal ${data.channelName}`);
-}
-
-// Logger les actions sur les rôles
-async function logRoleAction(action: string, data: any) {
-  // TODO: Implémenter le logging des rôles
-  Logger.error(`✅ Logging ${action} pour rôle ${data.roleName}`);
-}
 
 // ============================================================================
 // ENREGISTREMENT DES OUTILS MCP UNIFIÉS (40 OUTILS)
@@ -876,7 +765,7 @@ registerEmbedTools(server);
 registerEditEmbedTools(server);  // 🔧 Édition d'embeds (list, get details, update)
 registerMessageTools(server);
 registerListImagesTools(server);  // Nouvel outil unifié (remplace emoji_theme + get_thumbnail)
-registerGameTools(server);
+
 registerServerTools(server);
 registerWebhooksTools(server);
 registerSystemTools(server);

@@ -51,77 +51,7 @@ export const SUPPORTED_LANGUAGES: { [key: string]: string } = {
   properties: 'properties',
 };
 
-// Fonction pour envelopper automatiquement le code dans des blocs markdown
-const formatCodeBlocks = (content: string): string => {
-  const lines = content.split('\n');
-  const formattedLines: string[] = [];
-  let inCodeBlock = false;
-  let codeBuffer: string[] = [];
-  let currentLang = 'bash';
 
-  const flushCodeBuffer = (lang: string) => {
-    if (codeBuffer.length > 0) {
-      const BACKTICK = '\x60';
-      formattedLines.push(BACKTICK + BACKTICK + BACKTICK + lang);
-      formattedLines.push(...codeBuffer);
-      formattedLines.push(BACKTICK + BACKTICK + BACKTICK);
-      formattedLines.push(''); // Ligne vide après le bloc
-      codeBuffer = [];
-    }
-  };
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    // Détecter une ligne de commande bash
-    // - Commandes shell : chmod, echo, cd, npm, node, bash, sh, etc.
-    // - Appels de fonctions : create_channel(...), edit_message(...)
-    // - Variables : SESSION_ID=, $(), etc.
-    const isCommandLine = /^(\s*)(chmod|echo|cd|npm|node|pnpm|yarn|bash|sh|\$\s*\(|SESSION[_A-Z]*|create_|edit_|delete_|get_|send_|add_|move_|vote_|appuyer_|selectionner_)/.test(line) ||
-                         /\w+\([^)]*\)/.test(line) || // Détecte les appels de fonction avec ()
-                         /^(\s*)([A-Z_]{2,})(\s*[:=])/.test(line); // Détecte les constantes comme "BASH:"
-
-    // Détecter une ligne de code JS/TS (import, const, let, class, async, etc.)
-    const isJSLine = /^(\s*)(import|export|const|let|var|function|class|async|await|interface|type)/.test(line);
-
-    // Si on n'est pas dans un bloc et qu'on trouve une commande ou du code
-    if (!inCodeBlock && (isCommandLine || isJSLine)) {
-      // Terminer le markdown précédent si nécessaire
-      if (formattedLines.length > 0 && formattedLines[formattedLines.length - 1] !== '') {
-        formattedLines.push('');
-      }
-
-      // Commencer un bloc de code
-      inCodeBlock = true;
-      currentLang = isJSLine ? 'javascript' : 'bash';
-      codeBuffer = [line];
-    }
-    // Si on est dans un bloc de code et qu'on trouve une ligne qui n'est pas du code
-    else if (inCodeBlock && !isCommandLine && !isJSLine && line.trim() !== '' && !/^#{1,6}\s+/.test(line)) {
-      // Fin du bloc de code (mais continuer si c'est un header markdown)
-      flushCodeBuffer(currentLang);
-      inCodeBlock = false;
-
-      // Ajouter la ligne actuelle au markdown
-      formattedLines.push(line);
-    }
-    // Si on est dans un bloc de code, ajouter à la buffer
-    else if (inCodeBlock) {
-      codeBuffer.push(line);
-    }
-    // Sinon, ajouter au markdown normal
-    else {
-      formattedLines.push(line);
-    }
-  }
-
-  // Flush le dernier bloc de code s'il existe
-  if (inCodeBlock) {
-    flushCodeBuffer(currentLang);
-  }
-
-  return formattedLines.join('\n');
-};
 
 // Créer un ou plusieurs messages avec code (division automatique si trop long)
 export const createCodePreviewMessages = (code: string, language: string): string[] => {

@@ -5,7 +5,7 @@
 import { z } from 'zod';
 import type { FastMCP } from 'fastmcp';
 import { DiscordBridge } from '../discord-bridge.js';
-import { botConfig, withRateLimit, ensureDiscordConnection, formatDuration } from './common.js';
+import { botConfig, ensureDiscordConnection, formatDuration } from './common.js';
 import Logger from '../utils/logger.js';
 
 // ============================================================================
