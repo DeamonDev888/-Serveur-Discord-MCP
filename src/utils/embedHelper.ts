@@ -4,7 +4,6 @@
  */
 
 import Logger from './logger.js';
-import { DOCUMENTATION, displayDocumentation } from '../docs.js';  // 📚 Documentation intégrée
 
 // ============================================================================
 // MESSAGES D'AIDE ET CONSEILS
@@ -474,41 +473,10 @@ export const QUICK_TEMPLATES = {
   }
 };
 
-// ============================================================================
-// DOCUMENTATION INTÉGRÉE
-// ============================================================================
-
-export const DOCS = {
-  // Affiche un résumé de la documentation
-  summary: (section?: string): string => {
-    return displayDocumentation(section);
-  },
-
-  // Accès direct aux contenus
-  templates: DOCUMENTATION.templates,
-  exemples: DOCUMENTATION.exemples,
-  guide: DOCUMENTATION.guide,
-
-  // Affiche la liste des templates disponibles
-  listTemplates: (): string => {
-    return displayDocumentation('templates');
-  },
-
-  // Affiche la liste des thèmes disponibles
-  listThemes: (): string => {
-    return displayDocumentation('exemples');
-  }
-};
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
-
 export default {
   HELP_MESSAGES,
   SUGGESTIONS,
   INTERACTIVE_GUIDE,
   INTELLIGENT_VALIDATION,
-  QUICK_TEMPLATES,
-  DOCS
+  QUICK_TEMPLATES
 };
