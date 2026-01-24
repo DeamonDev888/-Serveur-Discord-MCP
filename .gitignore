@@ -62,3 +62,4 @@ embed-templates.json
 *.key
 *.crt
 *.p12
+tools_list.csv
