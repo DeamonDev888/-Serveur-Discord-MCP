@@ -73,6 +73,4 @@ export function formatDuration(seconds: number): string {
 
 // Imports des données et utilitaires
 import { CRYPTO_LOGOS, COMPANY_LOGOS, MISC_LOGOS } from '../data/logos.js';
-import { VISUAL_SEPARATORS, VISUAL_BADGES } from '../utils/gameData.js';
-
-export { CRYPTO_LOGOS, COMPANY_LOGOS, MISC_LOGOS, VISUAL_SEPARATORS, VISUAL_BADGES };
+export { CRYPTO_LOGOS, COMPANY_LOGOS, MISC_LOGOS };

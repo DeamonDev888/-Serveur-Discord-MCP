@@ -28,8 +28,6 @@ import embedHelper from '../utils/embedHelper.js'; // 🎯 SYSTÈME D'AIDE INTUI
 import { isSvgUrl as checkIsSvgUrl, convertSvgUrlToPng } from '../utils/svgConverter.js';
 import {
   ensureDiscordConnection,
-  VISUAL_SEPARATORS,
-  VISUAL_BADGES,
   formatDuration,
 } from './common.js';
 import {
