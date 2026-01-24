@@ -16,8 +16,6 @@ import {
 } from 'discord.js';
 import {
   ensureDiscordConnection,
-  EMBED_THEMES,
-  applyTheme,
 } from './common.js';
 import Logger from '../utils/logger.js';
 import {
@@ -30,12 +28,13 @@ import {
   type PersistentButton,
   type PersistentSelectMenu,
 } from '../utils/distPersistence.js';
+import { isLocalLogoUrl } from './embeds.js';
 import {
-  isLocalLogoUrl,
   generateGuidanceMessage,
   generateSvgFooterMessage,
   generateSvgAuthorMessage,
-} from './embeds.js';
+  applyTheme,
+} from './embeds_utils.js';
 
 // ============================================================================
 // ENREGISTREMENT DES OUTILS

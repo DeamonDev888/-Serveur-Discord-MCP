@@ -13,7 +13,7 @@ import {
   TextInputBuilder,
 } from 'discord.js';
 import { addPoll, type PollResult, loadPolls } from '../utils/pollPersistence.js';
-import { applyTheme, EMBED_THEMES } from './common.js';
+import { applyTheme } from './embeds_utils.js';
 import { isLocalLogoUrl } from './embeds.js';
 
 // Types de composants supportés

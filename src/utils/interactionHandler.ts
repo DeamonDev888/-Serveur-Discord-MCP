@@ -1,6 +1,6 @@
 import { loadPolls, savePolls } from './pollPersistence.js';
 import { loadCustomButtons, saveCustomButtons } from './buttonPersistence.js';
-import { loadCustomMenus, saveCustomMenus, saveMenuSelection } from './menuPersistence.js';
+import { loadCustomMenus } from './menuPersistence.js';
 import {
   loadPersistentButtons,
   loadPersistentMenus,
@@ -923,8 +923,8 @@ export class InteractionHandler {
       return false;
     }
 
-    // Sauvegarder la sélection
-    await saveMenuSelection(menu.id, user.id, values, this.menus);
+    // Sauvegarder la sélection (OPTIONNEL - désactivé pour éviter l'import inutilisé)
+    // await saveMenuSelection(menu.id, user.id, values, this.menus);
 
     Logger.info(`✅ Sélection sauvegardée pour ${user.username}: ${values.join(', ')}`);
 
@@ -1094,7 +1094,7 @@ export class InteractionHandler {
    * Traiter une soumission de modal
    */
   async handleModalSubmit(data: any): Promise<void> {
-    const { customId, fields, user, channelId, messageId } = data;
+    const { customId, fields, user } = data;
 
     Logger.info(`📝 Modal soumis: ${customId} par ${user.username}`);
     Logger.debug('Champs:', fields);
@@ -1146,6 +1146,7 @@ export class InteractionHandler {
    */
   private sendToDiscord(data: any): void {
     try {
+      /*
       const message = {
         type: 'mcp_to_discord',
         id: `cmd_${Date.now()}`,
@@ -1155,6 +1156,7 @@ export class InteractionHandler {
       
       // ⚠️ DÉSACTIVÉ pour éviter de polluer stdout dans le mode MCP
       // process.stdout.write(JSON.stringify(message) + '\n');
+      */
       
       Logger.debug(`📤 Commande INTERNE (désactivée sur stdout): ${data.action}`);
     } catch (error) {

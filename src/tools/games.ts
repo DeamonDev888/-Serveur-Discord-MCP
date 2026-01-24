@@ -12,8 +12,8 @@ import {
 } from 'discord.js';
 import {
   ensureDiscordConnection,
-  EMBED_THEMES,
 } from './common.js';
+import { applyTheme } from './embeds_utils.js';
 import {
   generateGameResult,
 } from '../utils/gameUtils.js';
@@ -69,9 +69,9 @@ export function registerGameTools(server: FastMCP) {
 
         // Appliquer le thème si spécifié
         if (args.theme) {
-          const themeData = EMBED_THEMES[args.theme];
-          if (themeData) {
-            embed.setColor(themeData.color as any);
+          const themeData = applyTheme(args.theme, {});
+          if (themeData.color) {
+            embed.setColor(themeData.color);
           }
         }
 
@@ -168,7 +168,7 @@ ${VISUAL_SEPARATORS.line}
 💰 **Récompense:** ${args.points} points${args.badge ? ` + 🏅 ${args.badge}` : ''}
 ${args.timeLimit ? `⏱️ **Temps:** ${args.timeLimit}s` : ''}
 ${VISUAL_SEPARATORS.sparkles}`)
-          .setColor(EMBED_THEMES[args.theme || 'gaming'].color as any)
+          .setColor(applyTheme(args.theme || 'gaming', {}).color as any)
           .setFooter({ text: '💡 Cliquez sur un bouton pour répondre !' })
           .setTimestamp();
 
