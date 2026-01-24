@@ -22,11 +22,11 @@ export function registerButtonFunctionTools(server: FastMCP) {
     name: 'enregistrer_fonction_bouton',
     description: 'Enregistre une fonction personnalisée pour un bouton existant (par ID de bouton)',
     parameters: z.object({
-      buttonId: z.string().describe("ID du bouton (customId)"),
-      functionCode: z.string().describe("Code JavaScript à exécuter quand le bouton est cliqué"),
-      functionName: z.string().optional().describe("Nom de la fonction (pour référence)"),
+      buttonId: z.string().describe('ID du bouton (customId)'),
+      functionCode: z.string().describe('Code JavaScript à exécuter quand le bouton est cliqué'),
+      functionName: z.string().optional().describe('Nom de la fonction (pour référence)'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const { buttonId, functionCode, functionName } = args;
 
@@ -71,11 +71,11 @@ export function registerButtonFunctionTools(server: FastMCP) {
                 return await interaction.editReply(data);
               },
               sendEmbed: async (embed: any, ephemeral: boolean = false) => {
-                   if (interaction.deferred || interaction.replied) {
-                       await interaction.followUp({ embeds: [embed], ephemeral });
-                   } else {
-                       await interaction.reply({ embeds: [embed], ephemeral });
-                   }
+                if (interaction.deferred || interaction.replied) {
+                  await interaction.followUp({ embeds: [embed], ephemeral });
+                } else {
+                  await interaction.reply({ embeds: [embed], ephemeral });
+                }
               },
 
               // Envoyer un message dans le canal
@@ -94,18 +94,19 @@ export function registerButtonFunctionTools(server: FastMCP) {
               },
               // SAUVEGARDE DE VOTE/DONNÉES
               saveVote: async (voteType: string, details: string = '') => {
-                 const { VoteManager } = await import('../utils/voteManager.js');
-                 await VoteManager.saveVote(voteType, context.user, context.channelId, details);
+                const { VoteManager } = await import('../utils/voteManager.js');
+                await VoteManager.saveVote(voteType, context.user, context.channelId, details);
               },
-               getVoteCounts: async () => {
-                   const { VoteManager } = await import('../utils/voteManager.js');
-                   return await VoteManager.getVoteCounts();
-               }
-
+              getVoteCounts: async () => {
+                const { VoteManager } = await import('../utils/voteManager.js');
+                return await VoteManager.getVoteCounts();
+              },
             };
 
             // Exécuter le code personnalisé avec accès au contexte
-            const asyncFunction = new Function('ctx', `
+            const asyncFunction = new Function(
+              'ctx',
+              `
               return (async () => {
                 try {
                   ${functionCode}
@@ -114,7 +115,8 @@ export function registerButtonFunctionTools(server: FastMCP) {
                   await ctx.reply('❌ Erreur: ' + e.message, true);
                 }
               })();
-            `);
+            `
+            );
 
             await asyncFunction(ctx);
           } catch (error: any) {
@@ -122,7 +124,7 @@ export function registerButtonFunctionTools(server: FastMCP) {
             if (!interaction.replied && !interaction.deferred) {
               await interaction.reply({
                 content: `❌ Erreur: ${error.message}`,
-                ephemeral: true
+                ephemeral: true,
               });
             }
           }
@@ -139,15 +141,18 @@ export function registerButtonFunctionTools(server: FastMCP) {
           await addCustomButton(existingButton, buttons);
         } else {
           // Créer une nouvelle entrée
-          await addCustomButton({
-            id: buttonId,
-            messageId: 'unknown',
-            channelId: 'unknown',
-            label: functionName || 'Custom Function',
-            action: { type: 'custom', data: {} },
-            functionCode,
-            createdAt: new Date(),
-          }, buttons);
+          await addCustomButton(
+            {
+              id: buttonId,
+              messageId: 'unknown',
+              channelId: 'unknown',
+              label: functionName || 'Custom Function',
+              action: { type: 'custom', data: {} },
+              functionCode,
+              createdAt: new Date(),
+            },
+            buttons
+          );
         }
 
         return `✅ Fonction enregistrée pour le bouton \`${buttonId}\`
@@ -168,7 +173,6 @@ Exemple de code:
 await ctx.saveVote('VALID', 'User comment');
 await ctx.reply('Vote enregistré !');
 \`\`\``;
-
       } catch (error: any) {
         Logger.error(`❌ [enregistrer_fonction_bouton]`, error.message);
         return `❌ Erreur: ${error.message}`;
@@ -192,9 +196,10 @@ await ctx.reply('Vote enregistré !');
           return 'ℹ️ Aucune fonction de bouton enregistrée.';
         }
 
-        return `📋 **${functions.length} fonction(s) de bouton enregistrée(s):**\n\n` +
-          functions.map((fn, i) => `${i + 1}. \`${fn}\``).join('\n');
-
+        return (
+          `📋 **${functions.length} fonction(s) de bouton enregistrée(s):**\n\n` +
+          functions.map((fn, i) => `${i + 1}. \`${fn}\``).join('\n')
+        );
       } catch (error: any) {
         Logger.error(`❌ [lister_fonctions_boutons]`, error.message);
         return `❌ Erreur: ${error.message}`;
@@ -207,11 +212,11 @@ await ctx.reply('Vote enregistré !');
    */
   server.addTool({
     name: 'supprimer_fonction_bouton',
-    description: 'Supprime la fonction personnalisée d\'un bouton',
+    description: "Supprime la fonction personnalisée d'un bouton",
     parameters: z.object({
-      buttonId: z.string().describe("ID du bouton"),
+      buttonId: z.string().describe('ID du bouton'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const { unregisterButtonFunction } = await import('../discord-bridge.js');
         const deleted = unregisterButtonFunction(args.buttonId);
@@ -221,7 +226,6 @@ await ctx.reply('Vote enregistré !');
         } else {
           return `ℹ️ Aucune fonction trouvée pour le bouton \`${args.buttonId}\``;
         }
-
       } catch (error: any) {
         Logger.error(`❌ [supprimer_fonction_bouton]`, error.message);
         return `❌ Erreur: ${error.message}`;
@@ -234,14 +238,14 @@ await ctx.reply('Vote enregistré !');
    */
   server.addTool({
     name: 'attacher_fonction_bouton_embed',
-    description: 'Attache une fonction personnalisée à un bouton d\'embed existant',
+    description: "Attache une fonction personnalisée à un bouton d'embed existant",
     parameters: z.object({
       embedId: z.string().describe("ID de l'embed (retourné par creer_embed)"),
-      buttonLabel: z.string().describe("Label du bouton cible"),
-      functionCode: z.string().describe("Code JavaScript à exécuter"),
-      functionName: z.string().optional().describe("Nom de la fonction"),
+      buttonLabel: z.string().describe('Label du bouton cible'),
+      functionCode: z.string().describe('Code JavaScript à exécuter'),
+      functionName: z.string().optional().describe('Nom de la fonction'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const { embedId, buttonLabel, functionCode, functionName } = args;
 
@@ -291,26 +295,32 @@ await ctx.reply('Vote enregistré !');
                   return await channel.messages.fetch(context.messageId);
                 }
               },
-                  // SAUVEGARDE DE VOTE/DONNÉES
+              // SAUVEGARDE DE VOTE/DONNÉES
               saveVote: async (voteType: string, details: string = '') => {
-                 try {
-                    // CHEMIN ABSOLU FORCÉ pour être sûr de trouver le fichier
-                    const voteFile = 'c:\\Users\\Deamon\\Desktop\\Backup\\Serveur MCP\\votes_sentinel.csv';
-                    
-                    // Ensure file exists with header
-                    if (!fs.existsSync(voteFile)) {
-                        fs.writeFileSync(voteFile, 'timestamp,vote_type,user,user_id,channel_id,details\n');
-                    }
-                    const line = `${new Date().toISOString()},${voteType},${context.user.username},${context.user.id},${context.channelId},"${details}"\n`;
-                    fs.appendFileSync(voteFile, line);
-                    Logger.info(`🗳️ Vote enregistré: ${voteType} par ${context.user.username}`);
-                 } catch (err: any) {
-                    Logger.error('Echec sauvegarde vote:', err);
-                 }
-              }
+                try {
+                  // CHEMIN ABSOLU FORCÉ pour être sûr de trouver le fichier
+                  const voteFile =
+                    'c:\\Users\\Deamon\\Desktop\\Backup\\Serveur MCP\\votes_sentinel.csv';
+
+                  // Ensure file exists with header
+                  if (!fs.existsSync(voteFile)) {
+                    fs.writeFileSync(
+                      voteFile,
+                      'timestamp,vote_type,user,user_id,channel_id,details\n'
+                    );
+                  }
+                  const line = `${new Date().toISOString()},${voteType},${context.user.username},${context.user.id},${context.channelId},"${details}"\n`;
+                  fs.appendFileSync(voteFile, line);
+                  Logger.info(`🗳️ Vote enregistré: ${voteType} par ${context.user.username}`);
+                } catch (err: any) {
+                  Logger.error('Echec sauvegarde vote:', err);
+                }
+              },
             };
 
-            const asyncFunction = new Function('ctx', `
+            const asyncFunction = new Function(
+              'ctx',
+              `
               return (async () => {
                 try {
                   ${functionCode}
@@ -319,7 +329,8 @@ await ctx.reply('Vote enregistré !');
                   await ctx.reply('❌ Erreur: ' + e.message, true);
                 }
               })();
-            `);
+            `
+            );
 
             await asyncFunction(ctx);
           } catch (error: any) {
@@ -327,7 +338,7 @@ await ctx.reply('Vote enregistré !');
             if (!interaction.replied && !interaction.deferred) {
               await interaction.reply({
                 content: `❌ Erreur: ${error.message}`,
-                ephemeral: true
+                ephemeral: true,
               });
             }
           }
@@ -341,7 +352,6 @@ await ctx.reply('Vote enregistré !');
 🎯 Bouton cible: "${buttonLabel}"
 
 La fonction sera exécutée pour tous les boutons de cet embed.`;
-
       } catch (error: any) {
         Logger.error(`❌ [attacher_fonction_bouton_embed]`, error.message);
         return `❌ Erreur: ${error.message}`;

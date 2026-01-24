@@ -50,8 +50,6 @@ function withRateLimit<T extends any[], R>(toolName: string, fn: (...args: T) =>
 
 const StatutBotSchema = z.object({});
 
-
-
 const LogsExplorerSchema = z.object({
   lines: z.number().min(1).max(100).default(20).describe('Nombre de lignes à afficher'),
   level: z.enum(['INFO', 'WARN', 'ERROR', 'DEBUG']).optional().describe('Filtrer par niveau'),
@@ -76,19 +74,20 @@ export function registerSystemTools(server: FastMCP): void {
     }),
   });
 
-
-
   server.addTool({
     name: 'logs_explorer',
     description: 'Explore les derniers logs du serveur',
     parameters: LogsExplorerSchema,
-    execute: async (args) => {
+    execute: async args => {
       try {
         const logDir = path.join(process.cwd(), 'logs');
         const logFiles = await fs.promises.readdir(logDir);
-        const latestLog = logFiles.filter(f => f.endsWith('.log')).sort().reverse()[0];
+        const latestLog = logFiles
+          .filter(f => f.endsWith('.log'))
+          .sort()
+          .reverse()[0];
 
-        if (!latestLog) return "❌ Aucun fichier de log trouvé.";
+        if (!latestLog) return '❌ Aucun fichier de log trouvé.';
 
         const content = await fs.promises.readFile(path.join(logDir, latestLog), 'utf-8');
         let linesArray = content.split('\n').filter(l => l.trim() !== '');

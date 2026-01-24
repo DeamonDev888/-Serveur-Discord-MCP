@@ -42,16 +42,22 @@ export interface HealthCheckConfig {
 export class UrlValidator {
   private config: ValidationConfig;
   private healthCheckConfig: HealthCheckConfig;
-  private validationCache = new Map<string, {
-    result: UrlValidationResult;
-    expiresAt: number;
-  }>();
-  private healthStatus = new Map<string, {
-    failures: number;
-    successes: number;
-    isHealthy: boolean;
-    lastChecked: number;
-  }>();
+  private validationCache = new Map<
+    string,
+    {
+      result: UrlValidationResult;
+      expiresAt: number;
+    }
+  >();
+  private healthStatus = new Map<
+    string,
+    {
+      failures: number;
+      successes: number;
+      isHealthy: boolean;
+      lastChecked: number;
+    }
+  >();
   private healthCheckTimer?: ReturnType<typeof setInterval>;
 
   constructor(
@@ -68,7 +74,7 @@ export class UrlValidator {
       requireImageType: true,
       cacheResults: true,
       cacheTtl: 60 * 60 * 1000, // 1h
-      ...validationConfig
+      ...validationConfig,
     };
 
     this.healthCheckConfig = {
@@ -76,7 +82,7 @@ export class UrlValidator {
       interval: 60 * 60 * 1000, // 1h
       failureThreshold: 3,
       recoveryThreshold: 2,
-      ...healthCheckConfig
+      ...healthCheckConfig,
     };
 
     if (this.healthCheckConfig.enabled) {
@@ -134,7 +140,7 @@ export class UrlValidator {
           responseTime: Date.now() - startTime,
           error: 'URL marquée comme non-healthy',
           isCached: false,
-          lastChecked: Date.now()
+          lastChecked: Date.now(),
         };
         this.cacheResult(url, result);
         return result;
@@ -146,7 +152,7 @@ export class UrlValidator {
         ...result,
         responseTime: Date.now() - startTime,
         isCached: false,
-        lastChecked: Date.now()
+        lastChecked: Date.now(),
       };
 
       // Mettre à jour le health status
@@ -158,7 +164,6 @@ export class UrlValidator {
       }
 
       return finalResult;
-
     } catch (error: any) {
       const result: UrlValidationResult = {
         url,
@@ -167,7 +172,7 @@ export class UrlValidator {
         responseTime: Date.now() - startTime,
         error: error.message,
         isCached: false,
-        lastChecked: Date.now()
+        lastChecked: Date.now(),
       };
 
       this.updateHealthStatus(url, false);
@@ -185,9 +190,7 @@ export class UrlValidator {
     const allResults: UrlValidationResult[] = [];
 
     for (const chunk of chunks) {
-      const chunkResults = await Promise.all(
-        chunk.map(url => this.validateUrl(url))
-      );
+      const chunkResults = await Promise.all(chunk.map(url => this.validateUrl(url)));
       allResults.push(...chunkResults);
     }
 
@@ -224,7 +227,7 @@ export class UrlValidator {
       responseTime: 0,
       error: `Toutes les tentatives ont échoué: ${lastError}`,
       isCached: false,
-      lastChecked: Date.now()
+      lastChecked: Date.now(),
     };
   }
 
@@ -242,8 +245,8 @@ export class UrlValidator {
         method: 'HEAD', // Plus rapide que GET
         headers: {
           'User-Agent': 'Discord-Embed-Validator/1.0',
-          'Accept': 'image/*,*/*;q=0.8'
-        }
+          Accept: 'image/*,*/*;q=0.8',
+        },
       });
 
       clearTimeout(timeoutId);
@@ -264,7 +267,7 @@ export class UrlValidator {
           error: `HTTP ${response.status}: ${response.statusText}`,
           isCached: false,
           lastChecked: Date.now(),
-          responseTime
+          responseTime,
         };
       }
 
@@ -281,7 +284,7 @@ export class UrlValidator {
             error: `Type de contenu non supporté: ${contentType}`,
             isCached: false,
             lastChecked: Date.now(),
-            responseTime
+            responseTime,
           };
         }
       }
@@ -289,7 +292,8 @@ export class UrlValidator {
       // Vérifier la taille si demandée
       if (this.config.checkContentLength && contentLength) {
         const size = parseInt(contentLength);
-        if (size > 8 * 1024 * 1024) { // 8MB max
+        if (size > 8 * 1024 * 1024) {
+          // 8MB max
           return {
             url,
             isValid: false,
@@ -300,7 +304,7 @@ export class UrlValidator {
             error: `Image trop grande: ${size} bytes (max: 8MB)`,
             isCached: false,
             lastChecked: Date.now(),
-            responseTime
+            responseTime,
           };
         }
       }
@@ -314,9 +318,8 @@ export class UrlValidator {
         contentLength: contentLength ? parseInt(contentLength) : undefined,
         isCached: false,
         lastChecked: Date.now(),
-        responseTime
+        responseTime,
       };
-
     } catch (error: any) {
       clearTimeout(timeoutId);
       const responseTime = Date.now() - startTime;
@@ -330,7 +333,7 @@ export class UrlValidator {
           error: `Timeout après ${this.config.timeout}ms`,
           isCached: false,
           lastChecked: Date.now(),
-          responseTime
+          responseTime,
         };
       }
 
@@ -341,7 +344,7 @@ export class UrlValidator {
         error: error.message,
         isCached: false,
         lastChecked: Date.now(),
-        responseTime
+        responseTime,
       };
     }
   }
@@ -354,7 +357,7 @@ export class UrlValidator {
       failures: 0,
       successes: 0,
       isHealthy: true,
-      lastChecked: Date.now()
+      lastChecked: Date.now(),
     };
 
     if (isValid) {
@@ -396,9 +399,7 @@ export class UrlValidator {
     const sampleSize = Math.max(1, Math.floor(urls.length * 0.2));
     const sampledUrls = this.getRandomSample(urls, sampleSize);
 
-    const results = await Promise.allSettled(
-      sampledUrls.map(url => this.validateUrl(url))
-    );
+    const results = await Promise.allSettled(sampledUrls.map(url => this.validateUrl(url)));
 
     const success = results.filter(r => r.status === 'fulfilled').length;
     Logger.info(`[UrlValidator] Health check terminé: ${success}/${sampledUrls.length} URLs OK`);
@@ -427,7 +428,7 @@ export class UrlValidator {
   private cacheResult(url: string, result: UrlValidationResult): void {
     this.validationCache.set(url, {
       result,
-      expiresAt: Date.now() + this.config.cacheTtl
+      expiresAt: Date.now() + this.config.cacheTtl,
     });
   }
 
@@ -466,17 +467,15 @@ export class UrlValidator {
     unhealthyUrls: number;
     totalChecks: number;
   } {
-    const healthy = Array.from(this.healthStatus.values())
-      .filter(h => h.isHealthy).length;
+    const healthy = Array.from(this.healthStatus.values()).filter(h => h.isHealthy).length;
 
-    const unhealthy = Array.from(this.healthStatus.values())
-      .filter(h => !h.isHealthy).length;
+    const unhealthy = Array.from(this.healthStatus.values()).filter(h => !h.isHealthy).length;
 
     return {
       cachedEntries: this.validationCache.size,
       healthyUrls: healthy,
       unhealthyUrls: unhealthy,
-      totalChecks: healthy + unhealthy
+      totalChecks: healthy + unhealthy,
     };
   }
 
@@ -544,7 +543,7 @@ export class UrlValidator {
         url,
         failures: status.failures,
         lastChecked: status.lastChecked,
-        error: `Échec ${status.failures} fois`
+        error: `Échec ${status.failures} fois`,
       }));
   }
 }
@@ -556,5 +555,5 @@ export const urlValidator = new UrlValidator({
   retryAttempts: 2,
   retryDelay: 1000,
   cacheResults: true,
-  cacheTtl: 60 * 60 * 1000 // 1h
+  cacheTtl: 60 * 60 * 1000, // 1h
 });

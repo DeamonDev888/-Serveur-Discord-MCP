@@ -1,4 +1,10 @@
-import { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder } from 'discord.js';
+import {
+  Client,
+  GatewayIntentBits,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+} from 'discord.js';
 import Logger from './utils/logger.js';
 
 import { interactionHandler } from './utils/interactionHandler.js';
@@ -23,7 +29,17 @@ const AUTO_RESPONSES = {
 
 // Types d'actions personnalisées pour les boutons
 export type ButtonAction = {
-  type: 'message' | 'embed' | 'role' | 'react' | 'command' | 'url' | 'delete' | 'edit' | 'modal' | 'custom';
+  type:
+    | 'message'
+    | 'embed'
+    | 'role'
+    | 'react'
+    | 'command'
+    | 'url'
+    | 'delete'
+    | 'edit'
+    | 'modal'
+    | 'custom';
   data?: any;
 };
 
@@ -88,7 +104,9 @@ export class DiscordBridge {
     this.setupInteractionHandlers();
 
     // Recharger les fonctions de boutons persistantes
-    await this.rehydrateButtonFunctions().catch(err => Logger.error('❌ [Bridge] Erreur rehydration:', err));
+    await this.rehydrateButtonFunctions().catch(err =>
+      Logger.error('❌ [Bridge] Erreur rehydration:', err)
+    );
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
@@ -124,93 +142,91 @@ export class DiscordBridge {
     });
   }
 
-
-
-    // Recharger les fonctions personnalisées depuis la persistance
-    private async rehydrateButtonFunctions(): Promise<void> {
+  // Recharger les fonctions personnalisées depuis la persistance
+  private async rehydrateButtonFunctions(): Promise<void> {
     try {
-        const { loadCustomButtons } = await import('./utils/buttonPersistence.js');
-        const buttons = await loadCustomButtons();
-        let count = 0;
+      const { loadCustomButtons } = await import('./utils/buttonPersistence.js');
+      const buttons = await loadCustomButtons();
+      let count = 0;
 
-        for (const [id, button] of buttons.entries()) {
-            if (button.functionCode) {
-                const func = async (interaction: any) => {
-                    // Reconstruire le contexte (ctx) identique à celui de registerButtonFunctions
-                    const context = {
-                        channelId: interaction.channelId,
-                        messageId: interaction.message.id,
-                        user: interaction.user,
-                        customId: interaction.customId
-                    };
+      for (const [id, button] of buttons.entries()) {
+        if (button.functionCode) {
+          const func = async (interaction: any) => {
+            // Reconstruire le contexte (ctx) identique à celui de registerButtonFunctions
+            const context = {
+              channelId: interaction.channelId,
+              messageId: interaction.message.id,
+              user: interaction.user,
+              customId: interaction.customId,
+            };
 
-                    const ctx = {
-                        interaction,
-                        channelId: context.channelId,
-                        messageId: context.messageId,
-                        user: context.user,
-                        buttonId: context.customId,
-                        client: interaction.client,
-                        // Fonctions utilitaires
-                        reply: async (content: string, ephemeral: boolean = true) => {
-                            if (!interaction.replied && !interaction.deferred) {
-                                await interaction.reply({ content, ephemeral });
-                            }
-                        },
-                        update: async (data: any) => {
-                            if (!interaction.replied && !interaction.deferred) {
-                                await interaction.update(data);
-                            }
-                        },
-                        deferReply: async (ephemeral: boolean = true) => {
-                            if (!interaction.deferred) {
-                                await interaction.deferReply({ ephemeral });
-                            }
-                        },
-                        followUp: async (content: string, ephemeral: boolean = true) => {
-                            await interaction.followUp({ content, ephemeral });
-                        },
-                        editReply: async (data: any) => {
-                            return await interaction.editReply(data);
-                        },
-                        updateEmbed: async (data: any) => {
-                            return await interaction.editReply(data);
-                        },
-                        sendEmbed: async (embed: any, ephemeral: boolean = false) => {
-                             if (interaction.deferred || interaction.replied) {
-                                 await interaction.followUp({ embeds: [embed], ephemeral });
-                             } else {
-                                 await interaction.reply({ embeds: [embed], ephemeral });
-                             }
-                        },
+            const ctx = {
+              interaction,
+              channelId: context.channelId,
+              messageId: context.messageId,
+              user: context.user,
+              buttonId: context.customId,
+              client: interaction.client,
+              // Fonctions utilitaires
+              reply: async (content: string, ephemeral: boolean = true) => {
+                if (!interaction.replied && !interaction.deferred) {
+                  await interaction.reply({ content, ephemeral });
+                }
+              },
+              update: async (data: any) => {
+                if (!interaction.replied && !interaction.deferred) {
+                  await interaction.update(data);
+                }
+              },
+              deferReply: async (ephemeral: boolean = true) => {
+                if (!interaction.deferred) {
+                  await interaction.deferReply({ ephemeral });
+                }
+              },
+              followUp: async (content: string, ephemeral: boolean = true) => {
+                await interaction.followUp({ content, ephemeral });
+              },
+              editReply: async (data: any) => {
+                return await interaction.editReply(data);
+              },
+              updateEmbed: async (data: any) => {
+                return await interaction.editReply(data);
+              },
+              sendEmbed: async (embed: any, ephemeral: boolean = false) => {
+                if (interaction.deferred || interaction.replied) {
+                  await interaction.followUp({ embeds: [embed], ephemeral });
+                } else {
+                  await interaction.reply({ embeds: [embed], ephemeral });
+                }
+              },
 
-                        sendMessage: async (content: string) => {
-                            const channel = await interaction.client.channels.fetch(context.channelId);
-                            if (channel && 'send' in channel) {
-                                await channel.send(content);
-                            }
-                        },
-                        getMessage: async () => {
-                            const channel = await interaction.client.channels.fetch(context.channelId);
-                            if (channel && 'messages' in channel) {
-                                return await channel.messages.fetch(context.messageId);
-                            }
-                        },
-                        // SAUVEGARDE DE VOTE/DONNÉES
-                        saveVote: async (voteType: string, details: string = '') => {
-                            const { VoteManager } = await import('./utils/voteManager.js');
-                            await VoteManager.saveVote(voteType, context.user, context.channelId, details);
-                        },
-                        getVoteCounts: async () => {
-                            const { VoteManager } = await import('./utils/voteManager.js');
-                            return await VoteManager.getVoteCounts();
-                        }
+              sendMessage: async (content: string) => {
+                const channel = await interaction.client.channels.fetch(context.channelId);
+                if (channel && 'send' in channel) {
+                  await channel.send(content);
+                }
+              },
+              getMessage: async () => {
+                const channel = await interaction.client.channels.fetch(context.channelId);
+                if (channel && 'messages' in channel) {
+                  return await channel.messages.fetch(context.messageId);
+                }
+              },
+              // SAUVEGARDE DE VOTE/DONNÉES
+              saveVote: async (voteType: string, details: string = '') => {
+                const { VoteManager } = await import('./utils/voteManager.js');
+                await VoteManager.saveVote(voteType, context.user, context.channelId, details);
+              },
+              getVoteCounts: async () => {
+                const { VoteManager } = await import('./utils/voteManager.js');
+                return await VoteManager.getVoteCounts();
+              },
+            };
 
-
-                    };
-
-                    // Exécuter le code avec le contexte
-                    const asyncFunction = new Function('ctx', `
+            // Exécuter le code avec le contexte
+            const asyncFunction = new Function(
+              'ctx',
+              `
                         return (async () => {
                             try {
                                 ${button.functionCode}
@@ -218,26 +234,32 @@ export class DiscordBridge {
                                 throw e;
                             }
                         })();
-                    `);
+                    `
+            );
 
-                    try {
-                        await asyncFunction(ctx);
-                    } catch (e: any) {
-                        Logger.error(`❌ Erreur dans la fonction persistée ${id}:`, e);
-                        if (!interaction.replied && !interaction.deferred) {
-                            await interaction.reply({ content: `❌ Erreur: ${e.message}`, ephemeral: true }).catch(() => {});
-                        } else {
-                            await interaction.followUp({ content: `❌ Erreur: ${e.message}`, ephemeral: true }).catch(() => {});
-                        }
-                    }
-                };
-                buttonFunctions.set(id, func);
-                count++;
+            try {
+              await asyncFunction(ctx);
+            } catch (e: any) {
+              Logger.error(`❌ Erreur dans la fonction persistée ${id}:`, e);
+              if (!interaction.replied && !interaction.deferred) {
+                await interaction
+                  .reply({ content: `❌ Erreur: ${e.message}`, ephemeral: true })
+                  .catch(() => {});
+              } else {
+                await interaction
+                  .followUp({ content: `❌ Erreur: ${e.message}`, ephemeral: true })
+                  .catch(() => {});
+              }
             }
+          };
+          buttonFunctions.set(id, func);
+          count++;
         }
-        if (count > 0) Logger.info(`♻️ [Bridge] ${count} fonctions de boutons rechargées depuis la persistance`);
+      }
+      if (count > 0)
+        Logger.info(`♻️ [Bridge] ${count} fonctions de boutons rechargées depuis la persistance`);
     } catch (err) {
-        Logger.error('❌ [Bridge] Erreur lors de la rehydration des fonctions:', err);
+      Logger.error('❌ [Bridge] Erreur lors de la rehydration des fonctions:', err);
     }
   }
 
@@ -248,7 +270,7 @@ export class DiscordBridge {
     if (!this.client) return;
 
     // Gestionnaire principal des interactions
-    this.client.on('interactionCreate', async (interaction) => {
+    this.client.on('interactionCreate', async interaction => {
       try {
         // Boutons
         if (interaction.isButton()) {
@@ -273,16 +295,18 @@ export class DiscordBridge {
         if (!interaction.isAutocomplete()) {
           const int = interaction as any;
           if (!int.replied && !int.deferred) {
-            await int.reply({
-              content: '❌ Une erreur est survenue lors du traitement de votre interaction.',
-              ephemeral: true
-            }).catch(() => {});
+            await int
+              .reply({
+                content: '❌ Une erreur est survenue lors du traitement de votre interaction.',
+                ephemeral: true,
+              })
+              .catch(() => {});
           }
         }
       }
     });
 
-    Logger.info('✅ [Bridge] Gestionnaire d\'interactions configuré');
+    Logger.info("✅ [Bridge] Gestionnaire d'interactions configuré");
   }
 
   /**
@@ -296,7 +320,9 @@ export class DiscordBridge {
     let wasHandled = false;
 
     // 🔥 VÉRIFIER L'ÉTAT DE L'INTERACTION dès le début
-    Logger.debug(`🔍 [Bridge] État interaction - replied: ${interaction.replied}, deferred: ${interaction.deferred}`);
+    Logger.debug(
+      `🔍 [Bridge] État interaction - replied: ${interaction.replied}, deferred: ${interaction.deferred}`
+    );
 
     // Si l'interaction est déjà acquittée, ne rien faire
     if (interaction.replied || interaction.deferred) {
@@ -309,13 +335,13 @@ export class DiscordBridge {
     // 🔥 ACQUITTER immédiatement pour éviter l'expiration de l'interaction
     // deferUpdate() est fait pour les boutons (update du message au lieu de nouvelle réponse)
     if (!interaction.replied && !interaction.deferred) {
-        try {
-          await interaction.deferUpdate();
-          Logger.debug(`⏱️ [Bridge] deferUpdate() effectué`);
-        } catch (e) {
-          Logger.error(`❌ [Bridge] Erreur deferUpdate:`, e);
-          // Continue execution even if defer fails (could be already handled in edge cases)
-        }
+      try {
+        await interaction.deferUpdate();
+        Logger.debug(`⏱️ [Bridge] deferUpdate() effectué`);
+      } catch (e) {
+        Logger.error(`❌ [Bridge] Erreur deferUpdate:`, e);
+        // Continue execution even if defer fails (could be already handled in edge cases)
+      }
     }
 
     // 1. GESTION DIRECTE des boutons custom avec embed/message (priorité MAXIMALE)
@@ -325,248 +351,251 @@ export class DiscordBridge {
     // Charger les boutons customs (buttons.json)
     const { loadCustomButtons } = await import('./utils/buttonPersistence.js');
     const buttons = await loadCustomButtons();
-    
+
     // Charger les boutons persistants (dist/data/persistent-buttons.json)
     const { getPersistentButton } = await import('./utils/distPersistence.js');
     const persistentBtn = await getPersistentButton(customId); // C'est ici que la MAGIE opère (lecture disque fraîche)
 
     Logger.debug(`🔍 [Bridge] Boutons customs chargés: ${buttons.size}`);
-    Logger.debug(`🔍 [Bridge] Bouton persistant trouvé pour ${customId}: ${persistentBtn ? 'OUI' : 'NON'}`);
+    Logger.debug(
+      `🔍 [Bridge] Bouton persistant trouvé pour ${customId}: ${persistentBtn ? 'OUI' : 'NON'}`
+    );
 
     // Fusionner la logique : on prend soit le custom, soit le persistant
     let button: any = buttons.get(customId);
     if (!button && persistentBtn) {
-        // Adapter le format pour qu'il ressemble à un bouton custom pour la suite du code
-        button = {
-            id: persistentBtn.id,
-            action: persistentBtn.action, // Action est déjà objet complet {type: 'message', content: ...}
-            label: persistentBtn.label,
-            channelId: persistentBtn.channelId
-        };
-        Logger.debug(`🔍 [Bridge] Utilisation de la configuration persistante pour ${customId}`);
+      // Adapter le format pour qu'il ressemble à un bouton custom pour la suite du code
+      button = {
+        id: persistentBtn.id,
+        action: persistentBtn.action, // Action est déjà objet complet {type: 'message', content: ...}
+        label: persistentBtn.label,
+        channelId: persistentBtn.channelId,
+      };
+      Logger.debug(`🔍 [Bridge] Utilisation de la configuration persistante pour ${customId}`);
     }
 
-    Logger.debug(`🔍 [Bridge] Résultat final recherche bouton ${customId}:`, button ? 'TROUVÉ' : 'PERDU');
+    Logger.debug(
+      `🔍 [Bridge] Résultat final recherche bouton ${customId}:`,
+      button ? 'TROUVÉ' : 'PERDU'
+    );
 
     if (button) {
-        Logger.debug(`🔍 [Bridge] Structure du bouton:`, JSON.stringify(button, null, 2).substring(0, 500));
+      Logger.debug(
+        `🔍 [Bridge] Structure du bouton:`,
+        JSON.stringify(button, null, 2).substring(0, 500)
+      );
 
-        // 🔥 CORRECTION: Détecter les actions custom avec différentes structures
-        let actionData = null;
-        let isActionEmbed = false;
+      // 🔥 CORRECTION: Détecter les actions custom avec différentes structures
+      let actionData = null;
+      let isActionEmbed = false;
 
-        Logger.debug(`🔍 [Bridge] Type d'action: ${button.action?.type}`);
+      Logger.debug(`🔍 [Bridge] Type d'action: ${button.action?.type}`);
 
-        // Structure 1: Boutons standards (embedv2_) avec action.data
-        if (button.action?.type === 'custom' && button.action?.data) {
-            actionData = button.action.data;
-            Logger.debug(`🔍 [Bridge] Structure 1 détectée (action.data)`);
-            Logger.debug(`🔍 [Bridge] Données:`, JSON.stringify(actionData, null, 2).substring(0, 300));
-        }
-        // Structure 2: Boutons persistants (pb_) avec action.embed/action.message
-        else if (button.action?.type === 'embed' || button.action?.type === 'message') {
-            actionData = button.action;
-            isActionEmbed = button.action.type === 'embed';
-            Logger.debug(`🔍 [Bridge] Structure 2 détectée (action directe)`);
-            Logger.debug(`🔍 [Bridge] Type: ${button.action.type}`);
-        }
+      // Structure 1: Boutons standards (embedv2_) avec action.data
+      if (button.action?.type === 'custom' && button.action?.data) {
+        actionData = button.action.data;
+        Logger.debug(`🔍 [Bridge] Structure 1 détectée (action.data)`);
+        Logger.debug(`🔍 [Bridge] Données:`, JSON.stringify(actionData, null, 2).substring(0, 300));
+      }
+      // Structure 2: Boutons persistants (pb_) avec action.embed/action.message
+      else if (button.action?.type === 'embed' || button.action?.type === 'message') {
+        actionData = button.action;
+        isActionEmbed = button.action.type === 'embed';
+        Logger.debug(`🔍 [Bridge] Structure 2 détectée (action directe)`);
+        Logger.debug(`🔍 [Bridge] Type: ${button.action.type}`);
+      }
 
-        if (actionData) {
-            Logger.debug(`🔍 [Bridge] Action custom détectée avec données!`);
-            wasHandled = true; // 🔥 MARQUER comme géré pour éviter l'auto-handler
+      if (actionData) {
+        Logger.debug(`🔍 [Bridge] Action custom détectée avec données!`);
+        wasHandled = true; // 🔥 MARQUER comme géré pour éviter l'auto-handler
 
-            // Envoyer embed si disponible
-            if (isActionEmbed || actionData.embed) {
-                Logger.debug(`🔍 [Bridge] Envoi embed custom...`);
-                const embedData = isActionEmbed ? actionData.embed : actionData.embed;
-                if (embedData) {
-                    const embedBuilder = new EmbedBuilder()
-                        .setTitle(embedData.title || 'Réponse')
-                        .setDescription(embedData.description || '')
-                        .setColor(embedData.color || 0x00FF00);
+        // Envoyer embed si disponible
+        if (isActionEmbed || actionData.embed) {
+          Logger.debug(`🔍 [Bridge] Envoi embed custom...`);
+          const embedData = isActionEmbed ? actionData.embed : actionData.embed;
+          if (embedData) {
+            const embedBuilder = new EmbedBuilder()
+              .setTitle(embedData.title || 'Réponse')
+              .setDescription(embedData.description || '')
+              .setColor(embedData.color || 0x00ff00);
 
-                    if (embedData.timestamp !== false) {
-                        embedBuilder.setTimestamp();
-                    }
-
-                    try {
-                        // 🔥 RÉPONSE avec editReply() ou followUp()
-                        const isEphemeral = (isActionEmbed ? actionData.ephemeral : actionData.ephemeral) !== false;
-                        const visibility = actionData.visibility || (isEphemeral ? 'author' : 'all');
-                        const finalEphemeral = visibility === 'author';
-
-                        let response;
-                        if (finalEphemeral) {
-                            // Réponse éphémère : utiliser followUp()
-                            response = await interaction.followUp({
-                                embeds: [embedBuilder],
-                                ephemeral: true
-                            });
-                            Logger.info(`✅ [Bridge] Réponse embed éphémère envoyée pour ${customId}`);
-                        } else {
-                            // Réponse publique : utiliser followUp() aussi
-                            response = await interaction.followUp({
-                                embeds: [embedBuilder]
-                            });
-                            Logger.info(`✅ [Bridge] Réponse embed publique envoyée pour ${customId}`);
-                        }
-
-                        // 🕐 AUTO-SUPPRESSION après délai si configuré
-                        const autoDelete = actionData.autoDelete;
-                        const autoDeleteReply = actionData.autoDeleteReply !== false;
-                        if (autoDelete && autoDelete > 0) {
-                            setTimeout(async () => {
-                                try {
-                                    if (autoDeleteReply && !finalEphemeral && response) {
-                                        // Supprimer la réponse publique
-                                        await response.delete();
-                                        Logger.debug(`🗑️ [Bridge] Réponse auto-supprimée après ${autoDelete}s`);
-                                    } else if (!autoDeleteReply) {
-                                        // Supprimer le message original
-                                        const originalMessage = interaction.message;
-                                        if (originalMessage) {
-                                            await originalMessage.delete();
-                                            Logger.debug(`🗑️ [Bridge] Message original auto-supprimé après ${autoDelete}s`);
-                                        }
-                                    }
-                                } catch (e) {
-                                    Logger.debug(`⚠️ [Bridge] Impossible de supprimer:`, e);
-                                }
-                            }, autoDelete * 1000);
-                            Logger.debug(`⏰ [Bridge] Auto-suppression programmée dans ${autoDelete}s`);
-                        }
-
-                        // 🔥 DÉSACTIVER LE BOUTON uniquement si réponse ÉPHÉMÈRE
-                        if (finalEphemeral) {
-                            try {
-                              const originalMessage = interaction.message;
-                              if (originalMessage && originalMessage.components) {
-                                const newRows = originalMessage.components.map((row: any) => {
-                                  const actionRow = new ActionRowBuilder();
-                                  row.components.forEach((btn: any) => {
-                                    const newBtn = new ButtonBuilder()
-                                      .setCustomId(btn.customId)
-                                      .setLabel(btn.label)
-                                      .setStyle(btn.style)
-                                      .setDisabled(true);
-                                    if (btn.emoji) newBtn.setEmoji(btn.emoji);
-                                    actionRow.addComponents(newBtn);
-                                  });
-                                  return actionRow;
-                                });
-                                await originalMessage.edit({ components: newRows });
-                                Logger.debug(`🔒 [Bridge] Bouton désactivé (réponse éphémère)`);
-                              }
-                            } catch (e) {
-                              Logger.debug(`⚠️ [Bridge] Impossible de désactiver le bouton:`, e);
-                            }
-                        } else {
-                            Logger.debug(`🔄 [Bridge] Bouton laissé actif (réponse publique - multi-click)`);
-                        }
-
-                        return; // Terminé - on a répondu
-                    } catch (e: any) {
-                        Logger.error(`❌ [Bridge] Erreur réponse embed:`, e.message);
-                    }
-                }
+            if (embedData.timestamp !== false) {
+              embedBuilder.setTimestamp();
             }
-            // Envoyer message si disponible
-            else if (actionData.message || actionData.content) {
-                Logger.debug(`🔍 [Bridge] Envoi message custom...`);
-                try {
-                    // 🔥 RÉPONSE avec followUp()
-                    const message = (actionData.message || actionData.content || '').replace('{user}', user.username);
-                    const isEphemeral = (isActionEmbed ? actionData.ephemeral : actionData.ephemeral) !== false;
-                    const visibility = actionData.visibility || (isEphemeral ? 'author' : 'all');
-                    const finalEphemeral = visibility === 'author';
 
-                    let response;
-                    if (finalEphemeral) {
-                        response = await interaction.followUp({
-                            content: message,
-                            ephemeral: true
-                        });
-                        Logger.info(`✅ [Bridge] Réponse message éphémère envoyée pour ${customId}`);
-                    } else {
-                        response = await interaction.followUp({
-                            content: message
-                        });
-                        Logger.info(`✅ [Bridge] Réponse message publique envoyée pour ${customId}`);
-                    }
-
-                    // 🕐 AUTO-SUPPRESSION après délai si configuré
-                    const autoDelete = actionData.autoDelete;
-                    const autoDeleteReply = actionData.autoDeleteReply !== false;
-                    if (autoDelete && autoDelete > 0) {
-                        setTimeout(async () => {
-                            try {
-                                if (autoDeleteReply && !finalEphemeral && response) {
-                                    await response.delete();
-                                    Logger.debug(`🗑️ [Bridge] Réponse auto-supprimée après ${autoDelete}s`);
-                                } else if (!autoDeleteReply) {
-                                    const originalMessage = interaction.message;
-                                    if (originalMessage) {
-                                        await originalMessage.delete();
-                                        Logger.debug(`🗑️ [Bridge] Message original auto-supprimé après ${autoDelete}s`);
-                                    }
-                                }
-                            } catch (e) {
-                                Logger.debug(`⚠️ [Bridge] Impossible de supprimer:`, e);
-                            }
-                        }, autoDelete * 1000);
-                        Logger.debug(`⏰ [Bridge] Auto-suppression programmée dans ${autoDelete}s`);
-                    }
-
-                    // 🔥 DÉSACTIVER LE BOUTON uniquement si réponse ÉPHÉMÈRE
-                    if (finalEphemeral) {
-                        try {
-                          const originalMessage = interaction.message;
-                          if (originalMessage && originalMessage.components) {
-                            const newRows = originalMessage.components.map((row: any) => {
-                              const actionRow = new ActionRowBuilder();
-                              row.components.forEach((btn: any) => {
-                                const newBtn = new ButtonBuilder()
-                                  .setCustomId(btn.customId)
-                                  .setLabel(btn.label)
-                                  .setStyle(btn.style)
-                                  .setDisabled(true);
-                                if (btn.emoji) newBtn.setEmoji(btn.emoji);
-                                actionRow.addComponents(newBtn);
-                              });
-                              return actionRow;
-                            });
-                            await originalMessage.edit({ components: newRows });
-                            Logger.debug(`🔒 [Bridge] Bouton désactivé (réponse éphémère)`);
-                          }
-                        } catch (e) {
-                          Logger.debug(`⚠️ [Bridge] Impossible de désactiver le bouton:`, e);
-                        }
-                    } else {
-                        Logger.debug(`🔄 [Bridge] Bouton laissé actif (réponse publique - multi-click)`);
-                    }
-
-                    return; // Terminé - on a répondu
-                } catch (e: any) {
-                    Logger.error(`❌ [Bridge] Erreur réponse message:`, e.message);
-                }
-            }
-        } else {
-            Logger.debug(`🔍 [Bridge] Pas d'action custom détectée pour ce bouton`);
-        }
-    }
-
-    // 2. Boutons RPG (court-circuit pour performance)
-    if (customId.startsWith('rpg_')) {
-        const customFunction = buttonFunctions.get(customId);
-        if (customFunction) {
             try {
-                await customFunction(interaction, { customId, user, channelId, messageId });
-                wasHandled = true;
-            } catch (error: any) {
-                Logger.error(`❌ [Bridge] Erreur RPG ${customId}:`, error.message);
+              // 🔥 RÉPONSE avec editReply() ou followUp()
+              const isEphemeral =
+                (isActionEmbed ? actionData.ephemeral : actionData.ephemeral) !== false;
+              const visibility = actionData.visibility || (isEphemeral ? 'author' : 'all');
+              const finalEphemeral = visibility === 'author';
+
+              let response;
+              if (finalEphemeral) {
+                // Réponse éphémère : utiliser followUp()
+                response = await interaction.followUp({
+                  embeds: [embedBuilder],
+                  ephemeral: true,
+                });
+                Logger.info(`✅ [Bridge] Réponse embed éphémère envoyée pour ${customId}`);
+              } else {
+                // Réponse publique : utiliser followUp() aussi
+                response = await interaction.followUp({
+                  embeds: [embedBuilder],
+                });
+                Logger.info(`✅ [Bridge] Réponse embed publique envoyée pour ${customId}`);
+              }
+
+              // 🕐 AUTO-SUPPRESSION après délai si configuré
+              const autoDelete = actionData.autoDelete;
+              const autoDeleteReply = actionData.autoDeleteReply !== false;
+              if (autoDelete && autoDelete > 0) {
+                setTimeout(async () => {
+                  try {
+                    if (autoDeleteReply && !finalEphemeral && response) {
+                      // Supprimer la réponse publique
+                      await response.delete();
+                      Logger.debug(`🗑️ [Bridge] Réponse auto-supprimée après ${autoDelete}s`);
+                    } else if (!autoDeleteReply) {
+                      // Supprimer le message original
+                      const originalMessage = interaction.message;
+                      if (originalMessage) {
+                        await originalMessage.delete();
+                        Logger.debug(
+                          `🗑️ [Bridge] Message original auto-supprimé après ${autoDelete}s`
+                        );
+                      }
+                    }
+                  } catch (e) {
+                    Logger.debug(`⚠️ [Bridge] Impossible de supprimer:`, e);
+                  }
+                }, autoDelete * 1000);
+                Logger.debug(`⏰ [Bridge] Auto-suppression programmée dans ${autoDelete}s`);
+              }
+
+              // 🔥 DÉSACTIVER LE BOUTON uniquement si réponse ÉPHÉMÈRE
+              if (finalEphemeral) {
+                try {
+                  const originalMessage = interaction.message;
+                  if (originalMessage && originalMessage.components) {
+                    const newRows = originalMessage.components.map((row: any) => {
+                      const actionRow = new ActionRowBuilder();
+                      row.components.forEach((btn: any) => {
+                        const newBtn = new ButtonBuilder()
+                          .setCustomId(btn.customId)
+                          .setLabel(btn.label)
+                          .setStyle(btn.style)
+                          .setDisabled(true);
+                        if (btn.emoji) newBtn.setEmoji(btn.emoji);
+                        actionRow.addComponents(newBtn);
+                      });
+                      return actionRow;
+                    });
+                    await originalMessage.edit({ components: newRows });
+                    Logger.debug(`🔒 [Bridge] Bouton désactivé (réponse éphémère)`);
+                  }
+                } catch (e) {
+                  Logger.debug(`⚠️ [Bridge] Impossible de désactiver le bouton:`, e);
+                }
+              } else {
+                Logger.debug(`🔄 [Bridge] Bouton laissé actif (réponse publique - multi-click)`);
+              }
+
+              return; // Terminé - on a répondu
+            } catch (e: any) {
+              Logger.error(`❌ [Bridge] Erreur réponse embed:`, e.message);
             }
-            return; // Terminé pour le RPG
+          }
         }
+        // Envoyer message si disponible
+        else if (actionData.message || actionData.content) {
+          Logger.debug(`🔍 [Bridge] Envoi message custom...`);
+          try {
+            // 🔥 RÉPONSE avec followUp()
+            const message = (actionData.message || actionData.content || '').replace(
+              '{user}',
+              user.username
+            );
+            const isEphemeral =
+              (isActionEmbed ? actionData.ephemeral : actionData.ephemeral) !== false;
+            const visibility = actionData.visibility || (isEphemeral ? 'author' : 'all');
+            const finalEphemeral = visibility === 'author';
+
+            let response;
+            if (finalEphemeral) {
+              response = await interaction.followUp({
+                content: message,
+                ephemeral: true,
+              });
+              Logger.info(`✅ [Bridge] Réponse message éphémère envoyée pour ${customId}`);
+            } else {
+              response = await interaction.followUp({
+                content: message,
+              });
+              Logger.info(`✅ [Bridge] Réponse message publique envoyée pour ${customId}`);
+            }
+
+            // 🕐 AUTO-SUPPRESSION après délai si configuré
+            const autoDelete = actionData.autoDelete;
+            const autoDeleteReply = actionData.autoDeleteReply !== false;
+            if (autoDelete && autoDelete > 0) {
+              setTimeout(async () => {
+                try {
+                  if (autoDeleteReply && !finalEphemeral && response) {
+                    await response.delete();
+                    Logger.debug(`🗑️ [Bridge] Réponse auto-supprimée après ${autoDelete}s`);
+                  } else if (!autoDeleteReply) {
+                    const originalMessage = interaction.message;
+                    if (originalMessage) {
+                      await originalMessage.delete();
+                      Logger.debug(
+                        `🗑️ [Bridge] Message original auto-supprimé après ${autoDelete}s`
+                      );
+                    }
+                  }
+                } catch (e) {
+                  Logger.debug(`⚠️ [Bridge] Impossible de supprimer:`, e);
+                }
+              }, autoDelete * 1000);
+              Logger.debug(`⏰ [Bridge] Auto-suppression programmée dans ${autoDelete}s`);
+            }
+
+            // 🔥 DÉSACTIVER LE BOUTON uniquement si réponse ÉPHÉMÈRE
+            if (finalEphemeral) {
+              try {
+                const originalMessage = interaction.message;
+                if (originalMessage && originalMessage.components) {
+                  const newRows = originalMessage.components.map((row: any) => {
+                    const actionRow = new ActionRowBuilder();
+                    row.components.forEach((btn: any) => {
+                      const newBtn = new ButtonBuilder()
+                        .setCustomId(btn.customId)
+                        .setLabel(btn.label)
+                        .setStyle(btn.style)
+                        .setDisabled(true);
+                      if (btn.emoji) newBtn.setEmoji(btn.emoji);
+                      actionRow.addComponents(newBtn);
+                    });
+                    return actionRow;
+                  });
+                  await originalMessage.edit({ components: newRows });
+                  Logger.debug(`🔒 [Bridge] Bouton désactivé (réponse éphémère)`);
+                }
+              } catch (e) {
+                Logger.debug(`⚠️ [Bridge] Impossible de désactiver le bouton:`, e);
+              }
+            } else {
+              Logger.debug(`🔄 [Bridge] Bouton laissé actif (réponse publique - multi-click)`);
+            }
+
+            return; // Terminé - on a répondu
+          } catch (e: any) {
+            Logger.error(`❌ [Bridge] Erreur réponse message:`, e.message);
+          }
+        }
+      } else {
+        Logger.debug(`🔍 [Bridge] Pas d'action custom détectée pour ce bouton`);
+      }
     }
 
     // Note: Tous les boutons connus (y compris custom_id personnalisés) sont déjà gérés ci-dessus
@@ -592,100 +621,102 @@ export class DiscordBridge {
     // 🔥 HOT RELOAD: Exécution dynamique du code depuis le disque (Priorité sur le cache mémoire)
     // N'exécuter que si pas encore géré par une action automatique (message/embed)
     if (button && button.functionCode && !wasHandled) {
-         Logger.info(`⚡ [Hot-Reload] Exécution code frais pour ${customId}`);
-         try {
-             // Reconstruire le contexte (ctx) identique à celui de registerButtonFunctions
-             const ctx = {
-                        interaction,
-                        channelId: interaction.channelId,
-                        messageId: interaction.message.id,
-                        user: interaction.user,
-                        client: interaction.client, // Ensure client is passed
-                        buttonId: interaction.customId,
-                        // Fonctions utilitaires
-                        reply: async (content: string, ephemeral: boolean = true) => {
-                            if (interaction.deferred || interaction.replied) {
-                                await interaction.followUp({ content, ephemeral });
-                            } else {
-                                try {
-                                    await interaction.reply({ content, ephemeral });
-                                } catch (e: any) {
-                                    if (e.code === 40060) await interaction.followUp({ content, ephemeral });
-                                    else throw e;
-                                }
-                            }
-                        },
-                        update: async (data: any) => {
-                            if (interaction.deferred || interaction.replied) {
-                                await interaction.editReply(data);
-                            } else {
-                                try {
-                                    await interaction.update(data);
-                                } catch (e: any) {
-                                    if (e.code === 40060) await interaction.editReply(data);
-                                    else throw e;
-                                }
-                            }
-                        },
-                        deferReply: async (ephemeral: boolean = true) => {
-                            if (!interaction.deferred && !interaction.replied) {
-                                try {
-                                    await interaction.deferReply({ ephemeral });
-                                } catch (e: any) {
-                                    if (e.code !== 40060) throw e;
-                                }
-                            }
-                        },
-                        followUp: async (content: string, ephemeral: boolean = true) => {
-                             if (interaction.deferred || interaction.replied) {
-                                 await interaction.followUp({ content, ephemeral });
-                             } else {
-                                 // Fallback to reply if not acknowledged
-                                 try {
-                                     await interaction.reply({ content, ephemeral });
-                                 } catch (e: any) {
-                                     if (e.code === 40060) await interaction.followUp({ content, ephemeral });
-                                     else throw e;
-                                 }
-                             }
-                        },
-                        editReply: async (data: any) => {
-                            return await interaction.editReply(data);
-                        },
-                        updateEmbed: async (data: any) => {
-                            return await interaction.editReply(data);
-                        },
-                        sendEmbed: async (embed: any, ephemeral: boolean = false) => {
-                             if (interaction.deferred || interaction.replied) {
-                                 await interaction.followUp({ embeds: [embed], ephemeral });
-                             } else {
-                                 await interaction.reply({ embeds: [embed], ephemeral });
-                             }
-                        },
-                        sendMessage: async (content: string) => {
-                            const channel = await interaction.client.channels.fetch(interaction.channelId);
-                            if (channel && 'send' in channel) {
-                                await channel.send(content);
-                            }
-                        },
-                        getMessage: async () => {
-                            const channel = await interaction.client.channels.fetch(interaction.channelId);
-                            if (channel && 'messages' in channel) {
-                                return await channel.messages.fetch(interaction.message.id);
-                            }
-                        },
-                        saveVote: async (voteType: string, details: string = '') => {
-                            const { VoteManager } = await import('./utils/voteManager.js');
-                            await VoteManager.saveVote(voteType, interaction.user, interaction.channelId, details);
-                        },
-                        getVoteCounts: async () => {
-                            const { VoteManager } = await import('./utils/voteManager.js');
-                            return await VoteManager.getVoteCounts();
-                        }
-             };
+      Logger.info(`⚡ [Hot-Reload] Exécution code frais pour ${customId}`);
+      try {
+        // Reconstruire le contexte (ctx) identique à celui de registerButtonFunctions
+        const ctx = {
+          interaction,
+          channelId: interaction.channelId,
+          messageId: interaction.message.id,
+          user: interaction.user,
+          client: interaction.client, // Ensure client is passed
+          buttonId: interaction.customId,
+          // Fonctions utilitaires
+          reply: async (content: string, ephemeral: boolean = true) => {
+            if (interaction.deferred || interaction.replied) {
+              await interaction.followUp({ content, ephemeral });
+            } else {
+              try {
+                await interaction.reply({ content, ephemeral });
+              } catch (e: any) {
+                if (e.code === 40060) await interaction.followUp({ content, ephemeral });
+                else throw e;
+              }
+            }
+          },
+          update: async (data: any) => {
+            if (interaction.deferred || interaction.replied) {
+              await interaction.editReply(data);
+            } else {
+              try {
+                await interaction.update(data);
+              } catch (e: any) {
+                if (e.code === 40060) await interaction.editReply(data);
+                else throw e;
+              }
+            }
+          },
+          deferReply: async (ephemeral: boolean = true) => {
+            if (!interaction.deferred && !interaction.replied) {
+              try {
+                await interaction.deferReply({ ephemeral });
+              } catch (e: any) {
+                if (e.code !== 40060) throw e;
+              }
+            }
+          },
+          followUp: async (content: string, ephemeral: boolean = true) => {
+            if (interaction.deferred || interaction.replied) {
+              await interaction.followUp({ content, ephemeral });
+            } else {
+              // Fallback to reply if not acknowledged
+              try {
+                await interaction.reply({ content, ephemeral });
+              } catch (e: any) {
+                if (e.code === 40060) await interaction.followUp({ content, ephemeral });
+                else throw e;
+              }
+            }
+          },
+          editReply: async (data: any) => {
+            return await interaction.editReply(data);
+          },
+          updateEmbed: async (data: any) => {
+            return await interaction.editReply(data);
+          },
+          sendEmbed: async (embed: any, ephemeral: boolean = false) => {
+            if (interaction.deferred || interaction.replied) {
+              await interaction.followUp({ embeds: [embed], ephemeral });
+            } else {
+              await interaction.reply({ embeds: [embed], ephemeral });
+            }
+          },
+          sendMessage: async (content: string) => {
+            const channel = await interaction.client.channels.fetch(interaction.channelId);
+            if (channel && 'send' in channel) {
+              await channel.send(content);
+            }
+          },
+          getMessage: async () => {
+            const channel = await interaction.client.channels.fetch(interaction.channelId);
+            if (channel && 'messages' in channel) {
+              return await channel.messages.fetch(interaction.message.id);
+            }
+          },
+          saveVote: async (voteType: string, details: string = '') => {
+            const { VoteManager } = await import('./utils/voteManager.js');
+            await VoteManager.saveVote(voteType, interaction.user, interaction.channelId, details);
+          },
+          getVoteCounts: async () => {
+            const { VoteManager } = await import('./utils/voteManager.js');
+            return await VoteManager.getVoteCounts();
+          },
+        };
 
-             // Exécuter le code avec le contexte
-             const asyncFunction = new Function('ctx', `
+        // Exécuter le code avec le contexte
+        const asyncFunction = new Function(
+          'ctx',
+          `
                 return (async () => {
                     try {
                         ${button.functionCode}
@@ -693,29 +724,31 @@ export class DiscordBridge {
                         throw e;
                     }
                 })();
-             `);
+             `
+        );
 
-             await asyncFunction(ctx);
-             wasHandled = true;
-
-         } catch (e: any) {
-             Logger.error(`❌ [Hot-Reload] Erreur exécution ${customId}:`, e);
-             if (!interaction.replied && !interaction.deferred) {
-                 await interaction.reply({ content: `❌ Erreur: ${e.message}`, ephemeral: true }).catch(() => {});
-             }
-         }
+        await asyncFunction(ctx);
+        wasHandled = true;
+      } catch (e: any) {
+        Logger.error(`❌ [Hot-Reload] Erreur exécution ${customId}:`, e);
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction
+            .reply({ content: `❌ Erreur: ${e.message}`, ephemeral: true })
+            .catch(() => {});
+        }
+      }
     }
     // Fallback sur mémoire si pas de bouton disque (peu probable si customFunction existe)
     else {
-        const customFunction = buttonFunctions.get(customId);
-        if (customFunction) {
-          try {
-            await customFunction(interaction, { customId, user, channelId, messageId });
-            wasHandled = true;
-          } catch (error: any) {
-            Logger.error(`❌ [Bridge] Erreur fonction bouton ${customId}:`, error.message);
-          }
+      const customFunction = buttonFunctions.get(customId);
+      if (customFunction) {
+        try {
+          await customFunction(interaction, { customId, user, channelId, messageId });
+          wasHandled = true;
+        } catch (error: any) {
+          Logger.error(`❌ [Bridge] Erreur fonction bouton ${customId}:`, error.message);
         }
+      }
     }
 
     // AUTO-HANDLER: Répondre automatiquement si aucun handler n'a répondu
@@ -735,7 +768,7 @@ export class DiscordBridge {
 
         await interaction.reply({
           content: responseContent,
-          ephemeral: true
+          ephemeral: true,
         });
         Logger.info(`🤖 [Auto-Handler] Réponse automatique envoyée pour le bouton: ${customId}`);
         wasHandled = true;
@@ -751,7 +784,9 @@ export class DiscordBridge {
 
     // FALLBACK ABSOLU: Répondre à l'interaction pour éviter le timeout (si rien n'a été fait)
     if (!wasHandled && !interaction.replied && !interaction.deferred) {
-      Logger.warn(`⚠️ [Bridge] Aucune réponse envoyé pour ${customId}, utilisation du fallback deferUpdate`);
+      Logger.warn(
+        `⚠️ [Bridge] Aucune réponse envoyé pour ${customId}, utilisation du fallback deferUpdate`
+      );
       await interaction.deferUpdate().catch(() => {});
     }
   }
@@ -787,7 +822,7 @@ export class DiscordBridge {
       try {
         await interaction.reply({
           content: AUTO_RESPONSES.menu(customId, user.username, values),
-          ephemeral: true
+          ephemeral: true,
         });
         Logger.info(`🤖 [Auto-Handler] Réponse automatique envoyée pour le menu: ${customId}`);
         wasHandled = true;

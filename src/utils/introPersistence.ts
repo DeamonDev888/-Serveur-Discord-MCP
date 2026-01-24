@@ -24,7 +24,7 @@ const INTRO_PERSISTENCE = new PersistenceManager<IntroState[]>(INTRO_FILE, 1000)
 export async function loadIntroStates(): Promise<Map<string, IntroState>> {
   const statesArray = await INTRO_PERSISTENCE.load([]);
   const statesMap = new Map<string, IntroState>();
-  
+
   statesArray.forEach(state => {
     statesMap.set(state.userId, state);
   });

@@ -44,7 +44,7 @@ export class ImageCache {
       compressionEnabled: true,
       autoCleanup: true,
       cleanupInterval: 60 * 60 * 1000, // 1h
-      ...config
+      ...config,
     };
 
     this.cacheDir = path.join(process.cwd(), 'cache', 'images');
@@ -178,8 +178,8 @@ export class ImageCache {
       const response = await fetch(url, {
         signal: controller.signal,
         headers: {
-          'User-Agent': 'Discord-Embed-Cache/1.0'
-        }
+          'User-Agent': 'Discord-Embed-Cache/1.0',
+        },
       });
 
       clearTimeout(timeoutId);
@@ -223,7 +223,7 @@ export class ImageCache {
         hitCount: 1,
         lastAccessed: Date.now(),
         mimeType: contentType,
-        checksum
+        checksum,
       };
 
       // Vérifier les limites avant d'ajouter
@@ -237,7 +237,6 @@ export class ImageCache {
 
       Logger.info(`[ImageCache] Téléchargé et mis en cache: ${url} (${finalBuffer.length} bytes)`);
       return localPath;
-
     } catch (error: any) {
       Logger.error(`[ImageCache] Erreur téléchargement: ${url}`, error.message);
       throw error;
@@ -292,7 +291,9 @@ export class ImageCache {
     // Respecter la limite du nombre d'entrées
     this.enforceCountLimit();
 
-    Logger.info(`[ImageCache] Nettoyage terminé: ${removedCount} entrées supprimées, ${freedSpace} bytes libérés`);
+    Logger.info(
+      `[ImageCache] Nettoyage terminé: ${removedCount} entrées supprimées, ${freedSpace} bytes libérés`
+    );
   }
 
   /**
@@ -306,15 +307,17 @@ export class ImageCache {
     }
 
     // Trier par dernière utilisation (LRU)
-    const entries = Array.from(this.cache.entries())
-      .sort((a, b) => a[1].lastAccessed - b[1].lastAccessed);
+    const entries = Array.from(this.cache.entries()).sort(
+      (a, b) => a[1].lastAccessed - b[1].lastAccessed
+    );
 
     // Supprimer les plus anciens jusqu'à être sous la limite
     for (const [url, entry] of entries) {
       this.delete(url);
       totalSize -= entry.size;
 
-      if (totalSize <= this.config.maxSize * 0.9) { // Garder 10% de marge
+      if (totalSize <= this.config.maxSize * 0.9) {
+        // Garder 10% de marge
         break;
       }
     }
@@ -331,8 +334,9 @@ export class ImageCache {
     }
 
     // Trier par dernière utilisation (LRU)
-    const entries = Array.from(this.cache.entries())
-      .sort((a, b) => a[1].lastAccessed - b[1].lastAccessed);
+    const entries = Array.from(this.cache.entries()).sort(
+      (a, b) => a[1].lastAccessed - b[1].lastAccessed
+    );
 
     // Supprimer les plus anciens
     const toRemove = this.cache.size - this.config.maxEntries;
@@ -355,8 +359,7 @@ export class ImageCache {
    * Calcule la taille totale du cache
    */
   private getTotalSize(): number {
-    return Array.from(this.cache.values())
-      .reduce((sum, entry) => sum + entry.size, 0);
+    return Array.from(this.cache.values()).reduce((sum, entry) => sum + entry.size, 0);
   }
 
   /**
@@ -371,9 +374,9 @@ export class ImageCache {
           {
             ...entry,
             // Ne pas sauvegarder les méthodes
-          }
+          },
         ])
-      )
+      ),
     };
 
     const cacheFile = path.join(process.cwd(), 'cache', 'cache-meta.json');
@@ -406,7 +409,6 @@ export class ImageCache {
       }
 
       Logger.info(`[ImageCache] ${loadedCount} entrées chargées depuis la sauvegarde`);
-
     } catch (error: any) {
       Logger.error('[ImageCache] Erreur chargement cache:', error.message);
     }
@@ -427,20 +429,16 @@ export class ImageCache {
     const totalHits = entries.reduce((sum, e) => sum + e.hitCount, 0);
     const totalRequests = totalHits + (this.cache.size - totalHits);
 
-    const oldestEntry = entries.length > 0
-      ? Math.min(...entries.map(e => e.createdAt))
-      : null;
+    const oldestEntry = entries.length > 0 ? Math.min(...entries.map(e => e.createdAt)) : null;
 
-    const newestEntry = entries.length > 0
-      ? Math.max(...entries.map(e => e.createdAt))
-      : null;
+    const newestEntry = entries.length > 0 ? Math.max(...entries.map(e => e.createdAt)) : null;
 
     return {
       entries: this.cache.size,
       totalSize,
       hitRate: totalRequests > 0 ? (totalHits / totalRequests) * 100 : 0,
       oldestEntry,
-      newestEntry
+      newestEntry,
     };
   }
 
@@ -461,9 +459,7 @@ export class ImageCache {
   async preload(urls: string[]): Promise<void> {
     Logger.info(`[ImageCache] Préchargement de ${urls.length} images...`);
 
-    const results = await Promise.allSettled(
-      urls.map(url => this.getOrDownload(url))
-    );
+    const results = await Promise.allSettled(urls.map(url => this.getOrDownload(url)));
 
     const success = results.filter(r => r.status === 'fulfilled').length;
     const failed = results.filter(r => r.status === 'rejected').length;
@@ -477,9 +473,7 @@ export class ImageCache {
   cleanupOrphanFiles(): void {
     try {
       const files = fs.readdirSync(this.cacheDir);
-      const cachedPaths = new Set(
-        Array.from(this.cache.values()).map(e => e.localPath)
-      );
+      const cachedPaths = new Set(Array.from(this.cache.values()).map(e => e.localPath));
 
       let removedCount = 0;
       for (const file of files) {
@@ -503,5 +497,5 @@ export const imageCache = new ImageCache({
   maxEntries: 1000,
   ttl: 24 * 60 * 60 * 1000, // 24h
   compressionEnabled: true,
-  autoCleanup: true
+  autoCleanup: true,
 });

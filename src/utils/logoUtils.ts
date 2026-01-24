@@ -26,7 +26,10 @@ import {
 } from '../data/logos.js';
 
 // Fonction universelle pour obtenir un logo ou une photo
-export function getUniversalLogo(symbol: string, mode: 'logo' | 'photo' = 'logo'): { name: string; url: string; type: string; mode: string } | null {
+export function getUniversalLogo(
+  symbol: string,
+  mode: 'logo' | 'photo' = 'logo'
+): { name: string; url: string; type: string; mode: string } | null {
   const upperSymbol = symbol.toUpperCase().replace(/[-_\s]/g, '');
 
   // Chercher dans les cryptos
@@ -120,7 +123,10 @@ export function getUniversalLogo(symbol: string, mode: 'logo' | 'photo' = 'logo'
 }
 
 // Fonction pour obtenir uniquement l'URL (compatibilité)
-export function getUniversalLogoUrl(symbol: string, mode: 'logo' | 'photo' = 'logo'): string | null {
+export function getUniversalLogoUrl(
+  symbol: string,
+  mode: 'logo' | 'photo' = 'logo'
+): string | null {
   const result = getUniversalLogo(symbol, mode);
   return result ? result.url : null;
 }
@@ -132,25 +138,48 @@ export function buildClearbitLogoUrl(domain: string, size: number = 128): string
 
 // Fonction pour obtenir le logo d'une crypto
 export function getCryptoLogo(symbol: string): string | null {
-  const upperSymbol = symbol.toUpperCase().replace('-', '').replace('USDT', '').replace('USD', '').replace('PERP', '').replace('BMEX', '').replace('CME', '');
+  const upperSymbol = symbol
+    .toUpperCase()
+    .replace('-', '')
+    .replace('USDT', '')
+    .replace('USD', '')
+    .replace('PERP', '')
+    .replace('BMEX', '')
+    .replace('CME', '');
   const crypto = CRYPTO_LOGOS[upperSymbol];
   return crypto ? crypto.logo : null;
 }
 
 // Fonction pour obtenir toutes les infos d'une crypto
-export function getCryptoInfo(symbol: string): { name: string; symbol: string; logo: string; category?: string } | null {
-  const upperSymbol = symbol.toUpperCase().replace('-', '').replace('USDT', '').replace('USD', '').replace('PERP', '').replace('BMEX', '').replace('CME', '');
+export function getCryptoInfo(
+  symbol: string
+): { name: string; symbol: string; logo: string; category?: string } | null {
+  const upperSymbol = symbol
+    .toUpperCase()
+    .replace('-', '')
+    .replace('USDT', '')
+    .replace('USD', '')
+    .replace('PERP', '')
+    .replace('BMEX', '')
+    .replace('CME', '');
   return CRYPTO_LOGOS[upperSymbol] || null;
 }
 
 // Fonction pour construire une URL de logo personnalisée
-export function buildCryptoLogoUrl(name: string, symbol: string, format: 'png' | 'svg' = 'png'): string {
+export function buildCryptoLogoUrl(
+  name: string,
+  symbol: string,
+  format: 'png' | 'svg' = 'png'
+): string {
   return `https://cryptologos.cc/logos/${name.toLowerCase()}-${symbol.toLowerCase()}-logo.${format}`;
 }
 
 // Fonction spécialisée pour Discord embeds (4ème position)
 // Retourne automatiquement la photo immersive (Unsplash) si mode=photo, sinon le logo
-export function getDiscordEmbedImage(symbol: string, mode: 'logo' | 'photo' = 'photo'): { url: string; mode: 'photo' | 'logo'; name: string } | null {
+export function getDiscordEmbedImage(
+  symbol: string,
+  mode: 'logo' | 'photo' = 'photo'
+): { url: string; mode: 'photo' | 'logo'; name: string } | null {
   const upperSymbol = symbol.toUpperCase().replace(/[-_\s]/g, '');
 
   // Si mode=photo, retourner null pour indiquer qu'il faut utiliser Unsplash
@@ -165,7 +194,7 @@ export function getDiscordEmbedImage(symbol: string, mode: 'logo' | 'photo' = 'p
     return {
       url: crypto.logo,
       mode: 'logo',
-      name: crypto.name
+      name: crypto.name,
     };
   }
 
@@ -175,7 +204,7 @@ export function getDiscordEmbedImage(symbol: string, mode: 'logo' | 'photo' = 'p
     return {
       url: company.logo,
       mode: 'logo',
-      name: company.name
+      name: company.name,
     };
   }
 
@@ -185,7 +214,7 @@ export function getDiscordEmbedImage(symbol: string, mode: 'logo' | 'photo' = 'p
     return {
       url: misc.logo,
       mode: 'logo',
-      name: misc.name
+      name: misc.name,
     };
   }
 

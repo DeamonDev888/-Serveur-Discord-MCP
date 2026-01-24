@@ -34,13 +34,9 @@ export interface BotConfig {
 // Importer botConfig depuis config.ts qui charge maintenant le .env
 export { default as botConfig } from '../config.js';
 
-
-
 // ============================================================================
 // SYSTÈME D'AUTO-UPDATE POUR EMBEDS 🚀
 // ============================================================================
-
-
 
 // ============================================================================
 // CONNEXION DISCORD

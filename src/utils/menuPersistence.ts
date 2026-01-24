@@ -42,7 +42,7 @@ const MENU_PERSISTENCE = new PersistenceManager<CustomMenu[]>(MENUS_FILE, 1000);
 // Charger tous les menus depuis le fichier
 export async function loadCustomMenus(): Promise<Map<string, CustomMenu>> {
   const menusArray = await MENU_PERSISTENCE.load([]);
-  
+
   const menusMap = new Map<string, CustomMenu>();
   menusArray.forEach(menu => {
     menu.createdAt = new Date(menu.createdAt);
@@ -63,7 +63,7 @@ export async function saveCustomMenus(menus: Map<string, CustomMenu>): Promise<v
   // Convertir les dates en strings pour la sérialisation JSON
   const menusToSave = menusArray.map(menu => ({
     ...menu,
-    createdAt: (menu.createdAt instanceof Date) ? menu.createdAt.toISOString() : menu.createdAt,
+    createdAt: menu.createdAt instanceof Date ? menu.createdAt.toISOString() : menu.createdAt,
   }));
 
   await MENU_PERSISTENCE.saveImmediate(menusToSave as any);

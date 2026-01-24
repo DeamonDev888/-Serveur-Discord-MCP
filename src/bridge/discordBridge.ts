@@ -235,4 +235,3 @@ export class DiscordBridge extends EventEmitter {
 
 // Exporter une instance singleton
 export const discordBridge = new DiscordBridge();
-

@@ -14,7 +14,6 @@ import { ensureDiscordConnection } from './common.js';
 // ============================================================================
 
 export function registerChannelTools(server: FastMCP) {
-
   // ========================================================================
   // 1. LISTE DES CANAUX
   // ========================================================================
@@ -23,9 +22,13 @@ export function registerChannelTools(server: FastMCP) {
     name: 'list_channels',
     description: 'Liste tous les canaux du serveur',
     parameters: z.object({
-      type: z.enum(['all', 'text', 'voice', 'category']).optional().default('all').describe('Type de canal'),
+      type: z
+        .enum(['all', 'text', 'voice', 'category'])
+        .optional()
+        .default('all')
+        .describe('Type de canal'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();
@@ -57,11 +60,13 @@ export function registerChannelTools(server: FastMCP) {
           [ChannelType.GuildCategory]: '📁',
         };
 
-        const list = channels.map(c => {
-          const emoji = typeEmoji[c.type] || '📌';
-          const category = c.parent ? ` (${c.parent.name})` : '';
-          return `${emoji} **${c.name}**${category} [${c.id}]`;
-        }).join('\n');
+        const list = channels
+          .map(c => {
+            const emoji = typeEmoji[c.type] || '📌';
+            const category = c.parent ? ` (${c.parent.name})` : '';
+            return `${emoji} **${c.name}**${category} [${c.id}]`;
+          })
+          .join('\n');
 
         return `📋 **${channels.length} canaux** (${args.type}):\n\n${list}`;
       } catch (error: any) {
@@ -84,7 +89,7 @@ export function registerChannelTools(server: FastMCP) {
       categoryId: z.string().optional().describe('ID de la catégorie parente'),
       reason: z.string().optional().describe('Raison de la création'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();
@@ -133,7 +138,7 @@ export function registerChannelTools(server: FastMCP) {
       categoryId: z.string().optional().describe('Nouvelle catégorie parente'),
       reason: z.string().optional().describe('Raison de la modification'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();
@@ -174,7 +179,7 @@ export function registerChannelTools(server: FastMCP) {
       channelId: z.string().describe('ID du canal à supprimer'),
       reason: z.string().optional().describe('Raison de la suppression'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();
@@ -206,14 +211,14 @@ export function registerChannelTools(server: FastMCP) {
 
   server.addTool({
     name: 'set_channel_permissions',
-    description: 'Définit les permissions d\'un canal pour un rôle',
+    description: "Définit les permissions d'un canal pour un rôle",
     parameters: z.object({
       channelId: z.string().describe('ID du canal'),
       roleId: z.string().describe('ID du rôle'),
       allow: z.array(z.string()).optional().describe('Permissions à accorder'),
       deny: z.array(z.string()).optional().describe('Permissions à refuser'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const guild = client.guilds.cache.first();

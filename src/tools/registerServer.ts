@@ -111,7 +111,10 @@ export function registerServerTools(server: FastMCP): void {
 
         const list = Array.from(members.values())
           .slice(0, args.limit)
-          .map(m => `• ${m.user.username}#${m.user.discriminator} | Roles: ${m.roles.cache.map(r => r.name).join(', ')}`)
+          .map(
+            m =>
+              `• ${m.user.username}#${m.user.discriminator} | Roles: ${m.roles.cache.map(r => r.name).join(', ')}`
+          )
           .join('\n');
 
         return `👥 ${Math.min(members.size, args.limit)} membres (sur ${members.size}):\n${list}`;

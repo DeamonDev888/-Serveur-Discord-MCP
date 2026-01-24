@@ -82,7 +82,9 @@ export function registerWebhooksTools(server: FastMCP): void {
           return `📋 Aucun webhook trouvé dans ce canal`;
         }
 
-        const list = webhooks.map((w: any) => `• ${w.name} | ID: ${w.id} | Token: ${w.token}`).join('\n');
+        const list = webhooks
+          .map((w: any) => `• ${w.name} | ID: ${w.id} | Token: ${w.token}`)
+          .join('\n');
         return `📋 ${webhooks.size} webhook(s):\n${list}`;
       } catch (error: any) {
         Logger.error(`❌ [list_webhooks]`, error.message);

@@ -14,14 +14,9 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
 } from 'discord.js';
-import {
-  ensureDiscordConnection,
-} from './common.js';
+import { ensureDiscordConnection } from './common.js';
 import Logger from '../utils/logger.js';
-import {
-  isSvgUrl as checkIsSvgUrl,
-  convertSvgUrlToPng,
-} from '../utils/svgConverter.js';
+import { isSvgUrl as checkIsSvgUrl, convertSvgUrlToPng } from '../utils/svgConverter.js';
 import {
   upsertPersistentButton,
   upsertPersistentMenu,
@@ -31,8 +26,6 @@ import {
 import { isLocalLogoUrl } from './embeds.js';
 import {
   generateGuidanceMessage,
-  generateSvgFooterMessage,
-  generateSvgAuthorMessage,
   applyTheme,
 } from './embeds_utils.js';
 
@@ -115,12 +108,7 @@ function validateDiscordMentions(text: string): {
     }
   }
 
-  const allInvalid = [
-    ...errors.user,
-    ...errors.channel,
-    ...errors.role,
-    ...errors.other,
-  ];
+  const allInvalid = [...errors.user, ...errors.channel, ...errors.role, ...errors.other];
 
   return {
     valid: allInvalid.length === 0,
@@ -132,7 +120,10 @@ function validateDiscordMentions(text: string): {
 /**
  * Génère le message d'erreur pour les mentions invalides
  */
-function generateMentionErrorMessage(validation: ReturnType<typeof validateDiscordMentions>, fieldName: string): string {
+function generateMentionErrorMessage(
+  validation: ReturnType<typeof validateDiscordMentions>,
+  fieldName: string
+): string {
   const message = `❌ **Format de mention invalide détecté dans ${fieldName} !**\n\n`;
 
   const parts: string[] = [];
@@ -281,19 +272,24 @@ function buildMenuAction(menu: any): any {
 }
 
 export function registerEditEmbedTools(server: FastMCP) {
-  Logger.info('[EDIT_EMBED] === DÉBUT ENREGISTREMENT DES OUTILS D\'ÉDITION D\'EMBEDS ===');
+  Logger.info("[EDIT_EMBED] === DÉBUT ENREGISTREMENT DES OUTILS D'ÉDITION D'EMBEDS ===");
 
   // ============================================================================
   // 1. LISTE DES EMBEDS D'UN CHANNEL
   // ============================================================================
   server.addTool({
     name: 'list_embeds',
-    description: 'Scanne un channel et liste tous les messages avec des embeds. Retourne les ID de messages, titres, descriptions, et toutes les infos des embeds pour permettre l\'édition.',
+    description:
+      "Scanne un channel et liste tous les messages avec des embeds. Retourne les ID de messages, titres, descriptions, et toutes les infos des embeds pour permettre l'édition.",
     parameters: z.object({
       channelId: z.string().describe('ID du canal Discord à scanner'),
-      limit: z.number().optional().default(50).describe('Nombre maximum de messages à scanner (défaut: 50)'),
+      limit: z
+        .number()
+        .optional()
+        .default(50)
+        .describe('Nombre maximum de messages à scanner (défaut: 50)'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const channel = await client.channels.fetch(args.channelId);
@@ -306,7 +302,7 @@ export function registerEditEmbedTools(server: FastMCP) {
         const messages = await channel.messages.fetch({ limit: args.limit });
         const embedMessages: any[] = [];
 
-        messages.forEach((msg) => {
+        messages.forEach(msg => {
           if (msg.embeds.length > 0) {
             msg.embeds.forEach((embed, index) => {
               const embedData: any = {
@@ -319,7 +315,10 @@ export function registerEditEmbedTools(server: FastMCP) {
 
               // Extraire toutes les propriétés de l'embed
               if (embed.title) embedData.title = embed.title;
-              if (embed.description) embedData.description = embed.description.substring(0, 200) + (embed.description.length > 200 ? '...' : '');
+              if (embed.description)
+                embedData.description =
+                  embed.description.substring(0, 200) +
+                  (embed.description.length > 200 ? '...' : '');
               if (embed.color) embedData.color = `#${embed.color.toString(16).padStart(6, '0')}`;
               if (embed.url) embedData.url = embed.url;
               if (embed.author) {
@@ -341,7 +340,10 @@ export function registerEditEmbedTools(server: FastMCP) {
               }
               if ((msg as any).components && (msg as any).components.length > 0) {
                 embedData.hasButtons = true;
-                embedData.buttonsCount = (msg as any).components.reduce((acc: number, row: any) => acc + row.components.length, 0);
+                embedData.buttonsCount = (msg as any).components.reduce(
+                  (acc: number, row: any) => acc + row.components.length,
+                  0
+                );
               }
 
               embedMessages.push(embedData);
@@ -387,13 +389,18 @@ export function registerEditEmbedTools(server: FastMCP) {
   // ============================================================================
   server.addTool({
     name: 'get_embed_details',
-    description: 'Récupère les détails complets d\'un embed existant pour permettre l\'édition. Retourne toutes les propriétés (title, description, color, author, thumbnail, image, footer, fields, components) en format structuré.',
+    description:
+      "Récupère les détails complets d'un embed existant pour permettre l'édition. Retourne toutes les propriétés (title, description, color, author, thumbnail, image, footer, fields, components) en format structuré.",
     parameters: z.object({
       channelId: z.string().describe('ID du canal Discord'),
-      messageId: z.string().describe('ID du message contenant l\'embed'),
-      embedIndex: z.number().optional().default(0).describe('Index de l\'embed si le message en contient plusieurs (défaut: 0)'),
+      messageId: z.string().describe("ID du message contenant l'embed"),
+      embedIndex: z
+        .number()
+        .optional()
+        .default(0)
+        .describe("Index de l'embed si le message en contient plusieurs (défaut: 0)"),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const channel = await client.channels.fetch(args.channelId);
@@ -460,7 +467,8 @@ export function registerEditEmbedTools(server: FastMCP) {
           details.components = [];
           message.components.forEach((row: any) => {
             row.components.forEach((component: any) => {
-              if (component.componentType === 2) { // Button
+              if (component.componentType === 2) {
+                // Button
                 details.components.push({
                   type: 'button',
                   label: component.label,
@@ -495,85 +503,174 @@ ${JSON.stringify(details, null, 2)}
   // ============================================================================
   server.addTool({
     name: 'update_embed',
-    description: 'Modifie un embed existant. Permet de changer le titre, description, couleur, les 4 positions d\'images (authorIcon, thumbnail, image, footerIcon), d\'ajouter/modifier des champs, et d\'ajouter/modifier des boutons. Peut aussi appliquer un thème prédéfini.\n\n⚡ MENTIONS DISCORD: title/authorName/footerText NE supportent PAS les mentions. description SUPPORTE les mentions (<@ID>, <@!ID>, <#ID>, <@&ID>).',
+    description:
+      "Modifie un embed existant. Permet de changer le titre, description, couleur, les 4 positions d'images (authorIcon, thumbnail, image, footerIcon), d'ajouter/modifier des champs, et d'ajouter/modifier des boutons. Peut aussi appliquer un thème prédéfini.\n\n⚡ MENTIONS DISCORD: title/authorName/footerText NE supportent PAS les mentions. description SUPPORTE les mentions (<@ID>, <@!ID>, <#ID>, <@&ID>).",
     parameters: z.object({
       channelId: z.string().describe('ID du canal Discord'),
-      messageId: z.string().describe('ID du message contenant l\'embed à modifier'),
-      embedIndex: z.number().optional().default(0).describe('Index de l\'embed (défaut: 0)'),
+      messageId: z.string().describe("ID du message contenant l'embed à modifier"),
+      embedIndex: z.number().optional().default(0).describe("Index de l'embed (défaut: 0)"),
       title: z.string().optional().describe('Nouveau titre (NE supporte PAS les mentions Discord)'),
-      description: z.string().optional().describe('Nouvelle description (SUPPORTE les mentions Discord: <@USER_ID>, <@!USER_ID>, <#CHANNEL_ID>, <@&ROLE_ID>)'),
+      description: z
+        .string()
+        .optional()
+        .describe(
+          'Nouvelle description (SUPPORTE les mentions Discord: <@USER_ID>, <@!USER_ID>, <#CHANNEL_ID>, <@&ROLE_ID>)'
+        ),
       color: z.string().optional().describe('Nouvelle couleur en hex (#RRGGBB)'),
       url: z.string().optional().describe('Nouvelle URL cliquable'),
-      authorName: z.string().optional().describe('⚠️ NE supporte PAS les mentions Discord. Utilisez un simple texte.'),
-      authorUrl: z.string().optional().describe('Nouvelle URL d\'auteur'),
-      authorIcon: z.string().optional().describe('Nouvelle icône d\'auteur (PETITE - haut-gauche)'),
+      authorName: z
+        .string()
+        .optional()
+        .describe('⚠️ NE supporte PAS les mentions Discord. Utilisez un simple texte.'),
+      authorUrl: z.string().optional().describe("Nouvelle URL d'auteur"),
+      authorIcon: z.string().optional().describe("Nouvelle icône d'auteur (PETITE - haut-gauche)"),
       thumbnail: z.string().optional().describe('Nouvelle thumbnail (MOYENNE - haut-droite)'),
       image: z.string().optional().describe('Nouvelle image (GRANDE - bas)'),
-      footerText: z.string().optional().describe('⚠️ NE supporte PAS les mentions Discord. Utilisez un simple texte.'),
+      footerText: z
+        .string()
+        .optional()
+        .describe('⚠️ NE supporte PAS les mentions Discord. Utilisez un simple texte.'),
       footerIcon: z.string().optional().describe('Nouvelle icône footer (PETITE - bas-gauche)'),
-      fields: z.array(z.object({
-        name: z.string(),
-        value: z.string(),
-        inline: z.boolean().optional().default(false),
-      })).optional().describe('Nouveaux champs (remplace les existants si fourni)'),
-      appendFields: z.array(z.object({
-        name: z.string(),
-        value: z.string(),
-        inline: z.boolean().optional().default(false),
-      })).optional().describe('Ajoute des champs aux existants'),
-      clearFields: z.boolean().optional().default(false).describe('Supprimer tous les champs existants'),
-      clearComponents: z.boolean().optional().default(false).describe('Supprimer tous les boutons existants'),
-      buttons: z.array(z.object({
-        label: z.string(),
-        style: z.enum(['Primary', 'Secondary', 'Success', 'Danger']),
-        emoji: z.string().optional(),
-        action: z.enum(['none', 'refresh', 'link', 'custom', 'delete', 'edit', 'role', 'modal', 'message', 'embed']),
-        value: z.string().optional(),
-        roleId: z.string().optional(),
-        custom_id: z.string().optional().describe('🔒 ID personnalisé (fortement recommandé)'),
-        persistent: z.boolean().optional().default(false).describe('Si true, le bouton est sauvegardé et hooké aux handlers persistants'),
-        customData: z.object({
-          message: z.string().optional(),
-          ephemeral: z.boolean().optional(),
-          embed: z.object({
-            title: z.string().optional(),
-            description: z.string().optional(),
-            color: z.number().optional(),
-          }).optional(),
-        }).optional(),
-      })).max(5).optional().describe('Nouveaux boutons (remplace les existants si fourni)'),
-      selectMenus: z.array(z.object({
-        custom_id: z.string().optional().describe('🔒 ID personnalisé (fortement recommandé)'),
-        type: z.enum(['string', 'user', 'role', 'channel', 'mentionable']).default('string'),
-        placeholder: z.string().optional(),
-        minValues: z.number().optional().default(1),
-        maxValues: z.number().optional().default(1),
-        options: z.array(z.object({
-          label: z.string(),
-          value: z.string(),
-          description: z.string().optional(),
-          emoji: z.string().optional(),
-        })).optional().describe('Options pour type=string'),
-        action: z.enum(['message', 'embed', 'role', 'delete', 'refresh', 'link', 'edit', 'custom', 'modal']).default('message'),
-        roleId: z.string().optional().describe('ID du rôle pour action role'),
-        url: z.string().optional().describe('URL pour action link'),
-        content: z.string().optional().describe('Contenu du message pour action message'),
-        template: z.string().optional().describe('Template avec {values} et {user}'),
-        persistent: z.boolean().optional().default(false).describe('Si true, le menu est sauvegardé dans dist/data/'),
-        customData: z.object({
-          embed: z.object({
-            title: z.string().optional(),
-            description: z.string().optional(),
-            color: z.number().optional(),
-          }).optional(),
-          handler: z.string().optional().describe('Handler pour action custom'),
-          modalId: z.string().optional().describe('ID du modal pour action modal'),
-        }).optional(),
-      })).max(5).optional().describe('Nouveaux menus de sélection (remplace les existants si fourni)'),
-      theme: z.enum(['cyberpunk', 'minimal', 'gaming', 'corporate', 'sunset', 'ocean', 'noel']).optional().describe('Appliquer un thème prédéfini'),
+      fields: z
+        .array(
+          z.object({
+            name: z.string(),
+            value: z.string(),
+            inline: z.boolean().optional().default(false),
+          })
+        )
+        .optional()
+        .describe('Nouveaux champs (remplace les existants si fourni)'),
+      appendFields: z
+        .array(
+          z.object({
+            name: z.string(),
+            value: z.string(),
+            inline: z.boolean().optional().default(false),
+          })
+        )
+        .optional()
+        .describe('Ajoute des champs aux existants'),
+      clearFields: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe('Supprimer tous les champs existants'),
+      clearComponents: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe('Supprimer tous les boutons existants'),
+      buttons: z
+        .array(
+          z.object({
+            label: z.string(),
+            style: z.enum(['Primary', 'Secondary', 'Success', 'Danger']),
+            emoji: z.string().optional(),
+            action: z.enum([
+              'none',
+              'refresh',
+              'link',
+              'custom',
+              'delete',
+              'edit',
+              'role',
+              'modal',
+              'message',
+              'embed',
+            ]),
+            value: z.string().optional(),
+            roleId: z.string().optional(),
+            custom_id: z.string().optional().describe('🔒 ID personnalisé (fortement recommandé)'),
+            persistent: z
+              .boolean()
+              .optional()
+              .default(false)
+              .describe('Si true, le bouton est sauvegardé et hooké aux handlers persistants'),
+            customData: z
+              .object({
+                message: z.string().optional(),
+                ephemeral: z.boolean().optional(),
+                embed: z
+                  .object({
+                    title: z.string().optional(),
+                    description: z.string().optional(),
+                    color: z.number().optional(),
+                  })
+                  .optional(),
+              })
+              .optional(),
+          })
+        )
+        .max(5)
+        .optional()
+        .describe('Nouveaux boutons (remplace les existants si fourni)'),
+      selectMenus: z
+        .array(
+          z.object({
+            custom_id: z.string().optional().describe('🔒 ID personnalisé (fortement recommandé)'),
+            type: z.enum(['string', 'user', 'role', 'channel', 'mentionable']).default('string'),
+            placeholder: z.string().optional(),
+            minValues: z.number().optional().default(1),
+            maxValues: z.number().optional().default(1),
+            options: z
+              .array(
+                z.object({
+                  label: z.string(),
+                  value: z.string(),
+                  description: z.string().optional(),
+                  emoji: z.string().optional(),
+                })
+              )
+              .optional()
+              .describe('Options pour type=string'),
+            action: z
+              .enum([
+                'message',
+                'embed',
+                'role',
+                'delete',
+                'refresh',
+                'link',
+                'edit',
+                'custom',
+                'modal',
+              ])
+              .default('message'),
+            roleId: z.string().optional().describe('ID du rôle pour action role'),
+            url: z.string().optional().describe('URL pour action link'),
+            content: z.string().optional().describe('Contenu du message pour action message'),
+            template: z.string().optional().describe('Template avec {values} et {user}'),
+            persistent: z
+              .boolean()
+              .optional()
+              .default(false)
+              .describe('Si true, le menu est sauvegardé dans dist/data/'),
+            customData: z
+              .object({
+                embed: z
+                  .object({
+                    title: z.string().optional(),
+                    description: z.string().optional(),
+                    color: z.number().optional(),
+                  })
+                  .optional(),
+                handler: z.string().optional().describe('Handler pour action custom'),
+                modalId: z.string().optional().describe('ID du modal pour action modal'),
+              })
+              .optional(),
+          })
+        )
+        .max(5)
+        .optional()
+        .describe('Nouveaux menus de sélection (remplace les existants si fourni)'),
+      theme: z
+        .enum(['cyberpunk', 'minimal', 'gaming', 'corporate', 'sunset', 'ocean', 'noel'])
+        .optional()
+        .describe('Appliquer un thème prédéfini'),
       timestamp: z.boolean().optional().describe('Ajouter/mettre à jour le timestamp'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const channel = await client.channels.fetch(args.channelId);
@@ -746,7 +843,7 @@ ${JSON.stringify(details, null, 2)}
               name: f.name || '',
               value: f.value || '',
               inline: f.inline || false,
-            }))
+            })),
           ];
         }
 
@@ -772,12 +869,16 @@ ${JSON.stringify(details, null, 2)}
 
             // Validation stricte de custom_id selon recommandation utilisateur
             if (!btn.custom_id && btn.action !== 'link') {
-              throw new Error(`❌ Le paramètre 'custom_id' est OBLIGATOIRE pour le bouton "${btn.label}" (action: ${btn.action}).`);
+              throw new Error(
+                `❌ Le paramètre 'custom_id' est OBLIGATOIRE pour le bouton "${btn.label}" (action: ${btn.action}).`
+              );
             }
 
-            const buttonId = btn.custom_id || (btn.persistent
-              ? `pb_${args.messageId}_${i}`
-              : `embed_${Date.now()}_${btn.action}_${Math.random().toString(36).substr(2, 5)}`);
+            const buttonId =
+              btn.custom_id ||
+              (btn.persistent
+                ? `pb_${args.messageId}_${i}`
+                : `embed_${Date.now()}_${btn.action}_${Math.random().toString(36).substr(2, 5)}`);
 
             const button = new ButtonBuilder()
               .setCustomId(buttonId)
@@ -880,17 +981,18 @@ ${JSON.stringify(details, null, 2)}
         }
 
         // Préparer les fichiers attachment si des SVG ont été convertis
-        const attachmentFiles = attachmentsToUpload.size > 0
-          ? Array.from(attachmentsToUpload.entries()).map(([name, path]) => ({
-              attachment: path,
-              name: name
-            }))
-          : undefined;
+        const attachmentFiles =
+          attachmentsToUpload.size > 0
+            ? Array.from(attachmentsToUpload.entries()).map(([name, path]) => ({
+                attachment: path,
+                name: name,
+              }))
+            : undefined;
 
         // Effectuer la mise à jour
         await message.edit({
           embeds: [updatedEmbed],
-          components: components.length > 0 ? components : (args.clearComponents ? [] : undefined),
+          components: components.length > 0 ? components : args.clearComponents ? [] : undefined,
           files: attachmentFiles,
         });
 
@@ -930,5 +1032,5 @@ ${JSON.stringify(details, null, 2)}
     },
   });
 
-  Logger.info('[EDIT_EMBED] === FIN ENREGISTREMENT DES OUTILS D\'ÉDITION D\'EMBEDS ===');
+  Logger.info("[EDIT_EMBED] === FIN ENREGISTREMENT DES OUTILS D'ÉDITION D'EMBEDS ===");
 }

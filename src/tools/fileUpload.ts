@@ -188,7 +188,7 @@ export function registerFileUploadTools(server: FastMCP) {
       spoiler: z.boolean().optional().default(false).describe('Marquer comme spoiler (SPOILER)'),
       description: z.string().optional().describe('Description du fichier'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         Logger.error(`📤 [file_upload] Fichier: ${args.filePath}`);
         const client = await ensureDiscordConnection();

@@ -20,23 +20,23 @@ export const IMAGE_POSITION_FALLBACKS: Record<string, FallbackConfig> = {
   authorIcon: {
     type: 'emoji',
     value: '👤',
-    priority: 1
+    priority: 1,
   },
   thumbnail: {
     type: 'emoji',
     value: '🖼️',
-    priority: 1
+    priority: 1,
   },
   image: {
     type: 'emoji',
     value: '🎨',
-    priority: 1
+    priority: 1,
   },
   footerIcon: {
     type: 'emoji',
     value: '📌',
-    priority: 1
-  }
+    priority: 1,
+  },
 };
 
 /**
@@ -49,7 +49,7 @@ export const CATEGORY_FALLBACKS: Record<string, FallbackConfig> = {
   tech: { type: 'emoji', value: '💻', priority: 2 },
   finance: { type: 'emoji', value: '💰', priority: 2 },
   social: { type: 'emoji', value: '💬', priority: 2 },
-  default: { type: 'emoji', value: '✨', priority: 3 }
+  default: { type: 'emoji', value: '✨', priority: 3 },
 };
 
 /**
@@ -151,7 +151,7 @@ export function generateGradientFallback(theme?: string): string {
     ocean: '#00CED1',
     minimal: '#2C2C2C',
     noel: '#C41E3A',
-    default: '#5865F2'
+    default: '#5865F2',
   };
 
   return gradients[theme || 'default'] || gradients.default;
@@ -220,7 +220,7 @@ export class SmartFallback {
   getCacheStats(): { size: number; entries: string[] } {
     return {
       size: this.cache.size,
-      entries: Array.from(this.cache.keys())
+      entries: Array.from(this.cache.keys()),
     };
   }
 }
@@ -231,46 +231,27 @@ export const smartFallback = new SmartFallback();
 /**
  * Helper pour appliquer un fallback sur tous les types d'images d'un embed
  */
-export function applyEmbedFallbacks(
-  embedData: any,
-  context?: any
-): any {
+export function applyEmbedFallbacks(embedData: any, context?: any): any {
   const processedData = { ...embedData };
 
   // Fallback pour authorIcon
   if (processedData.authorIcon) {
-    processedData.authorIcon = applyFallback(
-      'authorIcon',
-      processedData.authorIcon,
-      context
-    );
+    processedData.authorIcon = applyFallback('authorIcon', processedData.authorIcon, context);
   }
 
   // Fallback pour thumbnail
   if (processedData.thumbnail) {
-    processedData.thumbnail = applyFallback(
-      'thumbnail',
-      processedData.thumbnail,
-      context
-    );
+    processedData.thumbnail = applyFallback('thumbnail', processedData.thumbnail, context);
   }
 
   // Fallback pour image
   if (processedData.image) {
-    processedData.image = applyFallback(
-      'image',
-      processedData.image,
-      context
-    );
+    processedData.image = applyFallback('image', processedData.image, context);
   }
 
   // Fallback pour footerIcon
   if (processedData.footerIcon) {
-    processedData.footerIcon = applyFallback(
-      'footerIcon',
-      processedData.footerIcon,
-      context
-    );
+    processedData.footerIcon = applyFallback('footerIcon', processedData.footerIcon, context);
   }
 
   return processedData;

@@ -13,13 +13,13 @@ export const HELP_MESSAGES = {
   // Messages d'erreur avec solutions
   MISSING_CHANNEL_ID: {
     error: '❌ ERREUR: channelId manquant',
-    solution: '💡 SOLUTION: Ajoutez channelId avec l\'ID de votre canal Discord',
+    solution: "💡 SOLUTION: Ajoutez channelId avec l'ID de votre canal Discord",
     example: `Exemple:
 creer_embed({
   channelId: '1442317829998383235',  // ← AJOUTEZ CETTE LIGNE
   title: 'Mon titre',
   description: 'Ma description'
-});`
+});`,
   },
 
   MISSING_TITLE: {
@@ -30,7 +30,7 @@ creer_embed({
   channelId: 'VOTRE_ID',
   title: '📊 Mon Rapport',  // ← AJOUTEZ CETTE LIGNE
   description: 'Texte principal'
-});`
+});`,
   },
 
   MISSING_DESCRIPTION: {
@@ -42,7 +42,7 @@ creer_embed({
   title: 'Mon titre',
   description: 'Voici le contenu principal de l\'embed...',  // ← AJOUTEZ CETTE LIGNE
   fields: [...]
-});`
+});`,
   },
 
   TOO_MANY_FIELDS: {
@@ -53,39 +53,39 @@ fields: [
   { name: 'Info 1', value: 'Donnée 1', inline: true },
   { name: 'Info 2', value: 'Donnée 2', inline: true },
   { name: 'Info 3', value: 'Donnée 3', inline: true }
-]; // ← Maximum recommandé: 10 fields`
+]; // ← Maximum recommandé: 10 fields`,
   },
 
   INVALID_IMAGE_URL: {
-    error: '⚠️ URL d\'image détectée comme potentiellement invalide',
+    error: "⚠️ URL d'image détectée comme potentiellement invalide",
     solution: '✅ SOLUTION: Auto-correction appliquée avec emoji de fallback',
     example: `URLs alternatives recommandées:
 • https://cdn.simpleicons.org/discord (Logos SimpleIcons)
 • https://images.unsplash.com/photo-XXX (Images Unsplash)
 • https://cdn.discordapp.com/emojis/ID (Emojis Discord)
-• Laissez vide → Emoji automatique appliqué`
+• Laissez vide → Emoji automatique appliqué`,
   },
 
   // Messages d'encouragement
   SUCCESS_WITH_THEME: {
     message: '✅ Excellent ! Thème appliqué avec succès',
-    tip: '💡 Astuce: Les thèmes sont des templates - personnalisez title, description et fields selon vos besoins'
+    tip: '💡 Astuce: Les thèmes sont des templates - personnalisez title, description et fields selon vos besoins',
   },
 
   SUCCESS_WITHOUT_THEME: {
     message: '✅ Embed créé avec succès',
-    tip: '💡 Astuce: Utilisez un thème pour accélérer la création (basic, data_report, status_update, etc.)'
+    tip: '💡 Astuce: Utilisez un thème pour accélérer la création (basic, data_report, status_update, etc.)',
   },
 
   PHASE1_ENHANCEMENT: {
     message: '🚀 Phase 1 Enhancement activé !',
     features: [
-      '✅ Cache local d\'images automatique',
+      "✅ Cache local d'images automatique",
       '✅ Fallback intelligent (URL → Emoji)',
       '✅ Validation pré-exécution',
-      '✅ Optimisation selon positions Discord'
-    ]
-  }
+      '✅ Optimisation selon positions Discord',
+    ],
+  },
 };
 
 // ============================================================================
@@ -102,11 +102,19 @@ export const SUGGESTIONS = {
       return '💡 Suggestion: Utilisez theme: "data_report" pour un rapport avec indicateurs';
     }
 
-    if (title.includes('statut') || title.includes('état') || description.includes('opérationnel')) {
+    if (
+      title.includes('statut') ||
+      title.includes('état') ||
+      description.includes('opérationnel')
+    ) {
       return '💡 Suggestion: Utilisez theme: "status_update" pour afficher un statut système';
     }
 
-    if (title.includes('produit') || title.includes('nouveau') || description.includes('fonctionnalité')) {
+    if (
+      title.includes('produit') ||
+      title.includes('nouveau') ||
+      description.includes('fonctionnalité')
+    ) {
       return '💡 Suggestion: Utilisez theme: "product_showcase" pour présenter un produit';
     }
 
@@ -118,7 +126,11 @@ export const SUGGESTIONS = {
       return '💡 Suggestion: Utilisez theme: "dashboard" pour un tableau de bord temps réel';
     }
 
-    if (title.includes('tech') || title.includes('fonctionnalité') || description.includes('update')) {
+    if (
+      title.includes('tech') ||
+      title.includes('fonctionnalité') ||
+      description.includes('update')
+    ) {
       return '💡 Suggestion: Utilisez theme: "tech_announcement" pour une annonce technique';
     }
 
@@ -135,11 +147,13 @@ export const SUGGESTIONS = {
     const title = (params.title || '').toLowerCase();
 
     if (title.includes('rapport') || title.includes('stat')) {
-      suggestions.push('💡 Astuce image: Ajoutez thumbnail avec un emoji ou une icône (ex: 📊, 📈)');
+      suggestions.push(
+        '💡 Astuce image: Ajoutez thumbnail avec un emoji ou une icône (ex: 📊, 📈)'
+      );
     }
 
     if (title.includes('produit')) {
-      suggestions.push('💡 Astuce image: Ajoutez image avec une capture d\'écran du produit');
+      suggestions.push("💡 Astuce image: Ajoutez image avec une capture d'écran du produit");
     }
 
     if (title.includes('classement')) {
@@ -147,7 +161,7 @@ export const SUGGESTIONS = {
     }
 
     if (!params.image && !params.thumbnail) {
-      suggestions.push('💡 Astuce: Ajoutez image ou thumbnail pour rendre l\'embed plus visuel');
+      suggestions.push("💡 Astuce: Ajoutez image ou thumbnail pour rendre l'embed plus visuel");
     }
 
     return suggestions;
@@ -159,7 +173,9 @@ export const SUGGESTIONS = {
     const title = (params.title || '').toLowerCase();
 
     if (title.includes('rapport') || title.includes('dashboard')) {
-      suggestions.push('💡 Suggestion: Ajoutez un bouton "🔄 Actualiser" pour rafraîchir les données');
+      suggestions.push(
+        '💡 Suggestion: Ajoutez un bouton "🔄 Actualiser" pour rafraîchir les données'
+      );
     }
 
     if (title.includes('produit')) {
@@ -171,11 +187,11 @@ export const SUGGESTIONS = {
     }
 
     if (!params.buttons || params.buttons.length === 0) {
-      suggestions.push('💡 Astuce: Ajoutez des boutons pour rendre l\'embed interactif');
+      suggestions.push("💡 Astuce: Ajoutez des boutons pour rendre l'embed interactif");
     }
 
     return suggestions;
-  }
+  },
 };
 
 // ============================================================================
@@ -193,7 +209,9 @@ export const INTERACTIVE_GUIDE = {
     guide.push('✅ **ÉTAPE 1: Paramètres obligatoires**');
     guide.push(`• channelId: ${params.channelId ? '✅ Configuré' : '❌ Manquant - OBLIGATOIRE'}`);
     guide.push(`• title: ${params.title ? '✅ Configuré' : '❌ Manquant - OBLIGATOIRE'}`);
-    guide.push(`• description: ${params.description ? '✅ Configurée' : '❌ Manquante - OBLIGATOIRE'}\n`);
+    guide.push(
+      `• description: ${params.description ? '✅ Configurée' : '❌ Manquante - OBLIGATOIRE'}\n`
+    );
 
     // Étape 2: Thème
     guide.push('✅ **ÉTAPE 2: Thème (recommandé)**');
@@ -213,9 +231,15 @@ export const INTERACTIVE_GUIDE = {
 
     // Étape 3: Images
     guide.push('✅ **ÉTAPE 3: Images (optionnel)**');
-    guide.push(`• image: ${params.image ? '✅ Configurée' : '❌ Non définie - Grande image en bas'}`);
-    guide.push(`• thumbnail: ${params.thumbnail ? '✅ Configurée' : '❌ Non définie - Petite image haut-droite'}`);
-    guide.push(`• authorIcon: ${params.authorIcon ? '✅ Configurée' : '❌ Non définie - Icône auteur haut-gauche'}\n`);
+    guide.push(
+      `• image: ${params.image ? '✅ Configurée' : '❌ Non définie - Grande image en bas'}`
+    );
+    guide.push(
+      `• thumbnail: ${params.thumbnail ? '✅ Configurée' : '❌ Non définie - Petite image haut-droite'}`
+    );
+    guide.push(
+      `• authorIcon: ${params.authorIcon ? '✅ Configurée' : '❌ Non définie - Icône auteur haut-gauche'}\n`
+    );
 
     // Étape 4: Interactivité
     guide.push('✅ **ÉTAPE 4: Interactivité (optionnel)**');
@@ -223,7 +247,7 @@ export const INTERACTIVE_GUIDE = {
       guide.push(`• buttons: ✅ ${params.buttons.length} bouton(s) configuré(s)`);
     } else {
       guide.push('• buttons: ❌ Aucun bouton - Embed non interactif');
-      guide.push('  💡 Ajoutez des boutons pour l\'engagement');
+      guide.push("  💡 Ajoutez des boutons pour l'engagement");
     }
 
     if (params.selectMenus && params.selectMenus.length > 0) {
@@ -258,7 +282,7 @@ export const INTERACTIVE_GUIDE = {
 
     // Phase 1
     guide.push('\n🚀 **PHASE 1 ENHANCEMENT (automatique):**');
-    guide.push('• Cache local d\'images activé');
+    guide.push("• Cache local d'images activé");
     guide.push('• Fallback intelligent activé');
     guide.push('• Validation URL activée');
     guide.push('• Optimisation Discord activée');
@@ -318,11 +342,11 @@ export const INTERACTIVE_GUIDE = {
   buttons: [
     { label: '🔮 Décoder', style: 'Primary', action: 'custom', custom_id: 'btn_decode' }
   ]
-});`
+});`,
     };
 
     return examples[params.theme] || examples.basic;
-  }
+  },
 };
 
 // ============================================================================
@@ -361,8 +385,12 @@ export const INTELLIGENT_VALIDATION = {
 
     // Vérifications recommandées
     if (!params.theme) {
-      warnings.push('⚠️ Thème non défini - Considérez utiliser un thème pour accélérer la création');
-      tips.push('💡 Thèmes disponibles: basic, data_report, status_update, product_showcase, leaderboard, tech_announcement, social_feed, dashboard, noel, minimal');
+      warnings.push(
+        '⚠️ Thème non défini - Considérez utiliser un thème pour accélérer la création'
+      );
+      tips.push(
+        '💡 Thèmes disponibles: basic, data_report, status_update, product_showcase, leaderboard, tech_announcement, social_feed, dashboard, noel, minimal'
+      );
     }
 
     // Vérifications d'optimisation
@@ -372,12 +400,12 @@ export const INTELLIGENT_VALIDATION = {
     }
 
     if (!params.image && !params.thumbnail) {
-      warnings.push('⚠️ Aucune image définie - L\'embed sera textuel uniquement');
+      warnings.push("⚠️ Aucune image définie - L'embed sera textuel uniquement");
       tips.push('💡 Astuce: Ajoutez image ou thumbnail pour rendre plus visuel');
     }
 
     if (!params.buttons || params.buttons.length === 0) {
-      tips.push('💡 Astuce: Ajoutez des boutons pour l\'interactivité (max 5)');
+      tips.push("💡 Astuce: Ajoutez des boutons pour l'interactivité (max 5)");
     }
 
     // Conseils contextuels
@@ -390,7 +418,7 @@ export const INTELLIGENT_VALIDATION = {
       isValid: errors.length === 0,
       errors,
       warnings,
-      tips
+      tips,
     };
   },
 
@@ -416,9 +444,11 @@ export const INTELLIGENT_VALIDATION = {
       Logger.info(HELP_MESSAGES.SUCCESS_WITH_THEME.message);
       Logger.info(HELP_MESSAGES.SUCCESS_WITH_THEME.tip);
       Logger.info('\n🚀 Phase 1 Enhancement activé:');
-      HELP_MESSAGES.PHASE1_ENHANCEMENT.features.forEach((feature: string) => Logger.info(`   ${feature}`));
+      HELP_MESSAGES.PHASE1_ENHANCEMENT.features.forEach((feature: string) =>
+        Logger.info(`   ${feature}`)
+      );
     }
-  }
+  },
 };
 
 // ============================================================================
@@ -434,8 +464,8 @@ export const QUICK_TEMPLATES = {
     description,
     fields: [
       { name: 'Info 1', value: 'Donnée 1', inline: true },
-      { name: 'Info 2', value: 'Donnée 2', inline: true }
-    ]
+      { name: 'Info 2', value: 'Donnée 2', inline: true },
+    ],
   }),
 
   // Génère un rapport en une ligne
@@ -443,7 +473,7 @@ export const QUICK_TEMPLATES = {
     const fields = Object.entries(metrics).map(([key, value]) => ({
       name: key,
       value,
-      inline: true
+      inline: true,
     }));
 
     return {
@@ -451,7 +481,7 @@ export const QUICK_TEMPLATES = {
       theme: 'data_report',
       title,
       description: 'Rapport automatique:',
-      fields
+      fields,
     };
   },
 
@@ -460,7 +490,7 @@ export const QUICK_TEMPLATES = {
     const fields = Object.entries(services).map(([service, status]) => ({
       name: `🟢 ${service}`,
       value: status,
-      inline: true
+      inline: true,
     }));
 
     return {
@@ -468,9 +498,9 @@ export const QUICK_TEMPLATES = {
       theme: 'status_update',
       title: '🔄 État des Services',
       description: 'Dernière vérification: {timestamp}',
-      fields
+      fields,
     };
-  }
+  },
 };
 
 export default {
@@ -478,5 +508,5 @@ export default {
   SUGGESTIONS,
   INTERACTIVE_GUIDE,
   INTELLIGENT_VALIDATION,
-  QUICK_TEMPLATES
+  QUICK_TEMPLATES,
 };

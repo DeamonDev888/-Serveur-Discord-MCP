@@ -452,7 +452,6 @@ import Logger from '../utils/logger.js';
 import { ensureDiscordConnection } from './common.js';
 
 export function registerInteractionTools(server: FastMCP) {
-
   // ========================================================================
   // 1. CRÉER UN BOUTON
   // ========================================================================
@@ -468,7 +467,7 @@ export function registerInteractionTools(server: FastMCP) {
       customId: z.string().describe('ID unique du bouton'),
       emoji: z.string().optional().describe('Emoji du bouton'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const channel = await client.channels.fetch(args.channelId);
@@ -513,17 +512,23 @@ export function registerInteractionTools(server: FastMCP) {
       channelId: z.string().describe('ID du canal'),
       message: z.string().optional().describe('Message à envoyer'),
       customId: z.string().describe('ID unique du menu'),
-      placeholder: z.string().optional().describe('Texte d\'attente'),
-      options: z.array(z.object({
-        label: z.string(),
-        value: z.string(),
-        description: z.string().optional(),
-        emoji: z.string().optional(),
-      })).min(1).max(25).describe('Options du menu'),
+      placeholder: z.string().optional().describe("Texte d'attente"),
+      options: z
+        .array(
+          z.object({
+            label: z.string(),
+            value: z.string(),
+            description: z.string().optional(),
+            emoji: z.string().optional(),
+          })
+        )
+        .min(1)
+        .max(25)
+        .describe('Options du menu'),
       minValues: z.number().optional().default(1).describe('Nombre minimum de sélections'),
       maxValues: z.number().optional().default(1).describe('Nombre maximum de sélections'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const channel = await client.channels.fetch(args.channelId);
@@ -564,7 +569,8 @@ export function registerInteractionTools(server: FastMCP) {
 
   server.addTool({
     name: 'create_poll',
-    description: 'Crée un sondage interactif riche et persistant (avec boutons fonctionnels et gestion du temps)',
+    description:
+      'Crée un sondage interactif riche et persistant (avec boutons fonctionnels et gestion du temps)',
     parameters: z.object({
       channelId: z.string().describe('ID du canal'),
       question: z.string().describe('Question du sondage'),
@@ -572,12 +578,15 @@ export function registerInteractionTools(server: FastMCP) {
       duration: z.number().optional().default(60).describe('Durée en minutes (défaut: 60)'),
       allowMultiple: z.boolean().optional().default(false).describe('Autoriser plusieurs choix'),
       title: z.string().optional().describe('Titre du sondage (override "📊 Sondage")'),
-      theme: z.enum(['basic', 'cyberpunk', 'gaming', 'corporate', 'sunset', 'ocean', 'noel', 'minimal']).optional().describe('Thème visuel prédéfini'),
+      theme: z
+        .enum(['basic', 'cyberpunk', 'gaming', 'corporate', 'sunset', 'ocean', 'noel', 'minimal'])
+        .optional()
+        .describe('Thème visuel prédéfini'),
       image: z.string().optional().describe('URL image (grande - en bas)'),
       thumbnail: z.string().optional().describe('URL thumbnail (petite - haut droite)'),
       color: z.string().optional().describe('Couleur personnalisée (Hex #RRGGBB)'),
     }),
-    execute: async (args) => {
+    execute: async args => {
       try {
         const client = await ensureDiscordConnection();
         const channel = await client.channels.fetch(args.channelId);
@@ -592,13 +601,13 @@ export function registerInteractionTools(server: FastMCP) {
 
         // 2. Construire l'Embed Riche
         // Correction des sauts de ligne échappés (supporte \n et /n)
-        const cleanQuestion = args.question
-          .split('\\n').join('\n')
-          .split('/n').join('\n');
-        
+        const cleanQuestion = args.question.split('\\n').join('\n').split('/n').join('\n');
+
         const embed = new EmbedBuilder()
           .setTitle(args.title || '📊 Sondage')
-          .setDescription(`**${cleanQuestion}**\n\n${args.options.map((opt, i) => `**${i + 1}.** ${opt}`).join('\n')}`)
+          .setDescription(
+            `**${cleanQuestion}**\n\n${args.options.map((opt, i) => `**${i + 1}.** ${opt}`).join('\n')}`
+          )
           .setTimestamp();
 
         // Appliquer le thème si fourni
@@ -617,20 +626,20 @@ export function registerInteractionTools(server: FastMCP) {
         if (args.thumbnail && isLocalLogoUrl(args.thumbnail)) embed.setThumbnail(args.thumbnail);
 
         // Footer avec temps restant
-        embed.setFooter({ 
-          text: `Fin du vote: ${endTime.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})} • ${args.allowMultiple ? 'Choix multiples' : 'Choix unique'}` 
+        embed.setFooter({
+          text: `Fin du vote: ${endTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} • ${args.allowMultiple ? 'Choix multiples' : 'Choix unique'}`,
         });
 
         // 3. Créer les boutons
         const rows: ActionRowBuilder<ButtonBuilder>[] = [];
         let currentRow = new ActionRowBuilder<ButtonBuilder>();
-        
+
         args.options.forEach((opt, index) => {
           const button = new ButtonBuilder()
             .setCustomId(`${pollId}_option_${index}`)
             .setLabel(`${index + 1}`) // Chiffres pour gagner de la place, le texte est dans l'embed
             .setStyle(BUTTON_STYLES.PRIMARY);
-          
+
           currentRow.addComponents(button);
 
           // Max 5 boutons par ligne
@@ -679,5 +688,7 @@ export function registerInteractionTools(server: FastMCP) {
     },
   });
 
-  Logger.info('✅ Outils interactions enregistrés (3 outils: create_button, create_menu, create_poll)');
+  Logger.info(
+    '✅ Outils interactions enregistrés (3 outils: create_button, create_menu, create_poll)'
+  );
 }
