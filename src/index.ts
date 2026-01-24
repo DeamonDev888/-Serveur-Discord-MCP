@@ -84,7 +84,7 @@ import { registerInteractionTools } from './tools/interactions.js';
 import { registerEmbedTools } from './tools/embeds.js';
 import { registerMessageTools } from './tools/messages.js';
 import { registerListImagesTools } from './tools/listImages.js';
-import { registerGameTools } from './tools/games.js';
+
 import { registerServerTools } from './tools/registerServer.js';
 import { registerWebhooksTools } from './tools/registerWebhooks.js';
 import { registerSystemTools } from './tools/registerSystem.js';
@@ -765,7 +765,7 @@ registerEmbedTools(server);
 registerEditEmbedTools(server);  // 🔧 Édition d'embeds (list, get details, update)
 registerMessageTools(server);
 registerListImagesTools(server);  // Nouvel outil unifié (remplace emoji_theme + get_thumbnail)
-registerGameTools(server);
+
 registerServerTools(server);
 registerWebhooksTools(server);
 registerSystemTools(server);
