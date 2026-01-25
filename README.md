@@ -207,27 +207,12 @@ DISCORD_TOKEN=votre_token_ici
 
 Ajoutez à votre configuration MCP :
 
-**Windows :**
-
 ```json
 {
   "mcpServers": {
     "discord-server": {
       "command": "node",
       "args": ["CHEMIN_VERS_VOTRE_PROJET\\serveur_discord\\dist\\index.js"]
-    }
-  }
-}
-```
-
-**Linux / macOS :**
-
-```json
-{
-  "mcpServers": {
-    "discord-server": {
-      "command": "node",
-      "args": ["CHEMIN_VERS_VOTRE_PROJET/serveur_discord/dist/index.js"]
     }
   }
 }
