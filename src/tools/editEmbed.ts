@@ -24,10 +24,7 @@ import {
   type PersistentSelectMenu,
 } from '../utils/distPersistence.js';
 import { isLocalLogoUrl } from './embeds.js';
-import {
-  generateGuidanceMessage,
-  applyTheme,
-} from './embeds_utils.js';
+import { generateGuidanceMessage, applyTheme } from './embeds_utils.js';
 
 // ============================================================================
 // ENREGISTREMENT DES OUTILS

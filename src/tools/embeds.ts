@@ -5,7 +5,7 @@
  *
  * 💡 UTILISATION SIMPLE EN 3 ÉTAPES:
  * 1. channelId + title + description (OBLIGATOIRE)
- * 2. Choisir un thème (basic, data_report, status_update, etc.)
+ * 2. Choisir un thème (data_report, status_update, etc.)
  * 3. Personnaliser (images, boutons, champs)
  *
  * 📚 EXEMPLES PRÊTS À UTILISER dans GUIDE_CREER_EMBED_INTUITIF.md
@@ -26,10 +26,7 @@ import * as path from 'path';
 import Logger from '../utils/logger.js';
 import embedHelper from '../utils/embedHelper.js'; // 🎯 SYSTÈME D'AIDE INTUITIF
 import { isSvgUrl as checkIsSvgUrl, convertSvgUrlToPng } from '../utils/svgConverter.js';
-import {
-  ensureDiscordConnection,
-  formatDuration,
-} from './common.js';
+import { ensureDiscordConnection, formatDuration } from './common.js';
 import {
   validateDiscordMentions,
   generateMentionErrorMessage,
@@ -796,7 +793,7 @@ export function registerEmbedTools(server: FastMCP) {
    • description: Texte principal
 
 📚 ÉTAPE 2 (RECOMMANDÉ):
-   • theme: basic | data_report | status_update | product_showcase | leaderboard | tech_announcement | social_feed | dashboard | noel | minimal
+   • theme: data_report | status_update | product_showcase | leaderboard | tech_announcement | social_feed | dashboard | noel | minimal
 
 🎨 ÉTAPE 3 (OPTIONNEL):
    • image: Grande image (bas)
@@ -1051,7 +1048,6 @@ export function registerEmbedTools(server: FastMCP) {
         .describe('Dégradé de couleurs'),
       theme: z
         .enum([
-          'basic',
           'data_report',
           'status_update',
           'product_showcase',
@@ -1061,16 +1057,59 @@ export function registerEmbedTools(server: FastMCP) {
           'dashboard',
           'noel',
           'minimal',
+          'cyber_code',
           'cyberpunk',
           'gaming',
           'corporate',
           'sunset',
           'ocean',
+          'halloween',
+          'vector_pg',
+          'claude_code',
+          'mcp',
+          'sentinel_alpha',
+          'deep_logic',
+          'matrix_rain',
+          'trading_master',
+          'nebula_vision',
         ])
         .optional()
         .describe(
           'Thème visuel (Couleurs & template texte). NOTE: Les images/icones ne sont PLUS automatiques. CONSEIL: Utilisez list_images({category: "nom_du_theme"}) pour trouver les assets visuels appropriés (ex: cyberpunk, gaming, minimal, etc.)'
         ),
+      themeOptions: z
+        .object({
+          code: z.string().optional().describe('Bloc de code à afficher (Markdown)'),
+          language: z
+            .string()
+            .optional()
+            .default('typescript')
+            .describe('Langage pour le bloc de code'),
+          diff: z
+            .boolean()
+            .optional()
+            .default(false)
+            .describe('Utiliser le format diff pour le code'),
+          status: z
+            .enum(['online', 'offline', 'maintenance', 'alert'])
+            .optional()
+            .describe('Statut visuel'),
+          priority: z
+            .enum(['low', 'medium', 'high', 'critical'])
+            .optional()
+            .describe('Niveau de priorité'),
+          terminal: z
+            .boolean()
+            .optional()
+            .default(false)
+            .describe('Style terminal/matrice avec couleurs ANSI'),
+          symbol: z.string().optional().describe('Symbole boursier/crypto pour thèmes financiers'),
+          progress: z.number().min(0).max(100).optional().describe('Barre de progression (0-100)'),
+          tags: z.array(z.string()).optional().describe('Liste de tags/labels à afficher'),
+          compact: z.boolean().optional().describe('Mode compact (moins de texte, focus visuel)'),
+        })
+        .optional()
+        .describe('Options avancées pour personnaliser les thèmes'),
       enableAnalytics: z
         .boolean()
         .optional()
@@ -1284,7 +1323,8 @@ export function registerEmbedTools(server: FastMCP) {
 
         if (args.theme) {
           // Utilise applyTheme qui contient tous les nouveaux contenus riches
-          embedData = applyTheme(args.theme, embedData);
+          const themedData = applyTheme(args.theme, args);
+          embedData = { ...embedData, ...themedData };
         }
 
         const embed = new EmbedBuilder();
@@ -1296,6 +1336,35 @@ export function registerEmbedTools(server: FastMCP) {
         // ============================================================================
         const markdownImageRegex = /!\[.*?\]\(.*?\)|\[Image:.*?\]/i;
         const imageExtensionRegex = /\.(jpg|jpeg|png|gif|webp)/i;
+
+        // ============================================================================
+        // 🔒 FIXUP TWITTER/X VALIDATION
+        // Empêcher l'utilisation de fixupx.com/vxtwitter.com DANS l'embed
+        // car Discord ne les unfurl pas correctement à l'intérieur d'un embed.
+        // ============================================================================
+        const fixupRegex = /(fixupx\.com|vxtwitter\.com|fxtwitter\.com)/i;
+
+        const validateNoFixupInEmbed = (text: string | undefined, fieldName: string) => {
+          if (!text) return;
+          if (fixupRegex.test(text)) {
+            throw new Error(
+              `❌ **PROBLÈME DÉTECTÉ DANS ${fieldName.toUpperCase()}**\n\nLes liens de type "fixupx.com" ou "vxtwitter.com" ne fonctionnent PAS correctement à l'intérieur d'un embed Discord (pas d'aperçu/player).\n\n✅ **SOLUTION OBLIGATOIRE:**\nDéplacez ce lien dans le paramètre \`content\` de creer_embed (qui est hors de l'embed visuel) pour qu'il s'affiche correctement.`
+            );
+          }
+        };
+
+        // Valider tous les champs textuels de l'embed
+        validateNoFixupInEmbed(dataToUse.title, 'title');
+        validateNoFixupInEmbed(dataToUse.description, 'description');
+        validateNoFixupInEmbed(dataToUse.authorName, 'authorName');
+        validateNoFixupInEmbed(dataToUse.footerText, 'footerText');
+
+        if (dataToUse.fields) {
+          dataToUse.fields.forEach((field: any, index: number) => {
+            validateNoFixupInEmbed(field.name, `field[${index}].name`);
+            validateNoFixupInEmbed(field.value, `field[${index}].value`);
+          });
+        }
 
         const validateNoImagesInText = (text: string | undefined, fieldName: string) => {
           if (!text) return;

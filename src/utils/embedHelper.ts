@@ -220,12 +220,18 @@ export const INTERACTIVE_GUIDE = {
     } else {
       guide.push('• theme: ❌ Non défini');
       guide.push('  💡 Utilisez un thème pour accélérer la création:');
-      guide.push('  → basic (simple)');
+
       guide.push('  → data_report (rapports)');
       guide.push('  → status_update (statuts)');
       guide.push('  → product_showcase (produits)');
       guide.push('  → leaderboard (classements)');
       guide.push('  → cyberpunk (futuriste)');
+      guide.push('  → cyber_code (terminal & code)');
+      guide.push('  → sentinel_alpha (🚨 trading signals)');
+      guide.push('  → deep_logic (🧠 reasoning & analysis)');
+      guide.push('  → matrix_rain (🕶️ hacker styles)');
+      guide.push('  → trading_master (💰 finance hub)');
+      guide.push('  → nebula_vision (🌌 AI vision)');
       guide.push('  → dashboard (métriques)\n');
     }
 
@@ -293,9 +299,9 @@ export const INTERACTIVE_GUIDE = {
   // Exemple de code selon le contexte
   generateExample: (params: any): string => {
     const examples: Record<string, string> = {
-      basic: `creer_embed({
+      minimal: `creer_embed({
   channelId: 'VOTRE_ID',
-  theme: 'basic',
+  theme: 'minimal',
   title: '📝 Mon Titre',
   description: 'Description principale ici...',
   fields: [
@@ -343,9 +349,20 @@ export const INTERACTIVE_GUIDE = {
     { label: '🔮 Décoder', style: 'Primary', action: 'custom', custom_id: 'btn_decode' }
   ]
 });`,
+
+      cyber_code: `creer_embed({
+  channelId: 'VOTRE_ID',
+  theme: 'cyber_code',
+  title: '💻 SYSTEM CORE',
+  themeOptions: {
+    terminal: true,
+    code: 'const access = "granted";\\nconsole.log(access);',
+    language: 'typescript'
+  }
+});`,
     };
 
-    return examples[params.theme] || examples.basic;
+    return examples[params.theme] || examples.minimal;
   },
 };
 
@@ -389,7 +406,7 @@ export const INTELLIGENT_VALIDATION = {
         '⚠️ Thème non défini - Considérez utiliser un thème pour accélérer la création'
       );
       tips.push(
-        '💡 Thèmes disponibles: basic, data_report, status_update, product_showcase, leaderboard, tech_announcement, social_feed, dashboard, noel, minimal'
+        '💡 Thèmes premium: sentinel_alpha (trading), deep_logic (raisonnement), matrix_rain (hacker), trading_master (finance), nebula_vision (IA abstract)'
       );
     }
 
