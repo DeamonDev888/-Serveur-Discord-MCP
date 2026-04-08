@@ -11,7 +11,7 @@ module.exports = {
   ],
   plugins: ['@typescript-eslint'],
   rules: {
-    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    '@typescript-eslint/no-unused-vars': 'off',
     'no-unused-vars': 'off', // use TS version instead
     'no-console': 'off',
     '@typescript-eslint/no-explicit-any': 'off',

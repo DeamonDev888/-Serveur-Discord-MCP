@@ -25,7 +25,7 @@ export function registerMessageTools(server: FastMCP) {
       // 🐛 DEBUG MODE ACTIVE
       // Note: Le Wrapper withRateLimit a été retiré temporairement pour isoler les causes de crash.
       // Les logs ci-dessous sont immédiats et critiques pour tracer l'exécution avant tout crash potentiel.
-      Logger.error(`🔥 [DEBUG] envoyer_message execute called for channel ${args.channelId}`);
+      Logger.debug(`🔥 [DEBUG] envoyer_message execute called for channel ${args.channelId}`);
 
       try {
         if (!botConfig.token || botConfig.token === 'YOUR_BOT_TOKEN') {
@@ -35,21 +35,21 @@ export function registerMessageTools(server: FastMCP) {
         const bridge = DiscordBridge.getInstance(botConfig.token);
         const client = await bridge.getClient();
 
-        Logger.error('🔥 [DEBUG] Client retrieved');
+        Logger.debug('🔥 [DEBUG] Client retrieved');
 
         const channel = await client.channels.fetch(args.channelId);
         if (!channel || !('send' in channel)) {
           throw new Error('Canal invalide ou inaccessible');
         }
 
-        Logger.error('🔥 [DEBUG] Channel fetched, sending...');
+        Logger.debug('🔥 [DEBUG] Channel fetched, sending...');
 
         const message = await channel.send(args.content);
         const result = `✅ Message envoyé | ID: ${message.id}`;
         Logger.info('✅ [envoyer_message]', result);
         return result;
       } catch (error: any) {
-        Logger.error('❌ [envoyer_message]', error.message);
+        Logger.info('❌ [envoyer_message]', error.message);
         return `❌ Erreur: ${error.message}`;
       }
     },
@@ -106,7 +106,7 @@ export function registerMessageTools(server: FastMCP) {
     }),
     execute: async args => {
       try {
-        Logger.error(`✏️ [edit_message] Message: ${args.messageId}`);
+        Logger.debug(`✏️ [edit_message] Message: ${args.messageId}`);
         const client = await ensureDiscordConnection();
         const channel = await client.channels.fetch(args.channelId);
 
@@ -119,7 +119,7 @@ export function registerMessageTools(server: FastMCP) {
 
         return `✅ Message modifié | ID: ${args.messageId}`;
       } catch (error: any) {
-        Logger.error(`❌ [edit_message]`, error.message);
+        Logger.info(`❌ [edit_message]`, error.message);
         return `❌ Erreur: ${error.message}`;
       }
     },
@@ -136,7 +136,7 @@ export function registerMessageTools(server: FastMCP) {
     }),
     execute: async args => {
       try {
-        Logger.error(`🗑️ [delete_message] Message: ${args.messageId}`);
+        Logger.debug(`🗑️ [delete_message] Message: ${args.messageId}`);
         const client = await ensureDiscordConnection();
         const channel = await client.channels.fetch(args.channelId);
 
@@ -149,7 +149,7 @@ export function registerMessageTools(server: FastMCP) {
 
         return `✅ Message supprimé | ID: ${args.messageId}${args.reason ? ` | Raison: ${args.reason}` : ''}`;
       } catch (error: any) {
-        Logger.error(`❌ [delete_message]`, error.message);
+        Logger.info(`❌ [delete_message]`, error.message);
         return `❌ Erreur: ${error.message}`;
       }
     },
