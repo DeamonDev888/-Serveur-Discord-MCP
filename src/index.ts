@@ -736,9 +736,9 @@ registerMessageTools(server);
 registerListImagesTools(server); // Nouvel outil unifié (remplace emoji_theme + get_thumbnail)
 
 registerServerTools(server);
-registerWebhooksTools(server);
-registerSystemTools(server);
-registerButtonFunctionTools(server);
+// registerWebhooksTools(server);
+// registerSystemTools(server);
+// registerButtonFunctionTools(server);
 registerCodePreviewTools(server);
 registerFileUploadTools(server);
 registerFileDownloadTools(server);

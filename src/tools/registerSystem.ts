@@ -60,47 +60,5 @@ const LogsExplorerSchema = z.object({
 // ============================================================================
 
 export function registerSystemTools(server: FastMCP): void {
-  server.addTool({
-    name: 'statut_bot',
-    description: 'Statut actuel du bot',
-    parameters: StatutBotSchema,
-    execute: withRateLimit('statut_bot', async () => {
-      try {
-        const client = await ensureDiscordConnection();
-        return `🤖 Status: Connecté\nUser: ${client.user!.tag}\nGuilds: ${client.guilds.cache.size}\nUptime: ${client.uptime}ms\nNode: ${process.version}`;
-      } catch (error: any) {
-        return `❌ Déconnecté | Erreur: ${error.message}`;
-      }
-    }),
-  });
-
-  server.addTool({
-    name: 'logs_explorer',
-    description: 'Explore les derniers logs du serveur',
-    parameters: LogsExplorerSchema,
-    execute: async args => {
-      try {
-        const logDir = path.join(process.cwd(), 'logs');
-        const logFiles = await fs.promises.readdir(logDir);
-        const latestLog = logFiles
-          .filter(f => f.endsWith('.log'))
-          .sort()
-          .reverse()[0];
-
-        if (!latestLog) return '❌ Aucun fichier de log trouvé.';
-
-        const content = await fs.promises.readFile(path.join(logDir, latestLog), 'utf-8');
-        let linesArray = content.split('\n').filter(l => l.trim() !== '');
-
-        if (args.level) {
-          linesArray = linesArray.filter(l => l.includes(`[${args.level}]`));
-        }
-
-        const result = linesArray.slice(-args.lines).join('\n');
-        return `📋 **Derniers logs (${latestLog}):**\n\`\`\`\n${result || 'Aucune ligne correspondante.'}\n\`\`\``;
-      } catch (err: any) {
-        return `❌ Erreur lecture logs: ${err.message}`;
-      }
-    },
-  });
+  // Outils système désactivés pour simplifier l'interface
 }

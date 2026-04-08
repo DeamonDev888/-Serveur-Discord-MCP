@@ -25,12 +25,45 @@ export enum LogLevel {
 let isLoggingError = false;
 
 class Logger {
+  private static readonly MAX_LOG_SIZE = 10 * 1024 * 1024; // 10 MB
+  private static readonly MAX_LOG_FILES = 5;
+
+  private static rotateLogs() {
+    try {
+      if (!fs.existsSync(LOG_FILE)) return;
+
+      const stats = fs.statSync(LOG_FILE);
+      if (stats.size < this.MAX_LOG_SIZE) return;
+
+      // Supprimer le plus vieux log
+      const oldestLog = `${LOG_FILE}.${this.MAX_LOG_FILES}`;
+      if (fs.existsSync(oldestLog)) {
+        fs.unlinkSync(oldestLog);
+      }
+
+      // Décaler les logs existants
+      for (let i = this.MAX_LOG_FILES - 1; i >= 1; i--) {
+        const currentLog = `${LOG_FILE}.${i}`;
+        const nextLog = `${LOG_FILE}.${i + 1}`;
+        if (fs.existsSync(currentLog)) {
+          fs.renameSync(currentLog, nextLog);
+        }
+      }
+
+      // Renommer le log actuel
+      fs.renameSync(LOG_FILE, `${LOG_FILE}.1`);
+    } catch (err) {
+      // Ignorer les erreurs de rotation
+    }
+  }
+
   private static logToFile(level: LogLevel, message: string, ...args: any[]) {
     const timestamp = new Date().toISOString();
     const formattedArgs = args.length > 0 ? '\n' + JSON.stringify(args, null, 2) : '';
     const logLine = `[${timestamp}] [${level}] ${message}${formattedArgs}\n`;
 
     try {
+      this.rotateLogs();
       fs.appendFileSync(LOG_FILE, logLine);
     } catch (err) {
       // Ne pas écrire sur stderr pour éviter les boucles EPIPE
