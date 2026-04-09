@@ -751,27 +751,28 @@ async function main() {
   Logger.info('🚀 Préparation Discord MCP v2.1.2...');
 
   try {
-    // 1. Initialiser la connexion Discord AVANT de démarrer le serveur MCP
-    // Cela permet aux outils d'avoir un client prêt immédiatement
-    try {
-      Logger.info('🔗 Connexion à Discord...');
-      await ensureDiscordConnection();
-      Logger.info('✅ Client Discord prêt');
-    } catch (error) {
-      Logger.warn(
-        '⚠️ Échec connexion Discord initiale (sera réessayé au premier appel):',
-        (error as Error).message
-      );
-    }
-
     Logger.info('📊 Status:');
     Logger.info(`   • Nom: discord-mcp-server`);
     Logger.info(`   • Version: 2.1.2`);
     Logger.info(`   • Outils: 88 enregistrés`);
     Logger.info(`   • Environment: ${botConfig.environment}`);
 
-    // 2. Démarrer le serveur MCP (Ceci est bloquant en mode STDIO)
+    // 1. Démarrer le serveur MCP IMMÉDIATEMENT (sans attendre Discord)
+    // Les outils seront disponibles tout de suite, la connexion Discord se fera en arrière-plan
     Logger.info('🚀 Démarrage du serveur MCP (STDIO)...');
+
+    // 2. Lancer la connexion Discord en arrière-plan (non-bloquant)
+    // Si elle échoue, les outils réessaieront au premier appel
+    ensureDiscordConnection()
+      .then(() => Logger.info('✅ Client Discord prêt'))
+      .catch((error) =>
+        Logger.warn(
+          '⚠️ Échec connexion Discord initiale (sera réessayé au premier appel):',
+          (error as Error).message
+        )
+      );
+
+    // 3. Démarrer le serveur MCP (Ceci est bloquant en mode STDIO)
     await server.start();
 
     // Si on arrive ici, c'est que le serveur s'est arrêté proprement
