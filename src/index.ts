@@ -21,20 +21,30 @@ console.error = (...args) => {
   Logger.error('[STDERR-REDIRECT]', ...args);
 };
 
-// 2. Gestionnaires d'erreurs globaux
-// Pour éviter que le processus ne crashe silencieusement sur une exception non gérée,
-// ce qui causerait une erreur "EOF" immédiate côté client MCP.
-process.on('uncaughtException', error => {
-  Logger.error('🔥 CRITIQUE: Exception non gérée (Uncaught Exception):', error);
-  // En production, on pourrait vouloir quitter, mais en dev/debug on essaie de survivre
-  // pour voir les logs.
-});
+// 2. Gestionnaires d'erreurs globaux robustes
+// Définis tôt pour capturer toutes les erreurs d'initialisation.
+function setupGlobalErrorHandlers() {
+  process.on('uncaughtException', error => {
+    // Ignorer les erreurs EPIPE (stdout/stderr cassé) pour éviter les boucles infinies
+    if ((error as any)?.code === 'EPIPE' || (error as any)?.syscall === 'write') return;
+    
+    Logger.error('🔥 EXCEPTION NON CAPTURÉE:', error);
+    if (error.stack) Logger.error('Stack:', error.stack);
+    // On ne quitte pas forcément, mais on logue
+  });
 
-process.on('unhandledRejection', (reason, _promise) => {
-  // Ignorer les erreurs EPIPE (stderr cassé) pour éviter les boucles infinies
-  if ((reason as any)?.code === 'EPIPE') return;
-  Logger.error('🔥 CRITIQUE: Promesse rejetée non gérée (Unhandled Rejection):', reason);
-});
+  process.on('unhandledRejection', (reason, _promise) => {
+    if ((reason as any)?.code === 'EPIPE') return;
+    Logger.error('🔥 REJET DE PROMESSE NON GÉRÉ:', reason);
+  });
+
+  // Gérer le signal de pipe cassé spécifiquement
+  process.on('SIGPIPE', () => {
+    // Ignorer silencieusement, le logger s'en occupe déjà
+  });
+}
+
+setupGlobalErrorHandlers();
 
 // ============================================================================
 
@@ -694,24 +704,19 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
 
-// Gestion des erreurs non capturées pour éviter les crashes
-process.on('uncaughtException', error => {
-  // Ignorer les erreurs EPIPE (stderr cassé) pour éviter les boucles infinies
-  if ((error as any)?.code === 'EPIPE') return;
-  Logger.error('❌ Erreur non capturée:', error);
-  Logger.error('Stack trace:', error.stack);
-  // Ne pas quitter, laisser le serveur continuer
-});
+// Les gestionnaires globaux sont déjà définis au début du fichier.
 
-// Limite de mémoire pour éviter les freezes
+// Limite de mémoire pour éviter les freezes - Check périodique
 const MEMORY_LIMIT = 512 * 1024 * 1024; // 512 MB
-if (process.memoryUsage().heapUsed > MEMORY_LIMIT) {
-  Logger.error('⚠️ Limite de mémoire atteinte:', process.memoryUsage());
-  // Forcer le garbage collection si disponible
-  if ((global as any).gc) {
-    (global as any).gc();
+setInterval(() => {
+  const mem = process.memoryUsage();
+  if (mem.heapUsed > MEMORY_LIMIT) {
+    Logger.warn('⚠️ Limite de mémoire atteinte:', mem);
+    if ((global as any).gc) {
+      (global as any).gc();
+    }
   }
-}
+}, 60000); // Check toutes les minutes
 
 // ============================================================================
 // GESTIONNAIRE D'INTERACTIONS

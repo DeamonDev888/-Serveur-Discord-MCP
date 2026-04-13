@@ -21,8 +21,10 @@ export enum LogLevel {
   ERROR = 'ERROR',
 }
 
-// Flag pour éviter les boucles infinies d'erreur
-let isLoggingError = false;
+// Flags pour éviter les boucles infinies de logs
+let isLoggingInternal = false;
+let isStderrBroken = false;
+let isFileBroken = false;
 
 class Logger {
   private static readonly MAX_LOG_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -58,22 +60,29 @@ class Logger {
   }
 
   private static logToFile(level: LogLevel, message: string, ...args: any[]) {
+    if (isFileBroken || isLoggingInternal) return;
+
     const timestamp = new Date().toISOString();
     const formattedArgs = args.length > 0 ? '\n' + JSON.stringify(args, null, 2) : '';
     const logLine = `[${timestamp}] [${level}] ${message}${formattedArgs}\n`;
 
+    isLoggingInternal = true;
     try {
       this.rotateLogs();
       fs.appendFileSync(LOG_FILE, logLine);
     } catch (err) {
-      // Ne pas écrire sur stderr pour éviter les boucles EPIPE
+      // Ne pas écrire sur stderr pour éviter les boucles EPIPE si stderr est aussi cassé
+      // Marquer le fichier comme cassé pour éviter de réessayer en boucle
+      isFileBroken = true;
+    } finally {
+      isLoggingInternal = false;
     }
   }
 
   private static logToStderr(level: LogLevel, message: string, ...args: any[]) {
-    // Éviter les boucles infinies si stderr est cassé
-    if (isLoggingError) return;
+    if (isStderrBroken || isLoggingInternal) return;
 
+    isLoggingInternal = true;
     try {
       const timestamp = new Date().toLocaleTimeString();
       const color = this.getColor(level);
@@ -92,8 +101,10 @@ class Logger {
     } catch (err) {
       // stderr est cassé (EPIPE), marquer pour éviter les boucles
       if ((err as any)?.code === 'EPIPE') {
-        isLoggingError = true;
+        isStderrBroken = true;
       }
+    } finally {
+      isLoggingInternal = false;
     }
   }
 
