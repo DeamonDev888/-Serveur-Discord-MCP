@@ -795,8 +795,9 @@ async function executeMemberTool(args: z.infer<typeof MemberParamsSchema>): Prom
       if (!userId || !channelId) return '❌ userId + channelId requis pour move';
       const member = await guild.members.fetch(userId);
       const channel = await client.channels.fetch(channelId);
-      await member.voice.setChannel(channel);
-      return `✅ ${member.displayName} déplacé vers ${channel.name}`;
+      if (!channel || !('voice' in channel)) return '❌ Canal vocal introuvable';
+      await member.voice.setChannel(channel as any);
+      return `✅ ${member.displayName} déplacé vers ${('name' in channel) ? channel.name : channelId}`;
     }
     
     case 'timeout': {
