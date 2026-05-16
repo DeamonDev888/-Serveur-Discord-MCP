@@ -5,8 +5,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
 } from 'discord.js';
-import Logger from './utils/logger.js';
-
+import { bridgeLogger, logger } from './logger.js';
 import { interactionHandler } from './utils/interactionHandler.js';
 
 // ============================================================================
@@ -55,6 +54,20 @@ export class DiscordBridge {
   private connectionPromise: Promise<Client> | null = null;
   private isConnected = false;
   private readonly token: string;
+  private tokenInvalid = false;
+
+  // Anti rate-limit. Without backoff, successive failed logins hammer Discord
+  // gateway and trigger a Cloudflare 1015 ban on this IP. Each failure doubles
+  // the wait (1s → 2s → 4s → ... cap 5min). Reset to 0 on first successful
+  // ready event.
+  private failedAttempts = 0;
+  private retryAfter = 0; // epoch ms — earliest next attempt
+  private static readonly LOGIN_TIMEOUT_MS = 60_000;
+  private static readonly BACKOFF_BASE_MS = 5_000;  // 5s minimum (was 1s)
+  private static readonly BACKOFF_MAX_MS = 30 * 60_000; // 30min max (was 5min)
+  private static readonly CIRCUIT_BREAK_FILE = './data/circuit-breaker.json';
+  private static readonly MAX_FAILURES_BEFORE_CIRCUIT = 10;
+  private circuitBreakerTripped = false;
 
   private constructor(token: string) {
     this.token = token;
@@ -62,22 +75,111 @@ export class DiscordBridge {
 
   static getInstance(token: string): DiscordBridge {
     if (!DiscordBridge.instance) {
-      Logger.debug('🔍 [TRACE] Creating new DiscordBridge instance');
+      bridgeLogger.debug('🔍 [TRACE] Creating new DiscordBridge instance');
+      DiscordBridge.instance = new DiscordBridge(token);
+    } else if (DiscordBridge.instance.token !== token) {
+      bridgeLogger.warn('⚠️ [Bridge] Token changed, updating instance');
+      DiscordBridge.instance.destroy();
       DiscordBridge.instance = new DiscordBridge(token);
     }
     return DiscordBridge.instance;
   }
 
+  /**
+   * Reset the tokenInvalid flag and allow new connection attempts.
+   * Useful if the .env was updated or if the error was transient.
+   */
+  public resetTokenInvalid(): void {
+    bridgeLogger.info('🔄 [Bridge] Resetting tokenInvalid circuit-breaker');
+    this.tokenInvalid = false;
+    this.connectionPromise = null;
+    this.failedAttempts = 0;
+    this.retryAfter = 0;
+  }
+
+  /**
+   * Reset circuit breaker - call after user manually fixes the issue
+   */
+  public resetCircuitBreaker(): void {
+    this.circuitBreakerTripped = false;
+    this.failedAttempts = 0;
+    this.retryAfter = 0;
+    this.clearCircuitBreakerFile();
+    bridgeLogger.info('🔄 [Bridge] Circuit breaker reset - normal operation resumed');
+  }
+
+  private persistCircuitBreaker(): void {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const filePath = path.join(process.cwd(), 'data', 'circuit-breaker.json');
+      const dir = path.dirname(filePath);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(filePath, JSON.stringify({
+        tripped: true,
+        timestamp: Date.now(),
+        failures: this.failedAttempts,
+      }));
+    } catch (err) {
+      bridgeLogger.error({ err }, '❌ [Bridge] Failed to persist circuit breaker');
+    }
+  }
+
+  private loadCircuitBreaker(): void {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const filePath = path.join(process.cwd(), 'data', 'circuit-breaker.json');
+      if (fs.existsSync(filePath)) {
+        const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        this.circuitBreakerTripped = data.tripped || false;
+        if (this.circuitBreakerTripped) {
+          bridgeLogger.warn('⚠️ [Bridge] Circuit breaker was tripped previously. Connection blocked until reset.');
+        }
+      }
+    } catch (err) {
+      // File doesn't exist or is corrupted - no circuit breaker active
+    }
+  }
+
+  private clearCircuitBreakerFile(): void {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const filePath = path.join(process.cwd(), 'data', 'circuit-breaker.json');
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (err) {
+      // Ignore errors
+    }
+  }
+
   async getClient(): Promise<Client> {
-    Logger.debug('🔍 [TRACE] getClient called');
+    bridgeLogger.debug('🔍 [TRACE] getClient called');
+    if (this.tokenInvalid) {
+      throw new Error('TokenInvalid: Discord token is flagged as invalid. Use reset_discord_connection tool to retry.');
+    }
+    if (this.circuitBreakerTripped) {
+      throw new Error('CircuitBreakerTripped: Discord connection blocked due to repeated failures. Restart required.');
+    }
     if (this.client && this.client.isReady()) {
-      Logger.debug('🚀 [Bridge] Client déjà prêt - utilisation immédiate');
+      bridgeLogger.debug('🚀 [Bridge] Client already ready - immediate use');
       return this.client;
     }
 
     if (this.connectionPromise) {
-      Logger.debug('⏳ [Bridge] Connexion en cours - attente...');
+      bridgeLogger.debug('⏳ [Bridge] Connection in progress - waiting...');
       return this.connectionPromise;
+    }
+
+    // Anti rate-limit: refuse fast if we're still in backoff window.
+    const now = Date.now();
+    if (now < this.retryAfter) {
+      const waitSec = Math.ceil((this.retryAfter - now) / 1000);
+      throw new Error(
+        `RateLimitBackoff: Discord login backoff active for ${waitSec}s more (failed attempts: ${this.failedAttempts}).`,
+      );
     }
 
     this.connectionPromise = this.createConnection();
@@ -85,7 +187,7 @@ export class DiscordBridge {
   }
 
   private async createConnection(): Promise<Client> {
-    Logger.info('🔗 [Bridge] Création nouvelle connexion Discord...');
+    bridgeLogger.info('🔗 [Bridge] Creating new Discord connection...');
 
     this.client = new Client({
       intents: [
@@ -105,39 +207,73 @@ export class DiscordBridge {
 
     // Recharger les fonctions de boutons persistantes
     await this.rehydrateButtonFunctions().catch(err =>
-      Logger.error('❌ [Bridge] Erreur rehydration:', err)
+      bridgeLogger.error({ err }, '❌ [Bridge] Rehydration error')
     );
+
+    const onFailure = (err: any, label: string) => {
+      this.connectionPromise = null;
+      this.failedAttempts++;
+      const waitMs = Math.min(
+        DiscordBridge.BACKOFF_BASE_MS * Math.pow(2, Math.max(0, this.failedAttempts - 1)),
+        DiscordBridge.BACKOFF_MAX_MS,
+      );
+      this.retryAfter = Date.now() + waitMs;
+
+      // Circuit breaker: after MAX_FAILURES, stop all attempts permanently
+      if (this.failedAttempts >= DiscordBridge.MAX_FAILURES_BEFORE_CIRCUIT) {
+        this.circuitBreakerTripped = true;
+        this.persistCircuitBreaker();
+        bridgeLogger.fatal(
+          { attempts: this.failedAttempts },
+          `🔴 [Bridge] CIRCUIT BREAKER TRIPPED after ${this.failedAttempts} failures. Discord connection BLOCKED. Restart required to reset.`,
+        );
+        return; // Don't even try to reconnect anymore
+      }
+
+      bridgeLogger.error(
+        { err, attempts: this.failedAttempts, nextRetryInSec: Math.ceil(waitMs / 1000), circuitBreaker: `${this.failedAttempts}/${DiscordBridge.MAX_FAILURES_BEFORE_CIRCUIT}` },
+        `❌ [Bridge] ${label} — backoff ${Math.ceil(waitMs / 1000)}s before next attempt`,
+      );
+    };
+
+    // Load persisted circuit breaker state on startup
+    this.loadCircuitBreaker();
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-        Logger.error('❌ [Bridge] Timeout connexion 20s');
-        this.connectionPromise = null;
-        reject(new Error('Timeout de connexion Discord (20s)'));
-      }, 20000);
+        onFailure(null, `Timeout connexion ${DiscordBridge.LOGIN_TIMEOUT_MS / 1000}s`);
+        reject(new Error(`Timeout de connexion Discord (${DiscordBridge.LOGIN_TIMEOUT_MS / 1000}s)`));
+      }, DiscordBridge.LOGIN_TIMEOUT_MS);
 
       this.client!.once('clientReady', () => {
         clearTimeout(timeout);
         this.isConnected = true;
-        Logger.info(`✅ [Bridge] Connecté: ${this.client!.user!.tag}`);
+        this.failedAttempts = 0;
+        this.retryAfter = 0;
+        bridgeLogger.info({ user: this.client!.user!.tag }, '✅ [Bridge] Connected');
         resolve(this.client!);
       });
 
-      this.client!.once('error', error => {
+      this.client!.once('error', (err) => {
         clearTimeout(timeout);
-        this.connectionPromise = null;
-        Logger.error('❌ [Bridge] Erreur Discord:', error.message);
-        reject(error);
+        onFailure(err, 'Discord error');
+        reject(err);
       });
 
-      this.client!.once('warn', warning => {
-        Logger.warn('⚠️ [Bridge] Avertissement Discord:', warning);
+      this.client!.once('warn', (warning) => {
+        bridgeLogger.warn({ warning }, '⚠️ [Bridge] Discord warning');
       });
 
-      this.client!.login(this.token).catch(error => {
+      this.client!.login(this.token).catch((err) => {
         clearTimeout(timeout);
-        this.connectionPromise = null;
-        Logger.error('❌ [Bridge] Erreur login:', error.message);
-        reject(error);
+        if (err.code === 'TokenInvalid' || (err.message && err.message.includes('invalid token'))) {
+          this.tokenInvalid = true;
+          this.connectionPromise = null;
+          bridgeLogger.fatal('🔴 [Bridge] INVALID TOKEN — circuit-breaker activated. No new connection attempts.');
+        } else {
+          onFailure(err, 'Login error');
+        }
+        reject(err);
       });
     });
   }
@@ -152,81 +288,82 @@ export class DiscordBridge {
       for (const [id, button] of buttons.entries()) {
         if (button.functionCode) {
           const func = async (interaction: any) => {
-            // Reconstruire le contexte (ctx) identique à celui de registerButtonFunctions
-            const context = {
-              channelId: interaction.channelId,
-              messageId: interaction.message.id,
-              user: interaction.user,
-              customId: interaction.customId,
-            };
+            try {
+              // Reconstruire le contexte (ctx) identique à celui de registerButtonFunctions
+              const context = {
+                channelId: interaction.channelId,
+                messageId: interaction.message.id,
+                user: interaction.user,
+                customId: interaction.customId,
+              };
 
-            const ctx = {
-              interaction,
-              channelId: context.channelId,
-              messageId: context.messageId,
-              user: context.user,
-              buttonId: context.customId,
-              client: interaction.client,
-              // Fonctions utilitaires
-              reply: async (content: string, ephemeral: boolean = true) => {
-                if (!interaction.replied && !interaction.deferred) {
-                  await interaction.reply({ content, ephemeral });
-                }
-              },
-              update: async (data: any) => {
-                if (!interaction.replied && !interaction.deferred) {
-                  await interaction.update(data);
-                }
-              },
-              deferReply: async (ephemeral: boolean = true) => {
-                if (!interaction.deferred) {
-                  await interaction.deferReply({ ephemeral });
-                }
-              },
-              followUp: async (content: string, ephemeral: boolean = true) => {
-                await interaction.followUp({ content, ephemeral });
-              },
-              editReply: async (data: any) => {
-                return await interaction.editReply(data);
-              },
-              updateEmbed: async (data: any) => {
-                return await interaction.editReply(data);
-              },
-              sendEmbed: async (embed: any, ephemeral: boolean = false) => {
-                if (interaction.deferred || interaction.replied) {
-                  await interaction.followUp({ embeds: [embed], ephemeral });
-                } else {
-                  await interaction.reply({ embeds: [embed], ephemeral });
-                }
-              },
+              const ctx = {
+                interaction,
+                channelId: context.channelId,
+                messageId: context.messageId,
+                user: context.user,
+                buttonId: context.customId,
+                client: interaction.client,
+                // Fonctions utilitaires
+                reply: async (content: string, ephemeral: boolean = true) => {
+                  if (!interaction.replied && !interaction.deferred) {
+                    await interaction.reply({ content, ephemeral });
+                  }
+                },
+                update: async (data: any) => {
+                  if (!interaction.replied && !interaction.deferred) {
+                    await interaction.update(data);
+                  }
+                },
+                deferReply: async (ephemeral: boolean = true) => {
+                  if (!interaction.deferred) {
+                    await interaction.deferReply({ ephemeral });
+                  }
+                },
+                followUp: async (content: string, ephemeral: boolean = true) => {
+                  await interaction.followUp({ content, ephemeral });
+                },
+                editReply: async (data: any) => {
+                  return await interaction.editReply(data);
+                },
+                updateEmbed: async (data: any) => {
+                  return await interaction.editReply(data);
+                },
+                sendEmbed: async (embed: any, ephemeral: boolean = false) => {
+                  if (interaction.deferred || interaction.replied) {
+                    await interaction.followUp({ embeds: [embed], ephemeral });
+                  } else {
+                    await interaction.reply({ embeds: [embed], ephemeral });
+                  }
+                },
 
-              sendMessage: async (content: string) => {
-                const channel = await interaction.client.channels.fetch(context.channelId);
-                if (channel && 'send' in channel) {
-                  await channel.send(content);
-                }
-              },
-              getMessage: async () => {
-                const channel = await interaction.client.channels.fetch(context.channelId);
-                if (channel && 'messages' in channel) {
-                  return await channel.messages.fetch(context.messageId);
-                }
-              },
-              // SAUVEGARDE DE VOTE/DONNÉES
-              saveVote: async (voteType: string, details: string = '') => {
-                const { VoteManager } = await import('./utils/voteManager.js');
-                await VoteManager.saveVote(voteType, context.user, context.channelId, details);
-              },
-              getVoteCounts: async () => {
-                const { VoteManager } = await import('./utils/voteManager.js');
-                return await VoteManager.getVoteCounts();
-              },
-            };
+                sendMessage: async (content: string) => {
+                  const channel = await interaction.client.channels.fetch(context.channelId);
+                  if (channel && 'send' in channel) {
+                    await channel.send(content);
+                  }
+                },
+                getMessage: async () => {
+                  const channel = await interaction.client.channels.fetch(context.channelId);
+                  if (channel && 'messages' in channel) {
+                    return await channel.messages.fetch(context.messageId);
+                  }
+                },
+                // SAUVEGARDE DE VOTE/DONNÉES
+                saveVote: async (voteType: string, details: string = '') => {
+                  const { VoteManager } = await import('./utils/voteManager.js');
+                  await VoteManager.saveVote(voteType, context.user, context.channelId, details);
+                },
+                getVoteCounts: async () => {
+                  const { VoteManager } = await import('./utils/voteManager.js');
+                  return await VoteManager.getVoteCounts();
+                },
+              };
 
-            // Exécuter le code avec le contexte
-            const asyncFunction = new Function(
-              'ctx',
-              `
+              // Exécuter le code avec le contexte
+              const asyncFunction = new Function(
+                'ctx',
+                `
                         return (async () => {
                             try {
                                 ${button.functionCode}
@@ -235,19 +372,18 @@ export class DiscordBridge {
                             }
                         })();
                     `
-            );
+              );
 
-            try {
               await asyncFunction(ctx);
-            } catch (e: any) {
-              Logger.error(`❌ Erreur dans la fonction persistée ${id}:`, e);
+            } catch (err: any) {
+              bridgeLogger.error({ err, id }, `❌ Error in persisted function`);
               if (!interaction.replied && !interaction.deferred) {
                 await interaction
-                  .reply({ content: `❌ Erreur: ${e.message}`, ephemeral: true })
+                  .reply({ content: `❌ Error: ${err.message}`, ephemeral: true })
                   .catch(() => {});
               } else {
                 await interaction
-                  .followUp({ content: `❌ Erreur: ${e.message}`, ephemeral: true })
+                  .followUp({ content: `❌ Error: ${err.message}`, ephemeral: true })
                   .catch(() => {});
               }
             }
@@ -257,9 +393,9 @@ export class DiscordBridge {
         }
       }
       if (count > 0)
-        Logger.info(`♻️ [Bridge] ${count} fonctions de boutons rechargées depuis la persistance`);
+        bridgeLogger.info({ count }, '♻️ [Bridge] Rehydrated button functions from persistence');
     } catch (err) {
-      Logger.error('❌ [Bridge] Erreur lors de la rehydration des fonctions:', err);
+      bridgeLogger.error({ err }, '❌ [Bridge] Rehydration failed');
     }
   }
 
@@ -288,8 +424,8 @@ export class DiscordBridge {
         else if (interaction.isChatInputCommand()) {
           await this.handleSlashCommand(interaction);
         }
-      } catch (error: any) {
-        Logger.error('❌ [Bridge] Erreur interaction:', error.message);
+      } catch (err: any) {
+        bridgeLogger.error({ err }, '❌ [Bridge] Interaction error');
 
         // Répondre à l'utilisateur si possible
         if (!interaction.isAutocomplete()) {
@@ -306,7 +442,7 @@ export class DiscordBridge {
       }
     });
 
-    Logger.info("✅ [Bridge] Gestionnaire d'interactions configuré");
+    bridgeLogger.info('✅ [Bridge] Interaction handlers configured');
   }
 
   /**
@@ -320,33 +456,34 @@ export class DiscordBridge {
     let wasHandled = false;
 
     // 🔥 VÉRIFIER L'ÉTAT DE L'INTERACTION dès le début
-    Logger.debug(
-      `🔍 [Bridge] État interaction - replied: ${interaction.replied}, deferred: ${interaction.deferred}`
-    );
+    bridgeLogger.debug({
+      replied: interaction.replied,
+      deferred: interaction.deferred
+    }, '🔍 [Bridge] Interaction state');
 
     // Si l'interaction est déjà acquittée, ne rien faire
     if (interaction.replied || interaction.deferred) {
-      Logger.debug(`🔄 [Bridge] Interaction déjà acquittée, ignorée`);
+      bridgeLogger.debug('🔄 [Bridge] Interaction already acknowledged, ignoring');
       return;
     }
 
-    Logger.info(`🔘 [Bridge] Bouton cliqué: ${customId} par ${user.username}`);
+    bridgeLogger.info({ customId, user: user.username }, '🔘 [Bridge] Button clicked');
 
     // 🔥 ACQUITTER immédiatement pour éviter l'expiration de l'interaction
     // deferUpdate() est fait pour les boutons (update du message au lieu de nouvelle réponse)
     if (!interaction.replied && !interaction.deferred) {
       try {
         await interaction.deferUpdate();
-        Logger.debug(`⏱️ [Bridge] deferUpdate() effectué`);
-      } catch (e) {
-        Logger.error(`❌ [Bridge] Erreur deferUpdate:`, e);
+        bridgeLogger.debug('⏱️ [Bridge] deferUpdate() successful');
+      } catch (err) {
+        bridgeLogger.error({ err }, '❌ [Bridge] deferUpdate failed');
         // Continue execution even if defer fails (could be already handled in edge cases)
       }
     }
 
     // 1. GESTION DIRECTE des boutons custom avec embed/message (priorité MAXIMALE)
     // On traite TOUS les boutons connus (embedv2_, pb_, et custom_id personnalisés)
-    Logger.debug(`🔍 [Bridge] Chargement des boutons custom depuis la persistance...`);
+    bridgeLogger.debug('🔍 [Bridge] Loading custom buttons from persistence...');
 
     // Charger les boutons customs (buttons.json)
     const { loadCustomButtons } = await import('./utils/buttonPersistence.js');
@@ -356,10 +493,8 @@ export class DiscordBridge {
     const { getPersistentButton } = await import('./utils/distPersistence.js');
     const persistentBtn = await getPersistentButton(customId); // C'est ici que la MAGIE opère (lecture disque fraîche)
 
-    Logger.debug(`🔍 [Bridge] Boutons customs chargés: ${buttons.size}`);
-    Logger.debug(
-      `🔍 [Bridge] Bouton persistant trouvé pour ${customId}: ${persistentBtn ? 'OUI' : 'NON'}`
-    );
+    bridgeLogger.debug({ count: buttons.size }, '🔍 [Bridge] Custom buttons loaded');
+    bridgeLogger.debug({ customId, found: !!persistentBtn }, '🔍 [Bridge] Persistent button search');
 
     // Fusionner la logique : on prend soit le custom, soit le persistant
     let button: any = buttons.get(customId);
@@ -371,47 +506,39 @@ export class DiscordBridge {
         label: persistentBtn.label,
         channelId: persistentBtn.channelId,
       };
-      Logger.debug(`🔍 [Bridge] Utilisation de la configuration persistante pour ${customId}`);
+      bridgeLogger.debug({ customId }, '🔍 [Bridge] Using persistent configuration');
     }
 
-    Logger.debug(
-      `🔍 [Bridge] Résultat final recherche bouton ${customId}:`,
-      button ? 'TROUVÉ' : 'PERDU'
-    );
+    bridgeLogger.debug({ customId, result: button ? 'FOUND' : 'NOT_FOUND' }, '🔍 [Bridge] Final button search result');
 
     if (button) {
-      Logger.debug(
-        `🔍 [Bridge] Structure du bouton:`,
-        JSON.stringify(button, null, 2).substring(0, 500)
-      );
+      bridgeLogger.debug({ button: JSON.stringify(button).substring(0, 500) }, '🔍 [Bridge] Button structure');
 
       // 🔥 CORRECTION: Détecter les actions custom avec différentes structures
       let actionData = null;
       let isActionEmbed = false;
 
-      Logger.debug(`🔍 [Bridge] Type d'action: ${button.action?.type}`);
+      bridgeLogger.debug({ type: button.action?.type }, `🔍 [Bridge] Action type`);
 
       // Structure 1: Boutons standards (embedv2_) avec action.data
       if (button.action?.type === 'custom' && button.action?.data) {
         actionData = button.action.data;
-        Logger.debug(`🔍 [Bridge] Structure 1 détectée (action.data)`);
-        Logger.debug(`🔍 [Bridge] Données:`, JSON.stringify(actionData, null, 2).substring(0, 300));
+        bridgeLogger.debug('🔍 [Bridge] Structure 1 detected (action.data)');
       }
       // Structure 2: Boutons persistants (pb_) avec action.embed/action.message
       else if (button.action?.type === 'embed' || button.action?.type === 'message') {
         actionData = button.action;
         isActionEmbed = button.action.type === 'embed';
-        Logger.debug(`🔍 [Bridge] Structure 2 détectée (action directe)`);
-        Logger.debug(`🔍 [Bridge] Type: ${button.action.type}`);
+        bridgeLogger.debug('🔍 [Bridge] Structure 2 detected (direct action)');
       }
 
       if (actionData) {
-        Logger.debug(`🔍 [Bridge] Action custom détectée avec données!`);
+        bridgeLogger.debug('🔍 [Bridge] Custom action detected with data!');
         wasHandled = true; // 🔥 MARQUER comme géré pour éviter l'auto-handler
 
         // Envoyer embed si disponible
         if (isActionEmbed || actionData.embed) {
-          Logger.debug(`🔍 [Bridge] Envoi embed custom...`);
+          bridgeLogger.debug(`🔍 [Bridge] Envoi embed custom...`);
           const embedData = isActionEmbed ? actionData.embed : actionData.embed;
           if (embedData) {
             const embedBuilder = new EmbedBuilder()
@@ -437,13 +564,13 @@ export class DiscordBridge {
                   embeds: [embedBuilder],
                   ephemeral: true,
                 });
-                Logger.info(`✅ [Bridge] Réponse embed éphémère envoyée pour ${customId}`);
+                bridgeLogger.info({ customId }, '✅ [Bridge] Ephemeral embed response sent');
               } else {
                 // Réponse publique : utiliser followUp() aussi
                 response = await interaction.followUp({
                   embeds: [embedBuilder],
                 });
-                Logger.info(`✅ [Bridge] Réponse embed publique envoyée pour ${customId}`);
+                bridgeLogger.info({ customId }, '✅ [Bridge] Public embed response sent');
               }
 
               // 🕐 AUTO-SUPPRESSION après délai si configuré
@@ -455,22 +582,20 @@ export class DiscordBridge {
                     if (autoDeleteReply && !finalEphemeral && response) {
                       // Supprimer la réponse publique
                       await response.delete();
-                      Logger.debug(`🗑️ [Bridge] Réponse auto-supprimée après ${autoDelete}s`);
+                      bridgeLogger.debug({ customId }, '🗑️ [Bridge] Response auto-deleted');
                     } else if (!autoDeleteReply) {
                       // Supprimer le message original
                       const originalMessage = interaction.message;
                       if (originalMessage) {
                         await originalMessage.delete();
-                        Logger.debug(
-                          `🗑️ [Bridge] Message original auto-supprimé après ${autoDelete}s`
-                        );
+                        bridgeLogger.debug({ customId }, '🗑️ [Bridge] Original message auto-deleted');
                       }
                     }
-                  } catch (e) {
-                    Logger.debug(`⚠️ [Bridge] Impossible de supprimer:`, e);
+                  } catch (err) {
+                    bridgeLogger.debug({ err }, '⚠️ [Bridge] Could not delete');
                   }
                 }, autoDelete * 1000);
-                Logger.debug(`⏰ [Bridge] Auto-suppression programmée dans ${autoDelete}s`);
+                bridgeLogger.debug({ autoDelete }, '⏰ [Bridge] Auto-delete scheduled');
               }
 
               // 🔥 DÉSACTIVER LE BOUTON uniquement si réponse ÉPHÉMÈRE
@@ -492,24 +617,24 @@ export class DiscordBridge {
                       return actionRow;
                     });
                     await originalMessage.edit({ components: newRows });
-                    Logger.debug(`🔒 [Bridge] Bouton désactivé (réponse éphémère)`);
+                    bridgeLogger.debug(`🔒 [Bridge] Bouton désactivé (réponse éphémère)`);
                   }
                 } catch (e) {
-                  Logger.debug(`⚠️ [Bridge] Impossible de désactiver le bouton:`, e);
+                  bridgeLogger.debug({ err: e }, `⚠️ [Bridge] Impossible de désactiver le bouton:`);
                 }
               } else {
-                Logger.debug(`🔄 [Bridge] Bouton laissé actif (réponse publique - multi-click)`);
+                bridgeLogger.debug(`🔄 [Bridge] Bouton laissé actif (réponse publique - multi-click)`);
               }
 
               return; // Terminé - on a répondu
-            } catch (e: any) {
-              Logger.error(`❌ [Bridge] Erreur réponse embed:`, e.message);
+            } catch (err: any) {
+              bridgeLogger.error({ err }, '❌ [Bridge] Embed response error');
             }
           }
         }
         // Envoyer message si disponible
         else if (actionData.message || actionData.content) {
-          Logger.debug(`🔍 [Bridge] Envoi message custom...`);
+          bridgeLogger.debug(`🔍 [Bridge] Envoi message custom...`);
           try {
             // 🔥 RÉPONSE avec followUp()
             const message = (actionData.message || actionData.content || '').replace(
@@ -527,12 +652,12 @@ export class DiscordBridge {
                 content: message,
                 ephemeral: true,
               });
-              Logger.info(`✅ [Bridge] Réponse message éphémère envoyée pour ${customId}`);
+              bridgeLogger.info({ customId }, '✅ [Bridge] Ephemeral message response sent');
             } else {
               response = await interaction.followUp({
                 content: message,
               });
-              Logger.info(`✅ [Bridge] Réponse message publique envoyée pour ${customId}`);
+              bridgeLogger.info({ customId }, '✅ [Bridge] Public message response sent');
             }
 
             // 🕐 AUTO-SUPPRESSION après délai si configuré
@@ -543,21 +668,19 @@ export class DiscordBridge {
                 try {
                   if (autoDeleteReply && !finalEphemeral && response) {
                     await response.delete();
-                    Logger.debug(`🗑️ [Bridge] Réponse auto-supprimée après ${autoDelete}s`);
+                    bridgeLogger.debug({ customId }, '🗑️ [Bridge] Response auto-deleted');
                   } else if (!autoDeleteReply) {
                     const originalMessage = interaction.message;
                     if (originalMessage) {
                       await originalMessage.delete();
-                      Logger.debug(
-                        `🗑️ [Bridge] Message original auto-supprimé après ${autoDelete}s`
-                      );
+                      bridgeLogger.debug({ customId }, '🗑️ [Bridge] Original message auto-deleted');
                     }
                   }
-                } catch (e) {
-                  Logger.debug(`⚠️ [Bridge] Impossible de supprimer:`, e);
+                } catch (err) {
+                  bridgeLogger.debug({ err }, '⚠️ [Bridge] Could not delete');
                 }
               }, autoDelete * 1000);
-              Logger.debug(`⏰ [Bridge] Auto-suppression programmée dans ${autoDelete}s`);
+              bridgeLogger.debug({ autoDelete }, '⏰ [Bridge] Auto-delete scheduled');
             }
 
             // 🔥 DÉSACTIVER LE BOUTON uniquement si réponse ÉPHÉMÈRE
@@ -579,22 +702,22 @@ export class DiscordBridge {
                     return actionRow;
                   });
                   await originalMessage.edit({ components: newRows });
-                  Logger.debug(`🔒 [Bridge] Bouton désactivé (réponse éphémère)`);
+                  bridgeLogger.debug(`🔒 [Bridge] Bouton désactivé (réponse éphémère)`);
                 }
               } catch (e) {
-                Logger.debug(`⚠️ [Bridge] Impossible de désactiver le bouton:`, e);
+                bridgeLogger.debug({ err: e }, `⚠️ [Bridge] Impossible de désactiver le bouton`);
               }
             } else {
-              Logger.debug(`🔄 [Bridge] Bouton laissé actif (réponse publique - multi-click)`);
+              bridgeLogger.debug(`🔄 [Bridge] Bouton laissé actif (réponse publique - multi-click)`);
             }
 
             return; // Terminé - on a répondu
-          } catch (e: any) {
-            Logger.error(`❌ [Bridge] Erreur réponse message:`, e.message);
+          } catch (err: any) {
+            bridgeLogger.error({ err }, '❌ [Bridge] Message response error');
           }
         }
       } else {
-        Logger.debug(`🔍 [Bridge] Pas d'action custom détectée pour ce bouton`);
+        bridgeLogger.debug({ customId }, `🔍 [Bridge] No custom action detected for this button`);
       }
     }
 
@@ -615,13 +738,13 @@ export class DiscordBridge {
         wasHandled = true;
       }
     } else {
-      Logger.debug(`🔄 [Bridge] interactionHandler sauté pour bouton embedv2_/pb_`);
+      bridgeLogger.debug({ customId }, '🔄 [Bridge] interactionHandler skipped for embedv2_/pb_ button');
     }
 
     // 🔥 HOT RELOAD: Exécution dynamique du code depuis le disque (Priorité sur le cache mémoire)
     // N'exécuter que si pas encore géré par une action automatique (message/embed)
     if (button && button.functionCode && !wasHandled) {
-      Logger.info(`⚡ [Hot-Reload] Exécution code frais pour ${customId}`);
+      bridgeLogger.info({ customId }, '⚡ [Hot-Reload] Executing fresh code');
       try {
         // Reconstruire le contexte (ctx) identique à celui de registerButtonFunctions
         const ctx = {
@@ -729,11 +852,11 @@ export class DiscordBridge {
 
         await asyncFunction(ctx);
         wasHandled = true;
-      } catch (e: any) {
-        Logger.error(`❌ [Hot-Reload] Erreur exécution ${customId}:`, e);
+      } catch (err: any) {
+        bridgeLogger.error({ err, customId }, '❌ [Hot-Reload] Execution error');
         if (!interaction.replied && !interaction.deferred) {
           await interaction
-            .reply({ content: `❌ Erreur: ${e.message}`, ephemeral: true })
+            .reply({ content: `❌ Error: ${err.message}`, ephemeral: true })
             .catch(() => {});
         }
       }
@@ -745,8 +868,8 @@ export class DiscordBridge {
         try {
           await customFunction(interaction, { customId, user, channelId, messageId });
           wasHandled = true;
-        } catch (error: any) {
-          Logger.error(`❌ [Bridge] Erreur fonction bouton ${customId}:`, error.message);
+        } catch (err: any) {
+          bridgeLogger.error({ err, customId }, '❌ [Bridge] Button function error');
         }
       }
     }
@@ -770,10 +893,10 @@ export class DiscordBridge {
           content: responseContent,
           ephemeral: true,
         });
-        Logger.info(`🤖 [Auto-Handler] Réponse automatique envoyée pour le bouton: ${customId}`);
+        bridgeLogger.info({ customId }, '🤖 [Auto-Handler] Auto-response sent');
         wasHandled = true;
-      } catch (error: any) {
-        Logger.error(`❌ [Auto-Handler] Erreur réponse automatique:`, error.message);
+      } catch (err: any) {
+        bridgeLogger.error({ err }, '❌ [Auto-Handler] Auto-response error');
 
         // Fallback: deferUpdate en cas d'erreur de reply
         if (!interaction.replied && !interaction.deferred) {
@@ -784,7 +907,7 @@ export class DiscordBridge {
 
     // FALLBACK ABSOLU: Répondre à l'interaction pour éviter le timeout (si rien n'a été fait)
     if (!wasHandled && !interaction.replied && !interaction.deferred) {
-      Logger.warn(
+      bridgeLogger.warn(
         `⚠️ [Bridge] Aucune réponse envoyé pour ${customId}, utilisation du fallback deferUpdate`
       );
       await interaction.deferUpdate().catch(() => {});
@@ -800,7 +923,7 @@ export class DiscordBridge {
     const user = interaction.user;
     let wasHandled = false;
 
-    Logger.info(`📋 [Bridge] Menu sélectionné: ${customId} par ${user.username}`);
+    bridgeLogger.info(`📋 [Bridge] Menu sélectionné: ${customId} par ${user.username}`);
 
     const wasHandledByHandler = await interactionHandler.handleSelectMenu({
       customId,
@@ -824,10 +947,10 @@ export class DiscordBridge {
           content: AUTO_RESPONSES.menu(customId, user.username, values),
           ephemeral: true,
         });
-        Logger.info(`🤖 [Auto-Handler] Réponse automatique envoyée pour le menu: ${customId}`);
+        bridgeLogger.info(`🤖 [Auto-Handler] Réponse automatique envoyée pour le menu: ${customId}`);
         wasHandled = true;
       } catch (error: any) {
-        Logger.error(`❌ [Auto-Handler] Erreur réponse automatique:`, error.message);
+        bridgeLogger.error({ err: error }, `❌ [Auto-Handler] Erreur réponse automatique`);
       }
     }
 
@@ -845,7 +968,7 @@ export class DiscordBridge {
     const fields = interaction.fields;
     const user = interaction.user;
 
-    Logger.info(`📝 [Bridge] Modal soumis: ${customId} par ${user.username}`);
+    bridgeLogger.info(`📝 [Bridge] Modal soumis: ${customId} par ${user.username}`);
 
     await interactionHandler.handleModalSubmit({
       customId,
@@ -868,7 +991,7 @@ export class DiscordBridge {
    */
   private async handleSlashCommand(interaction: any): Promise<void> {
     const commandName = interaction.commandName;
-    Logger.info(`⚡ [Bridge] Commande slash: ${commandName} par ${interaction.user.username}`);
+    bridgeLogger.info(`⚡ [Bridge] Commande slash: ${commandName} par ${interaction.user.username}`);
     // TODO: Implémenter les commandes slash si nécessaire
   }
 
@@ -877,7 +1000,7 @@ export class DiscordBridge {
       this.client.destroy();
       this.isConnected = false;
       this.connectionPromise = null;
-      Logger.info('🧹 [Bridge] Client détruit');
+      bridgeLogger.info('🧹 [Bridge] Client détruit');
     }
   }
 }
@@ -887,7 +1010,7 @@ export class DiscordBridge {
  */
 export function registerButtonFunction(customId: string, func: ButtonFunction): void {
   buttonFunctions.set(customId, func);
-  Logger.info(`📝 [Bridge] Fonction enregistrée pour le bouton: ${customId}`);
+  bridgeLogger.info(`📝 [Bridge] Fonction enregistrée pour le bouton: ${customId}`);
 }
 
 /**
@@ -896,7 +1019,7 @@ export function registerButtonFunction(customId: string, func: ButtonFunction): 
 export function unregisterButtonFunction(customId: string): boolean {
   const deleted = buttonFunctions.delete(customId);
   if (deleted) {
-    Logger.info(`🗑️ [Bridge] Fonction supprimée pour le bouton: ${customId}`);
+    bridgeLogger.info(`🗑️ [Bridge] Fonction supprimée pour le bouton: ${customId}`);
   }
   return deleted;
 }

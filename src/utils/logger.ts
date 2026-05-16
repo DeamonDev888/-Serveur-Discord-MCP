@@ -1,146 +1,98 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { fileURLToPath } from 'url';
+import pino from "pino";
+import path from "path";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+/**
+ * ============================================================================
+ * SUPER-PINO LOGGER - Discord Server Edition
+ * ============================================================================
+ */
 
-// Chemin absolu vers le fichier de log à la racine du projet
-const LOG_DIR = path.resolve(__dirname, '../../logs');
-const LOG_FILE = path.join(LOG_DIR, 'server.log');
+const REDACT_PATHS = [
+  "*.password",
+  "*.api_key",
+  "*.token",
+  "*.secret",
+  "req.headers.authorization",
+  "*.email",
+  "db.password",
+  "DISCORD_TOKEN",
+];
 
-// S'assurer que le répertoire de logs existe
-if (!fs.existsSync(LOG_DIR)) {
-  fs.mkdirSync(LOG_DIR, { recursive: true });
+const DEFAULT_LOG_DIR = path.join(process.cwd(), "logs");
+const DEFAULT_LOG_FILE = path.join(DEFAULT_LOG_DIR, "nexus-discord.log");
+const GLOBAL_LOG_PATH = "C:\\SierraChart\\ACS_Source\\BTCacsil\\logs\\nexus-discord-server.log";
+
+function getFileTargets(): string[] {
+  const raw = process.env.LOG_FILES ?? "";
+  const paths = raw.split(",").map(p => p.trim()).filter(Boolean);
+  const userPaths = paths.map(p => path.isAbsolute(p) ? p : path.resolve(process.cwd(), p));
+  return [DEFAULT_LOG_FILE, GLOBAL_LOG_PATH, ...userPaths];
 }
 
-export enum LogLevel {
-  DEBUG = 'DEBUG',
-  INFO = 'INFO',
-  WARN = 'WARN',
-  ERROR = 'ERROR',
-}
+const fileTargets = getFileTargets();
 
-// Flags pour éviter les boucles infinies de logs
-let isLoggingInternal = false;
-let isStderrBroken = false;
-let isFileBroken = false;
+const transport = pino.transport({
+  targets: [
+    {
+      target: "pino-pretty",
+      level: process.env.LOG_LEVEL || "debug",
+      options: {
+        destination: 2, 
+        colorize: true,
+        translateTime: "SYS:yyyy-mm-dd HH:MM:ss",
+        ignore: "pid,hostname,service,version",
+        messageFormat: "\x1b[35m[{module}]\x1b[0m {msg}", // Magenta for Discord
+        errorLikeObjectKeys: ["err", "error"],
+      } as any,
+    },
+    ...fileTargets.map((filePath) => ({
+      target: "pino-roll",
+      level: process.env.LOG_LEVEL || "info",
+      options: {
+        file: filePath,
+        frequency: "daily",
+        dateFormat: "yyyy-MM-dd",
+        size: "50m",
+        limit: { count: 30 },
+        mkdir: true,
+      },
+    })),
+  ],
+});
 
-class Logger {
-  private static readonly MAX_LOG_SIZE = 10 * 1024 * 1024; // 10 MB
-  private static readonly MAX_LOG_FILES = 5;
+export const logger = pino(
+  {
+    name: "discord-mcp",
+    level: process.env.LOG_LEVEL || "info",
+    redact: {
+      paths: REDACT_PATHS,
+      censor: "[CONFIDENTIEL]",
+    },
+    serializers: {
+      err: pino.stdSerializers.err,
+      error: pino.stdSerializers.err,
+    },
+    base: {
+      service: "discord-mcp-server",
+      version: "2.1.3",
+    },
+  },
+  transport
+);
 
-  private static rotateLogs() {
-    try {
-      if (!fs.existsSync(LOG_FILE)) return;
-
-      const stats = fs.statSync(LOG_FILE);
-      if (stats.size < this.MAX_LOG_SIZE) return;
-
-      // Supprimer le plus vieux log
-      const oldestLog = `${LOG_FILE}.${this.MAX_LOG_FILES}`;
-      if (fs.existsSync(oldestLog)) {
-        fs.unlinkSync(oldestLog);
-      }
-
-      // Décaler les logs existants
-      for (let i = this.MAX_LOG_FILES - 1; i >= 1; i--) {
-        const currentLog = `${LOG_FILE}.${i}`;
-        const nextLog = `${LOG_FILE}.${i + 1}`;
-        if (fs.existsSync(currentLog)) {
-          fs.renameSync(currentLog, nextLog);
-        }
-      }
-
-      // Renommer le log actuel
-      fs.renameSync(LOG_FILE, `${LOG_FILE}.1`);
-    } catch (err) {
-      // Ignorer les erreurs de rotation
-    }
-  }
-
-  private static logToFile(level: LogLevel, message: string, ...args: any[]) {
-    if (isFileBroken || isLoggingInternal) return;
-
-    const timestamp = new Date().toISOString();
-    const formattedArgs = args.length > 0 ? '\n' + JSON.stringify(args, null, 2) : '';
-    const logLine = `[${timestamp}] [${level}] ${message}${formattedArgs}\n`;
-
-    isLoggingInternal = true;
-    try {
-      this.rotateLogs();
-      fs.appendFileSync(LOG_FILE, logLine);
-    } catch (err) {
-      // Ne pas écrire sur stderr pour éviter les boucles EPIPE si stderr est aussi cassé
-      // Marquer le fichier comme cassé pour éviter de réessayer en boucle
-      isFileBroken = true;
-    } finally {
-      isLoggingInternal = false;
-    }
-  }
-
-  private static logToStderr(level: LogLevel, message: string, ...args: any[]) {
-    if (isStderrBroken || isLoggingInternal) return;
-
-    isLoggingInternal = true;
-    try {
-      const timestamp = new Date().toLocaleTimeString();
-      const color = this.getColor(level);
-      const reset = '\x1b[0m';
-
-      const formattedMessage = `[${timestamp}] ${color}[${level}]${reset} ${message}`;
-
-      if (args.length > 0) {
-        process.stderr.write(`${formattedMessage}\n`);
-        for (const arg of args) {
-          process.stderr.write(`${JSON.stringify(arg, null, 2)}\n`);
-        }
-      } else {
-        process.stderr.write(`${formattedMessage}\n`);
-      }
-    } catch (err) {
-      // stderr est cassé (EPIPE), marquer pour éviter les boucles
-      if ((err as any)?.code === 'EPIPE') {
-        isStderrBroken = true;
-      }
-    } finally {
-      isLoggingInternal = false;
-    }
-  }
-
-  private static getColor(level: LogLevel): string {
-    switch (level) {
-      case LogLevel.DEBUG:
-        return '\x1b[90m'; // Gris
-      case LogLevel.INFO:
-        return '\x1b[32m'; // Vert
-      case LogLevel.WARN:
-        return '\x1b[33m'; // Jaune
-      case LogLevel.ERROR:
-        return '\x1b[31m'; // Rouge
-      default:
-        return '\x1b[0m';
-    }
-  }
-
+// --- COMPATIBILITY LAYER ---
+export class Logger {
   static debug(message: string, ...args: any[]) {
-    this.logToStderr(LogLevel.DEBUG, message, ...args);
-    this.logToFile(LogLevel.DEBUG, message, ...args);
+    logger.debug({ module: "DEBUG", args }, message);
   }
-
   static info(message: string, ...args: any[]) {
-    this.logToStderr(LogLevel.INFO, message, ...args);
-    this.logToFile(LogLevel.INFO, message, ...args);
+    logger.info({ module: "INFO", args }, message);
   }
-
   static warn(message: string, ...args: any[]) {
-    this.logToStderr(LogLevel.WARN, message, ...args);
-    this.logToFile(LogLevel.WARN, message, ...args);
+    logger.warn({ module: "WARN", args }, message);
   }
-
   static error(message: string, ...args: any[]) {
-    this.logToStderr(LogLevel.ERROR, message, ...args);
-    this.logToFile(LogLevel.ERROR, message, ...args);
+    logger.error({ module: "ERROR", args }, message);
   }
 }
 

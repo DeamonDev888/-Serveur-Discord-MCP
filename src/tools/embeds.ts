@@ -27,6 +27,7 @@ import Logger from '../utils/logger.js';
 import embedHelper from '../utils/embedHelper.js'; // 🎯 SYSTÈME D'AIDE INTUITIF
 import { isSvgUrl as checkIsSvgUrl, convertSvgUrlToPng } from '../utils/svgConverter.js';
 import { ensureDiscordConnection, formatDuration } from './common.js';
+import { botConfig } from '../config.js';
 import {
   validateDiscordMentions,
   generateMentionErrorMessage,
@@ -83,6 +84,158 @@ import { interactionHandler } from '../utils/interactionHandler.js';
 // Utilise le pipeline serveur_discord/src/data/logos.ts
 // ============================================================================
 
+// Limites Discord pour les embeds (officielles)
+export const DISCORD_EMBED_LIMITS = {
+  TITLE_MAX: 256,
+  DESCRIPTION_MAX: 4096,
+  FIELD_NAME_MAX: 256,
+  FIELD_VALUE_MAX: 1024,
+  FOOTER_TEXT_MAX: 2048,
+  AUTHOR_NAME_MAX: 256,
+  TOTAL_EMBED_CHARS: 2000, // ⚠️ Limite stricte Discord (pas 6000!)
+  FIELDS_MAX: 25,
+  FIELDS_INLINE_MAX: 3,
+};
+
+/**
+ * Tronque une chaîne à maxLength avec suffixe "..." si coupée
+ */
+function truncateString(str: string, maxLength: number): string {
+  if (!str || str.length <= maxLength) return str;
+  return str.substring(0, maxLength - 3) + '...';
+}
+
+/**
+ * Tronque un texte d'embed avec message de fallback pour l'agent
+ * @returns { truncated: boolean, content: string, originalLength: number, warning: string | null }
+ */
+function smartTruncateEmbedField(
+  content: string,
+  maxLength: number,
+  fieldName: string
+): { content: string; truncated: boolean; originalLength: number; warning: string | null } {
+  if (!content) return { content, truncated: false, originalLength: 0, warning: null };
+
+  const originalLength = content.length;
+  if (originalLength <= maxLength) {
+    return { content, truncated: false, originalLength, warning: null };
+  }
+
+  const truncated = truncateString(content, maxLength);
+  const warning = `⚠️ [${fieldName}] Tronqué: ${originalLength} → ${maxLength} chars. Utilisez pagination ou réduisez le contenu.`;
+
+  return { content: truncated, truncated: true, originalLength, warning };
+}
+
+/**
+ * Valide ET tronque tous les champs d'un embed pour respecter les limites Discord
+ * Retourne un rapport détaillé pour l'agent avec instructions de fallback
+ */
+export function validateAndTruncateEmbed(args: {
+  title?: string;
+  description?: string;
+  authorName?: string;
+  footerText?: string;
+  fields?: Array<{ name: string; value: string; inline?: boolean }>;
+}): {
+  args: any;
+  truncated: boolean;
+  warnings: string[];
+  totalChars: number;
+  report: string;
+} {
+  const warnings: string[] = [];
+  const truncatedFields: string[] = [];
+
+  // Clone args pour éviter mutation
+  const safeArgs = JSON.parse(JSON.stringify(args));
+
+  // Tronquer title
+  if (safeArgs.title) {
+    const result = smartTruncateEmbedField(safeArgs.title, DISCORD_EMBED_LIMITS.TITLE_MAX, 'title');
+    safeArgs.title = result.content;
+    if (result.truncated && result.warning) {
+      warnings.push(result.warning);
+      truncatedFields.push(`title`);
+    }
+  }
+
+  // Tronquer description (la plus fréquente à dépasser)
+  if (safeArgs.description) {
+    const result = smartTruncateEmbedField(safeArgs.description, DISCORD_EMBED_LIMITS.DESCRIPTION_MAX, 'description');
+    safeArgs.description = result.content;
+    if (result.truncated && result.warning) {
+      warnings.push(result.warning);
+      truncatedFields.push(`description`);
+    }
+  }
+
+  // Tronquer authorName
+  if (safeArgs.authorName) {
+    const result = smartTruncateEmbedField(safeArgs.authorName, DISCORD_EMBED_LIMITS.AUTHOR_NAME_MAX, 'authorName');
+    safeArgs.authorName = result.content;
+    if (result.truncated && result.warning) {
+      warnings.push(result.warning);
+      truncatedFields.push(`authorName`);
+    }
+  }
+
+  // Tronquer footerText
+  if (safeArgs.footerText) {
+    const result = smartTruncateEmbedField(safeArgs.footerText, DISCORD_EMBED_LIMITS.FOOTER_TEXT_MAX, 'footerText');
+    safeArgs.footerText = result.content;
+    if (result.truncated && result.warning) {
+      warnings.push(result.warning);
+      truncatedFields.push(`footerText`);
+    }
+  }
+
+  // Tronquer fields
+  if (safeArgs.fields && safeArgs.fields.length > 0) {
+    safeArgs.fields = safeArgs.fields.map((field: any, index: number) => {
+      const truncatedName = smartTruncateEmbedField(field.name, DISCORD_EMBED_LIMITS.FIELD_NAME_MAX, `fields[${index}].name`);
+      const truncatedValue = smartTruncateEmbedField(field.value, DISCORD_EMBED_LIMITS.FIELD_VALUE_MAX, `fields[${index}].value`);
+
+      if (truncatedName.truncated || truncatedValue.truncated) {
+        truncatedFields.push(`field[${index}]`);
+      }
+
+      return {
+        ...field,
+        name: truncatedName.content,
+        value: truncatedValue.content,
+      };
+    });
+  }
+
+  // Calculer total (approximatif)
+  const totalChars =
+    (safeArgs.title?.length || 0) +
+    (safeArgs.description?.length || 0) +
+    (safeArgs.authorName?.length || 0) +
+    (safeArgs.footerText?.length || 0) +
+    (safeArgs.fields || []).reduce((sum: number, f: any) => sum + (f.name?.length || 0) + (f.value?.length || 0), 0);
+
+  // Build report
+  let report = '';
+  if (truncatedFields.length > 0) {
+    report = `📝 **CONTENU TRONQUÉ** (limites Discord 2000 chars/embed):\n`;
+    report += `Champs affectés: ${truncatedFields.join(', ')}\n`;
+    report += `\n💡 **INSTRUCTIONS POUR L'AGENT:**\n`;
+    report += `1. Réduisez la description ou utilisez le paramètre 'pagination'\n`;
+    report += `2. Splittez les champs en plusieurs embeds\n`;
+    report += `3. Ou envoyez le contenu via le paramètre 'content' (hors embed)\n`;
+  }
+
+  return {
+    args: safeArgs,
+    truncated: truncatedFields.length > 0,
+    warnings,
+    totalChars,
+    report,
+  };
+}
+
 // ============================================================================
 // FONCTIONS UTILITAIRES
 // ============================================================================
@@ -98,26 +251,140 @@ import { interactionHandler } from '../utils/interactionHandler.js';
 export function isLocalLogoUrl(url: string | undefined): boolean {
   if (!url) return false;
 
-  // Liste des domaines CDN fiables autorisés
+// =====================================================
+// 4 POSITIONS D'IMAGES + BARRE COULEUR (LEFT BAR)
+// =====================================================
+//
+// ┌───────────────────────────────────────────────────────────────────┐
+// │                                                                   │
+// │ [authorIcon 16x16]                           [thumbnail 80x80]    │ ← Haut droit
+// │                                                                   │
+// │  Title                                                            │
+// │  Description...                                                   │
+// │                                                                   │ ←[COLOR_BAR 4px] gauche
+// │  ┌─────────────┬─────────────┬─────────────┐                      │
+// │  │ Field 1     │ Field 2     │ Field 3     │                      │
+// │  └─────────────┴─────────────┴─────────────┘                      │
+// │                                                                   │
+// │               [image 400x250]                                     │ ← Bas gauche
+// │              [footerIcon 16x16]                                   │   ← Bas
+// └───────────────────────────────────────────────────────────────────┘
+//
+// POSITIONS D'IMAGES:
+//   1. authorIcon  (16x16)  → Haut GAUCHE  - petite icône auteur
+//   2. thumbnail   (80x80)  → Haut DROITE  - logo/avatar principal
+//   3. footerIcon  (16x16)  → Bas GAUCHE   - petite icône footer
+//   4. image       (400x250)→ Bas DROITE   - grande image principale
+//
+// BARRE COULEUR (COLOR BAR):
+//   → 4px de large, sur le côté GAUCHE de l'embed
+//   → Définit la "couleur" de l'embed (bandeau vertical)
+//   → Paramètre: color (0xRRGGBB hex)
+//   → Si non défini: utilise la couleur du thème ou 0x2c3e50 (défaut)
+//
+// ⚠️ LIMITES DISCORD:
+//   - TOTAL: 2000 chars max par embed (title + description + fields + footer)
+//   - title: 256 chars max
+//   - description: 4096 chars max
+//   - field name: 256 chars, field value: 1024 chars
+//   - footer text: 2048 chars max
+//   - author name: 256 chars max
+//   - 25 fields max par embed
+//
+// IMAGES - PERSISTANCE ET CDN:
+//   ┌──────────────────────────────────────────────────────────────────────┐
+//   │ 📎 ATTACHMENTS (upload_local / envoi fichier)                        │
+//   │   → URL: cdn.discordapp.com/attachments/...                         │
+//   │   → ✅ PERSISTANTE si le message existe                              │
+//   │   → ⚠️ MEURT si le message source est supprimé                        │
+//   │   → 💡 Stocker le message ID pour pouvoir re-fetch si besoin         │
+//   ├──────────────────────────────────────────────────────────────────────┤
+//   │ 🌐 URLs EXTERNES (CDN tiers)                                        │
+//   │   → URL: telle que fournie (imgur, unsplash, etc.)                   │
+//   │   → ⚠️ DÉPEND du CDN externe - peut mourir ou changer                │
+//   │   → ⚠️ BLOQUÉE si non dans TRUSTED_DOMAINS                          │
+//   │   → ✅ Pas de dépendance au message Discord                          │
+//   ├──────────────────────────────────────────────────────────────────────┤
+//   │ 💾 CDN DISCORD UPLOAD (upload_fichier)                               │
+//   │   → URL: https://cdn.discordapp.com/emojis/XXX.png?size=...          │
+//   │   → ✅ MEILLEURE durabilité que attachments                          │
+//   │   → ⚠️ Requiert que le bot ait uploadé un fichier                    │
+//   │   → ⚠️ ÉMOJI CUSTOM: expire si bot retiré du serveur                │
+//   └──────────────────────────────────────────────────────────────────────┘
+//
+// TRUSTED DOMAINS (URLs externes autorisées):
+//   • Icônes/Logos: cdn.simpleicons.org, img.icons凉tern.io
+//   • Crypto: assets.coingecko.com, cryptologos.cc, cryptoicons.org
+//   • Photos: images.unsplash.com, picsum.photos
+//   • Discord: cdn.discordapp.com, media.discordapp.net
+//   • Réseaux: pbs.twimg.com, abs.twimg.com, platform-lookaside.fbsbx.com
+//   • Images: i.imgur.com, i.postimg.cc, postimages.org
+//   • Wikis: upload.wikimedia.org, commons.wikimedia.org
+//   • GitHub: raw.githubusercontent.com, github.com, avatars.githubusercontent.com
+//   • CDNs: cdn.jsdelivr.net, cdnjs.cloudflare.com, unpkg.com
+//   • Émojis: asset.hqemoji.com, twemoji.maxcdn.com
+//
+// POUR UTILISER DES IMAGES EXTERNES NON-LISTÉES:
+//   1. Upload sur un domaine de confiance (imgur, discord, etc.)
+//   2. OU utilise l'outil 'upload_fichier' pour uploader via le bot
+//   3. Vérifie que l'URL est accessible publiquement ET directe (pas de SSO)
+//
+// =====================================================
+  //
+  // ⚠️ Ordre visuel: authorIcon/title/thumbnail → fields → image → footer
+  // ⚠️ image et footerIcon ne sont PAS sur la même ligne
+
+  // =====================================================
+  // TRUSTED DOMAINS - URLs autorisées sans vérification
+  // =====================================================
   const TRUSTED_DOMAINS = [
-    'cdn.simpleicons.org',
-    'simpleicons.org',
-    'images.unsplash.com',
-    'unsplash.com',
-    'cdn.discordapp.com',
-    'media.discordapp.net',
-    'picsum.photos',
-    'assets.coingecko.com',
-    'cryptologos.cc',
-    'raw.githubusercontent.com',
-    'github.com',
-    'avatars.githubusercontent.com',
-    'upload.wikimedia.org',
-    'pbs.twimg.com',
-    'abs.twimg.com',
-    'i.imgur.com',
-    'imgur.com',
-    'assets.coingecko.com', // Added for crypto logos
+    // Icônes/Logos
+    'cdn.simpleicons.org',    // SimpleIcons (DES MILLIERS d'icônes)
+    'simpleicons.org',        // Fallback
+    'img.icons凉tern.io',     // Icons (alternatif)
+    
+    // Crypto/Finance
+    'assets.coingecko.com',   // CoinGecko logos
+    'cryptologos.cc',         // Crypto logos
+    'cryptoicons.org',        // Crypto icons
+    
+    // Images/Photos
+    'images.unsplash.com',    // Photos haute qualité
+    'unsplash.com',           // Fallback
+    'picsum.photos',          // Photos aléatoires
+    
+    // Discord
+    'cdn.discordapp.com',     // Discord CDN
+    'media.discordapp.net',   // Discord media
+    
+    // Réseaux sociaux
+    'pbs.twimg.com',           // Twitter/X photos
+    'abs.twimg.com',           // Twitter/X abs
+    'platform-lookaside.fbsbx.com', // Facebook
+    
+    // Hébergement images
+    'i.imgur.com',            // Imgur
+    'imgur.com',              // Fallback imgur
+    'i.postimg.cc',           // Postimages
+    'postimages.org',         // Postimages
+    
+    // Wikis/Médias libres
+    'upload.wikimedia.org',   // Wikipedia commons
+    'commons.wikimedia.org',  // Wikimedia
+    
+    // GitHub
+    'raw.githubusercontent.com', // GitHub raw
+    'github.com',             // GitHub
+    'avatars.githubusercontent.com', // GitHub avatars
+    
+    // CDNs divers
+    'cdn.jsdelivr.net',       // jsDelivr CDN
+    'cdnjs.cloudflare.com',   // cdnjs
+    'unpkg.com',              // unpkg
+    
+    // Hébergement diverse
+    'asset.hqemoji.com',      // Emojis
+    'twemoji.maxcdn.com',     // Twitter emojis
   ];
 
   // Vérifier si l'URL provient d'un CDN fiable
@@ -807,7 +1074,7 @@ export function registerEmbedTools(server: FastMCP) {
    • image (bas) - GRANDE (400x250px Discord)
    • footerIcon (bas-gauche) - PETITE (16x16px Discord)
 
-💡 CONSEIL: Utilisez help=true pour afficher le guide interactif !
+⚡ IMPORTANT: Les paramètres channelId, title et description sont OBLIGATOIRES pour créer un embed.
 
 🚀 PHASE 1 ENHANCEMENT (automatique):
    • Cache local d'images
@@ -1251,7 +1518,7 @@ export function registerEmbedTools(server: FastMCP) {
 
       // Si erreurs critiques, afficher l'aide et arrêter
       if (!validation.isValid) {
-        return `❌ **ERREURS À CORRIGER:**\n\n${validation.errors.join('\n')}\n\n💡 **AIDE:** Utilisez help=true pour voir le guide interactif !`;
+        return `❌ **ERREURS À CORRIGER:**\n\n${validation.errors.join('\n')}\n\n⚠️ **Donnez-moi uniquement les informations manquantes, pas de guide.**`;
       }
 
       // Afficher les conseils même si valide
@@ -1278,7 +1545,7 @@ export function registerEmbedTools(server: FastMCP) {
         const client = await ensureDiscordConnection();
         // ============================================================================
         // 🚨 OVERRIDE SENTINEL POLLS
-        // Utilisation directe du canal dédié 1421701551080345710 pour Sentinel
+        // Utilisation du canal Sentinel configuré dans botConfig
         // ============================================================================
         let finalChannelId = args.channelId;
 
@@ -1289,9 +1556,9 @@ export function registerEmbedTools(server: FastMCP) {
           args.authorName.toUpperCase().includes('SENTINEL')
         ) {
           Logger.info(
-            '🚨 [SENTINEL] Détection Sentinel (Author) - Force Canal: 1460428956518846466'
+            `🚨 [SENTINEL] Détection Sentinel (Author) - Force Canal: ${botConfig.sentinelChannelId}`
           );
-          finalChannelId = '1460428956518846466';
+          finalChannelId = botConfig.sentinelChannelId;
         }
 
         // 2. Détection par contenu (Backup)
@@ -1301,9 +1568,9 @@ export function registerEmbedTools(server: FastMCP) {
           args.title.includes('ALERTE DE CAPITULATION')
         ) {
           Logger.info(
-            '🚨 [SENTINEL] Détection Sentinel (Titre) - Force Canal: 1460428956518846466'
+            `🚨 [SENTINEL] Détection Sentinel (Titre) - Force Canal: ${botConfig.sentinelChannelId}`
           );
-          finalChannelId = '1460428956518846466';
+          finalChannelId = botConfig.sentinelChannelId;
         }
 
         const channel = await client.channels.fetch(finalChannelId);
@@ -1329,6 +1596,29 @@ export function registerEmbedTools(server: FastMCP) {
 
         const embed = new EmbedBuilder();
         const dataToUse = { ...embedData, ...args };
+
+        // ============================================================================
+        // 📏 LIMITES DISCORD - TRONCATION INTELLIGENTE (2000 CHARS MAX)
+        // Évite les crashs silencieux en tronquant ET en informant l'agent
+        // ============================================================================
+        const { args: truncatedArgs, truncated, warnings: truncationWarnings, report: truncationReport } =
+          validateAndTruncateEmbed({
+            title: dataToUse.title,
+            description: dataToUse.description,
+            authorName: dataToUse.authorName,
+            footerText: dataToUse.footerText,
+            fields: dataToUse.fields as Array<{ name: string; value: string; inline?: boolean }>,
+          });
+
+        // Appliquer les args tronqués
+        if (truncated) {
+          dataToUse.title = truncatedArgs.title;
+          dataToUse.description = truncatedArgs.description;
+          dataToUse.authorName = truncatedArgs.authorName;
+          dataToUse.footerText = truncatedArgs.footerText;
+          dataToUse.fields = truncatedArgs.fields;
+          Logger.info(`[EMBEDS] 📏 Contenu tronqué: ${truncationWarnings.join(', ')}`);
+        }
 
         // ============================================================================
         // 🔒 SÉCURITÉ CONTENU (CONTENT SAFETY)
@@ -2006,14 +2296,39 @@ export function registerEmbedTools(server: FastMCP) {
               }))
             : undefined;
 
-        const message = await channel.send({
-          content: args.content,
-          embeds: [embed],
-          components: components.length > 0 ? components : undefined,
-          files: attachmentFiles,
-        });
+        // ============================================================================
+        // 📤 ENVOI AVEC RETRY (configuration via botConfig)
+        // ============================================================================
+        let message;
+        let sendError = null;
+        
+        for (let attempt = 1; attempt <= botConfig.maxRetries; attempt++) {
+          try {
+            message = await channel.send({
+              content: args.content,
+              embeds: [embed],
+              components: components.length > 0 ? components : undefined,
+              files: attachmentFiles,
+            });
+            sendError = null;
+            break; // Succès
+          } catch (error: any) {
+            sendError = error;
+            Logger.warn(`[EMBEDS] Tentative ${attempt}/${botConfig.maxRetries} échouée: ${error.message}`);
+            
+            if (attempt < botConfig.maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, botConfig.retryDelay * attempt));
+            }
+          }
+        }
+        
+        if (sendError) {
+          Logger.error(`[EMBEDS] Échec définitif après ${botConfig.maxRetries} tentatives`);
+          throw sendError;
+        }
 
-        Logger.info(`[EMBEDS] Message envoyé avec ID: ${message.id}`);
+        // message est défini ici car on a throw si erreur
+        Logger.info(`[EMBEDS] Message envoyé avec ID: ${message!.id}`);
 
         // Mettre à jour les messageId des boutons embed
         if (args.buttons && args.buttons.length > 0) {
@@ -2029,9 +2344,9 @@ export function registerEmbedTools(server: FastMCP) {
             if (buttonId) {
               const buttonData = buttonsMap.get(buttonId);
               if (buttonData) {
-                buttonData.messageId = message.id;
+                buttonData.messageId = message!.id;
                 buttonsMap.set(buttonId, buttonData);
-                Logger.info(`[EMBEDS] messageId mis à jour pour ${buttonId} -> ${message.id}`);
+                Logger.info(`[EMBEDS] messageId mis à jour pour ${buttonId} -> ${message!.id}`);
               } else {
                 Logger.error(`[EMBEDS] ERREUR: Bouton ${buttonId} non trouvé dans la persistance!`);
               }
@@ -2059,9 +2374,9 @@ export function registerEmbedTools(server: FastMCP) {
           // Trouver et mettre à jour les menus avec TEMP dans leur ID
           for (const [menuId, menuData] of allMenus.entries()) {
             if (menuId.includes('TEMP_') && menuData.channelId === args.channelId) {
-              const newMenuId = menuId.replace('TEMP_', message.id + '_');
+              const newMenuId = menuId.replace('TEMP_', message!.id + '_');
               menuData.id = newMenuId;
-              menuData.messageId = message.id;
+              menuData.messageId = message!.id;
               await upsertPersistentMenu(menuData);
 
               // Supprimer l'ancienne entrée avec TEMP
@@ -2074,7 +2389,7 @@ export function registerEmbedTools(server: FastMCP) {
 
         if (args.autoUpdate?.enabled) {
           autoUpdateEmbeds.set(embedId, {
-            messageId: message.id,
+            messageId: message!.id,
             channelId: args.channelId,
             embedData: args,
             interval: args.autoUpdate.interval || 60,
@@ -2093,13 +2408,18 @@ export function registerEmbedTools(server: FastMCP) {
           });
         }
 
-        let finalMessage = `✅ Embed créé | ID: ${message.id} | EmbedId: ${embedId}`;
+        let finalMessage = `✅ Embed créé | ID: ${message!.id} | EmbedId: ${embedId}`;
         if (args.autoUpdate?.enabled) finalMessage += ' | Auto-update: ON';
         if (args.saveAsTemplate) finalMessage += ` | Template: ${args.saveAsTemplate}`;
 
         // Ajouter les warnings s'il y en a
         if (warnings.length > 0) {
           finalMessage += `\n\n⚠️ AVERTISSEMENTS:\n${warnings.join('\n\n')}`;
+        }
+
+        // 📏 AJOUTER RAPPORT DE TRONCATION SI APPLICABLE
+        if (truncationReport) {
+          finalMessage += `\n\n${truncationReport}`;
         }
 
         return finalMessage;
