@@ -28,13 +28,13 @@ Discord MCP Server est un **pont** entre votre intelligence artificielle et Disc
 
 ### 🌟 Compatible avec TOUS les assistants IA :
 
-- ✅ **Claude Code** (l'outil que vous utilisez maintenant !)
-- ✅ **Google AI Studio** (Gemini)
-- ✅ **Antigravity**
-- ✅ **Gemini CLI**
+- ✅ **Claude Code** / **Claude Desktop**
+- ✅ **Hermes Agent** (Nous Research)
+- ✅ **OpenClaw** / **Kilo Code**
 - ✅ **Cursor AI**
-- ✅ **Kilo Code**
 - ✅ **Cline**
+- ✅ **Gemini CLI** / **Google AI Studio**
+- ✅ **Antigravity**
 - ✅ Et tous les autres assistants supportant MCP !
 
 **En résumé :** Parlez à votre IA, et votre bot Discord exécute. C'est aussi simple que ça ! 🚀
@@ -50,7 +50,7 @@ Avec **50 outils puissants**, vous pouvez faire absolument tout sur Discord :
 
 ---
 
-## 🛠️ Fonctionnalités (50 Outils)
+## 🛠️ Fonctionnalités (40+ Outils)
 
 <details>
 <summary>💬 Gestion des Messages & Réactions (5 outils)</summary>
@@ -162,26 +162,28 @@ Avec **50 outils puissants**, vous pouvez faire absolument tout sur Discord :
 
 ## 🚀 Démarrage Rapide
 
-### Prérequis
+### Option 1: Installation npm globale (recommandé)
 
-- [Node.js](https://nodejs.org/) (v16 ou plus)
-- [npm](https://www.npmjs.com/) (v8 ou plus)
-- Un bot Discord ([créer ici](https://discord.com/developers/applications))
+```bash
+# Installation globale
+npm install -g discord-mcp-server
 
-### Installation
+# Build
+npm run build
+
+# Démarrer
+npm start
+```
+
+### Option 2: Installation depuis les sources
 
 ```bash
 # Cloner le projet
-
 git clone https://github.com/DeamonDev888/-Serveur-Discord-MCP.git
 cd -Serveur-Discord-MCP
 
 # Installer les dépendances
 npm install
-
-# Configurer le bot
-cp .env.example .env
-# Éditer .env avec votre token Discord
 
 # Compiler le projet TypeScript
 npm run build
@@ -194,6 +196,25 @@ npm start
 
 ## ⚙️ Configuration
 
+### Option 1: Installation npm globale (recommandé)
+
+```bash
+npm install -g discord-mcp-server
+```
+
+Après installation, le serveur est disponible globalement et vous n'avez plus besoin de cloner le repo.
+
+### Option 2: Installation depuis les sources
+
+```bash
+git clone https://github.com/DeamonDev888/-Serveur-Discord-MCP.git
+cd -Serveur-Discord-MCP
+npm install
+npm run build
+```
+
+---
+
 ### Variables d'environnement
 
 Créez un fichier `.env` :
@@ -201,24 +222,43 @@ Créez un fichier `.env` :
 ```env
 # Token Discord du bot (obligatoire)
 DISCORD_TOKEN=votre_token_ici
+
+# Client ID Discord (optionnel)
+DISCORD_CLIENT_ID=votre_client_id_ici
+
+# Guild ID pour les opérations de serveur (optionnel)
+DISCORD_GUILD_ID=votre_guild_id_ici
 ```
 
-### Configuration .mcp.json
+### Configuration MCP (.mcp.json)
 
-Ajoutez à votre configuration MCP :
+Ajoutez à votre configuration MCP (globale ou par projet) :
 
+**Windows:**
 ```json
 {
   "mcpServers": {
-    "discord-server": {
+    "discord": {
       "command": "node",
-      "args": ["CHEMIN_VERS_VOTRE_PROJET\\serveur_discord\\dist\\index.js"]
+      "args": ["C:\\Users\\VOTRE_USER\\AppData\\Roaming\\npm\\node_modules\\discord-mcp-server\\dist\\index.js"]
     }
   }
 }
 ```
 
-> ⚠️ **Important**: Remplacez `CHEMIN_VERS_VOTRE_PROJET` par le chemin absolu vers votre installation
+**macOS/Linux:**
+```json
+{
+  "mcpServers": {
+    "discord": {
+      "command": "node",
+      "args": ["/usr/local/lib/node_modules/discord-mcp-server/dist/index.js"]
+    }
+  }
+}
+```
+
+> 💡 Avec l'installation npm globale, le chemin reste le même après chaque mise à jour !
 
 ---
 
