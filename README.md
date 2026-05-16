@@ -186,7 +186,7 @@ Le serveur Discord MCP offre **10 outils unifiés** avec actions Enum pour une m
 
 ```bash
 # Installation globale
-npm install -g discord-mcp-server
+npm install -g discord-mcp-pro
 
 # Build
 npm run build
@@ -219,7 +219,7 @@ npm start
 ### Option 1: Installation npm globale (recommandé)
 
 ```bash
-npm install -g discord-mcp-server
+npm install -g discord-mcp-pro
 ```
 
 Après installation, le serveur est disponible globalement et vous n'avez plus besoin de cloner le repo.
@@ -260,7 +260,7 @@ Ajoutez à votre configuration MCP (globale ou par projet) :
   "mcpServers": {
     "discord": {
       "command": "node",
-      "args": ["C:\\Users\\VOTRE_USER\\AppData\\Roaming\\npm\\node_modules\\discord-mcp-server\\dist\\index.js"]
+      "args": ["C:\\Users\\VOTRE_USER\\AppData\\Roaming\\npm\\node_modules\\discord-mcp-pro\\dist\\index.js"]
     }
   }
 }
@@ -272,7 +272,7 @@ Ajoutez à votre configuration MCP (globale ou par projet) :
   "mcpServers": {
     "discord": {
       "command": "node",
-      "args": ["/usr/local/lib/node_modules/discord-mcp-server/dist/index.js"]
+      "args": ["/usr/local/lib/node_modules/discord-mcp-pro/dist/index.js"]
     }
   }
 }
@@ -376,9 +376,9 @@ Les contributions sont les bienvenues ! N'hésitez pas à :
 
 **Made with ❤️ by DeaMoN888**
 
-[![GitHub stars](https://img.shields.io/github/stars/yourusername/discord-mcp-server?style=social)](https://github.com/yourusername/discord-mcp-server)
-[![GitHub forks](https://img.shields.io/github/forks/yourusername/discord-mcp-server?style=social)](https://github.com/yourusername/discord-mcp-server)
-[![GitHub license](https://img.shields.io/github/license/yourusername/discord-mcp-server)](https://github.com/yourusername/discord-mcp-server)
+[![GitHub stars](https://img.shields.io/github/stars/yourusername/discord-mcp-server?style=social)](https://github.com/DeamonDev888/-Serveur-Discord-MCP)
+[![GitHub forks](https://img.shields.io/github/forks/yourusername/discord-mcp-server?style=social)](https://github.com/DeamonDev888/-Serveur-Discord-MCP)
+[![GitHub license](https://img.shields.io/github/license/yourusername/discord-mcp-server)](https://github.com/DeamonDev888/-Serveur-Discord-MCP)
 
 </div>
 
