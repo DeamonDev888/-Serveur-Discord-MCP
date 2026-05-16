@@ -39,124 +39,144 @@ Discord MCP Server est un **pont** entre votre intelligence artificielle et Disc
 
 **En résumé :** Parlez à votre IA, et votre bot Discord exécute. C'est aussi simple que ça ! 🚀
 
-Avec **50 outils puissants**, vous pouvez faire absolument tout sur Discord :
+Avec **10 outils unifiés** avec actions Enum, vous pouvez faire absolument tout sur Discord :
 
 - Envoyer des messages
 - Créer des sondages interactifs, menus et boutons
 - Gérer votre serveur (Membres, Rôles, Canaux)
 - Et bien plus encore !
 
-👉 **[Consulter la liste complète des 50 outils ici](./docs/LISTE_OUTILS.md)**
+👉 **[Consulter la documentation des 10 outils ici](#-fonctionnalités-10-outils-unifiés)**
 
 ---
 
-## 🛠️ Fonctionnalités (40+ Outils)
+## 🛠️ Fonctionnalités (10 Outils Unifiés)
+
+Le serveur Discord MCP offre **10 outils unifiés** avec actions Enum pour une meilleure organisation :
 
 <details>
-<summary>💬 Gestion des Messages & Réactions (5 outils)</summary>
+<summary>📁 file — Upload / Download de fichiers</summary>
 
-| Outil               | Description                          |
-| ------------------- | ------------------------------------ |
-| **envoyer_message** | Envoie un message texte simple       |
-| **read_messages**   | Lit l'historique d'un canal          |
-| **edit_message**    | Modifie un message envoyé par le bot |
-| **delete_message**  | Supprime un message spécifique       |
-| **add_reaction**    | Ajoute une réaction emoji            |
+| Action | Description |
+|--------|-------------|
+| **upload** | Upload un fichier vers Discord (retourne URL CDN) |
+| **download** | Télécharge un fichier Discord en local |
 
 </details>
 
 <details>
-<summary>🖼️ Embeds Riches & Édition (7 outils)</summary>
+<summary>💬 message — Gestion des messages</summary>
 
-| Outil                       | Description                                |
-| --------------------------- | ------------------------------------------ |
-| **creer_embed**             | Création d'embeds avec thèmes et boutons   |
-| **list_embeds**             | Scanne un canal pour lister les embeds     |
-| **get_embed_details**       | Récupère la structure JSON pour édition    |
-| **update_embed**            | Modification dynamique d'un embed existant |
-| **get_embed_analytics**     | Statistiques d'interaction                 |
-| **list_auto_update_embeds** | Liste les embeds à mise à jour auto        |
-| **stop_embed_auto_update**  | Arrête le cycle de mise à jour             |
+| Action | Description |
+|--------|-------------|
+| **send** | Envoie un message texte |
+| **edit** | Modifie un message existant |
+| **delete** | Supprime un message |
+| **read** | Lit l'historique d'un canal |
+| **react** | Ajoute une réaction emoji |
 
 </details>
 
 <details>
-<summary>🔘 Interactions & Sondages (7 outils)</summary>
+<summary>🖼️ embed — Embeds Riches</summary>
 
-| Outil                           | Description                                   |
-| ------------------------------- | --------------------------------------------- |
-| **create_button**               | Crée un bouton interactif simple              |
-| **create_menu**                 | Crée un menu déroulant                        |
-| **create_poll**                 | Génère un sondage interactif avec persistance |
-| **enregistrer_fonction_bouton** | Lie un script JS à un bouton                  |
-| **attacher_fonction_embed**     | Lie un script à un bouton d'embed             |
-| **lister_fonctions_boutons**    | Affiche tous les scripts enregistrés          |
-| **supprimer_fonction_bouton**   | Supprime le script d'un bouton                |
+| Action | Description |
+|--------|-------------|
+| **create** | Crée un embed avec thèmes, boutons, menus |
+| **list** | Liste les embeds d'un canal |
+| **get** | Récupère les détails d'un embed |
+| **update** | Met à jour un embed existant |
 
 </details>
 
 <details>
-<summary>👥 Membres & Modération (11 outils)</summary>
+<summary>📝 channel — Canaux</summary>
 
-| Outil                       | Description                            |
-| --------------------------- | -------------------------------------- |
-| **list_members**            | Liste les membres avec filtres         |
-| **get_user_info**           | Détails complets du profil utilisateur |
-| **kick_member**             | Expulse un membre                      |
-| **ban_member**              | Bannit un membre (avec raison)         |
-| **unban_member**            | Débannit un utilisateur                |
-| **timeout_member**          | Applique une sourdine temporaire       |
-| **remove_timeout**          | Retire le time-out d'un membre         |
-| **warn_member**             | Enregistre un avertissement            |
-| **move_member**             | Déplace un membre vers un salon vocal  |
-| **add_role_to_member**      | Assigne un rôle à un utilisateur       |
-| **remove_role_from_member** | Retire un rôle d'un utilisateur        |
+| Action | Description |
+|--------|-------------|
+| **list** | Liste les canaux |
+| **create** | Crée un canal |
+| **edit** | Modifie un canal |
+| **delete** | Supprime un canal |
+| **permissions** | Gère les permissions |
 
 </details>
 
 <details>
-<summary>🏷️ Rôles & Canaux (10 outils)</summary>
+<summary>🏷️ role — Rôles</summary>
 
-| Outil                       | Description                         |
-| --------------------------- | ----------------------------------- |
-| **list_roles**              | Liste tous les rôles et permissions |
-| **create_role**             | Crée un nouveau rôle                |
-| **edit_role**               | Modifie un rôle existant            |
-| **delete_role**             | Supprime un rôle                    |
-| **set_role_permissions**    | Définit massivement les permissions |
-| **list_channels**           | Liste les salons et catégories      |
-| **create_channel**          | Crée un nouveau salon               |
-| **edit_channel**            | Modifie un salon existant           |
-| **delete_channel**          | Supprime un salon                   |
-| **set_channel_permissions** | Configure les accès par rôle        |
+| Action | Description |
+|--------|-------------|
+| **list** | Liste les rôles |
+| **create** | Crée un rôle |
+| **edit** | Modifie un rôle |
+| **delete** | Supprime un rôle |
+| **permissions** | Gère les permissions |
 
 </details>
 
 <details>
-<summary>📸 Images & Fichiers (3 outils)</summary>
+<summary>👥 member — Membres</summary>
 
-| Outil                   | Description                                |
-| ----------------------- | ------------------------------------------ |
-| **list_images**         | Recherche de logos et photos HD (Unsplash) |
-| **uploader_fichier**    | Envoie un fichier local vers Discord       |
-| **telecharger_fichier** | Télécharge un fichier Discord en local     |
+| Action | Description |
+|--------|-------------|
+| **list** | Liste les membres |
+| **get** | Info utilisateur |
+| **kick** | Expulse un membre |
+| **ban** | Ban un membre |
+| **unban** | Débannit |
+| **timeout** | Timeout temporaire |
+| **warn** | Avertissement |
+| **move** | Déplace en vocal |
+| **role** | Ajoute/retire rôle |
 
 </details>
 
 <details>
-<summary>💻 Système & Webhooks (7 outils)</summary>
+<summary>📊 poll — Sondages</summary>
 
-| Outil               | Description                                |
-| ------------------- | ------------------------------------------ |
-| **get_server_info** | Statistiques globales de la guilde         |
-| **statut_bot**      | Santé, uptime et latence du bot            |
-| **logs_explorer**   | Consultation des logs du serveur           |
-| **code_preview**    | Affiche du code avec coloration syntaxique |
-| **create_webhook**  | Crée un webhook sur un canal               |
-| **list_webhooks**   | Liste les webhooks d'un canal              |
-| **send_webhook**    | Envoie un message via webhook              |
+| Action | Description |
+|--------|-------------|
+| **create** | Crée un sondage interactif |
+| **list** | Liste les sondages |
+| **get** | Détails d'un sondage |
+| **stop** | Arrête un sondage |
 
 </details>
+
+<details>
+<summary>🔘 button — Boutons</summary>
+
+| Action | Description |
+|--------|-------------|
+| **create** | Crée un bouton |
+| **register** | Lie une fonction JS |
+| **list** | Liste les fonctions |
+| **delete** | Supprime une fonction |
+
+</details>
+
+<details>
+<summary>📋 menu — Menus déroulants</summary>
+
+| Action | Description |
+|--------|-------------|
+| **create** | Crée un menu |
+| **delete** | Supprime un menu |
+
+</details>
+
+<details>
+<summary>🖥️ server — Serveur</summary>
+
+| Action | Description |
+|--------|-------------|
+| **info** | Info serveur |
+| **webhook** | Gère les webhooks |
+
+</details>
+
+> 💡 Chaque outil accepte une action `action: 'list' | 'create' | 'edit' | 'delete' | 'get'` etc. selon l'outil.
 
 ---
 

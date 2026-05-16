@@ -649,12 +649,14 @@ async function executeChannelTool(args: z.infer<typeof ChannelParamsSchema>): Pr
       if (!channelId || !permissions) return '❌ channelId + permissions requis';
       const channel = await guild.channels.fetch(channelId);
       if (!channel) return `❌ Canal ${channelId} introuvable`;
-      
+
       for (const perm of permissions) {
         const overwriteData: any = {};
         if (perm.allow) overwriteData.allow = perm.allow;
         if (perm.deny) overwriteData.deny = perm.deny;
-        await channel.permissionOverwrites.create(perm.id, overwriteData);
+        if ('permissionOverwrites' in channel) {
+          await (channel as any).permissionOverwrites.create(perm.id, overwriteData);
+        }
       }
       return `✅ Permissions mises à jour`;
     }
