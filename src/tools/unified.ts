@@ -649,12 +649,14 @@ async function executeChannelTool(args: z.infer<typeof ChannelParamsSchema>): Pr
       if (!channelId || !permissions) return '❌ channelId + permissions requis';
       const channel = await guild.channels.fetch(channelId);
       if (!channel) return `❌ Canal ${channelId} introuvable`;
-      
+
       for (const perm of permissions) {
         const overwriteData: any = {};
         if (perm.allow) overwriteData.allow = perm.allow;
         if (perm.deny) overwriteData.deny = perm.deny;
-        await channel.permissionOverwrites.create(perm.id, overwriteData);
+        if ('permissionOverwrites' in channel) {
+          await (channel as any).permissionOverwrites.create(perm.id, overwriteData);
+        }
       }
       return `✅ Permissions mises à jour`;
     }
@@ -793,8 +795,9 @@ async function executeMemberTool(args: z.infer<typeof MemberParamsSchema>): Prom
       if (!userId || !channelId) return '❌ userId + channelId requis pour move';
       const member = await guild.members.fetch(userId);
       const channel = await client.channels.fetch(channelId);
-      await member.voice.setChannel(channel);
-      return `✅ ${member.displayName} déplacé vers ${channel.name}`;
+      if (!channel || !('voice' in channel)) return '❌ Canal vocal introuvable';
+      await member.voice.setChannel(channel as any);
+      return `✅ ${member.displayName} déplacé vers ${('name' in channel) ? channel.name : channelId}`;
     }
     
     case 'timeout': {
