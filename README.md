@@ -180,64 +180,17 @@ Le serveur Discord MCP offre **10 outils unifiés** avec actions Enum pour une m
 
 ---
 
-## 🚀 Démarrage Rapide
-
-### Option 1: Installation npm globale (recommandé)
-
-```bash
-# Installation globale
-npm install -g discord-mcp-pro
-
-# Build
-npm run build
-
-# Démarrer
-npm start
-```
-
-### Option 2: Installation depuis les sources
-
-```bash
-# Cloner le projet
-git clone https://github.com/DeamonDev888/-Serveur-Discord-MCP.git
-cd -Serveur-Discord-MCP
-
-# Installer les dépendances
-npm install
-
-# Compiler le projet TypeScript
-npm run build
-
-# Démarrer le serveur
-npm start
-```
-
----
-
 ## ⚙️ Configuration
 
-### Option 1: Installation npm globale (recommandé)
+### 1. Installation globale
 
 ```bash
 npm install -g discord-mcp-pro
 ```
 
-Après installation, le serveur est disponible globalement et vous n'avez plus besoin de cloner le repo.
+### 2. Variables d'environnement
 
-### Option 2: Installation depuis les sources
-
-```bash
-git clone https://github.com/DeamonDev888/-Serveur-Discord-MCP.git
-cd -Serveur-Discord-MCP
-npm install
-npm run build
-```
-
----
-
-### Variables d'environnement
-
-Créez un fichier `.env` :
+Créez un fichier `.env` à la racine :
 
 ```env
 # Token Discord du bot (obligatoire)
@@ -250,7 +203,7 @@ DISCORD_CLIENT_ID=votre_client_id_ici
 DISCORD_GUILD_ID=votre_guild_id_ici
 ```
 
-### Configuration MCP (.mcp.json)
+### 3. Configuration MCP (.mcp.json)
 
 Ajoutez à votre configuration MCP (globale ou par projet) :
 
