@@ -5,37 +5,92 @@ import { Client, EmbedBuilder } from 'discord.js';
 import { config } from 'dotenv';
 import * as fs from 'fs';
 import { DiscordBridge } from './discord-bridge.js';
-import Logger from './utils/logger.js';
+import { serverLogger, logger } from './logger.js';
 
 // ============================================================================
-// 🛡️ PROTECTION DU PROTOCOLE MCP & GESTION DES ERREURS
+// 🛡️ ULTIMATE SHIELD - PROTECTION DU PROTOCOLE MCP (v2.0)
 // ============================================================================
+const originalStdoutWrite = process.stdout.write.bind(process.stdout);
 
+// @ts-ignore
+process.stdout.write = (chunk: any, encoding?: any, callback?: any) => {
+  const str = typeof chunk === "string" ? chunk : chunk.toString();
+  const trimmed = str.trim();
+
+  // Allow JSON-RPC (starts with {) and empty/newline chunks
+  if (trimmed.startsWith("{") || trimmed.startsWith("[") || trimmed === "") {
+    // Additional safety: block arrays as they cause ZodError in most MCP SDKs
+    if (trimmed.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          serverLogger.warn({ raw: str }, "🛡️ [SHIELD] Blocked array-as-JSON-RPC on stdout");
+          return process.stderr.write(chunk, encoding as BufferEncoding, callback);
+        }
+      } catch (err) {
+        // Not valid JSON, redirect to stderr
+        return process.stderr.write(chunk, encoding as BufferEncoding, callback);
+      }
+    }
+    return originalStdoutWrite(chunk, encoding as BufferEncoding, callback);
+  }
+
+  // Redirect everything else to stderr
+  return process.stderr.write(chunk, encoding as BufferEncoding, callback);
+};
+
+// Redirection globale des console.* vers stderr (via pino) pour double protection
 console.log = (...args) => {
-  // Logger.info utilise process.stderr, donc c'est sûr pour le protocole MCP.
-  // Le préfixe [STDOUT-REDIRECT] permet d'identifier l'origine du log.
-  Logger.info('[STDOUT-REDIRECT]', ...args);
+  serverLogger.debug({ args }, "[STDOUT-REDIRECT]");
 };
 
 console.error = (...args) => {
-  Logger.error('[STDERR-REDIRECT]', ...args);
+  // Capture l'erreur pour analyse
+  const errorMsg = args.map(arg => 
+    typeof arg === 'string' ? arg : JSON.stringify(arg, null, 2)
+  ).join(' ');
+
+  // 🛡️ DÉTECTION DES ERREURS DE TRANSPORT (Zod Handshake Errors)
+  if (
+    errorMsg.includes('ZodError') && 
+    (errorMsg.includes('method') || errorMsg.includes('unrecognized_keys') || errorMsg.includes('invalid_type') || errorMsg.includes('invalid_union'))
+  ) {
+    serverLogger.debug({ 
+      context: "FastMCP_Transport_Handshake",
+      message: "Ignored transport noise (Zod Handshake Error)"
+    }, "🛡️ [SHIELD] Filtered transport noise");
+    return;
+  }
+
+  // 📉 GESTION DU BRUIT (Faux positifs console.error des scrapers)
+  const isActuallyError = /exception|fail|fatal|critical|reject|timeout/i.test(errorMsg) && !/ZodError/i.test(errorMsg);
+  const isStatusNoise = /found|navigating to|scraping content|initialized|started|ZodError|FastMCP|waiting|loading|fetching/i.test(errorMsg);
+
+  if (isStatusNoise && !isActuallyError) {
+    serverLogger.info({ args }, "[STDERR-REDIRECT] Captured operational status");
+  } else if (!isActuallyError) {
+    serverLogger.warn({ args }, "[STDERR-REDIRECT] Captured unknown stderr");
+  } else {
+    serverLogger.error({ args }, "[STDERR-REDIRECT] Captured actual console.error");
+  }
 };
 
-// 2. Gestionnaires d'erreurs globaux
-// Pour éviter que le processus ne crashe silencieusement sur une exception non gérée,
-// ce qui causerait une erreur "EOF" immédiate côté client MCP.
-process.on('uncaughtException', error => {
-  Logger.error('🔥 CRITIQUE: Exception non gérée (Uncaught Exception):', error);
-  // En production, on pourrait vouloir quitter, mais en dev/debug on essaie de survivre
-  // pour voir les logs.
-});
+// 2. Gestionnaires d'erreurs globaux robustes
+function setupGlobalErrorHandlers() {
+  process.on("uncaughtException", (err) => {
+    if ((err as any)?.code === "EPIPE" || (err as any)?.syscall === "write") return;
+    serverLogger.fatal({ err }, "🚨 UNCAUGHT EXCEPTION");
+  });
 
-process.on('unhandledRejection', (reason, _promise) => {
-  // Ignorer les erreurs EPIPE (stderr cassé) pour éviter les boucles infinies
-  if ((reason as any)?.code === 'EPIPE') return;
-  Logger.error('🔥 CRITIQUE: Promesse rejetée non gérée (Unhandled Rejection):', reason);
-});
+  process.on("unhandledRejection", (reason) => {
+    if ((reason as any)?.code === "EPIPE") return;
+    serverLogger.error({ reason }, "❌ UNHANDLED REJECTION");
+  });
 
+  process.on("SIGPIPE", () => {});
+}
+
+setupGlobalErrorHandlers();
 // ============================================================================
 
 // Imports des utilitaires de logos
@@ -56,7 +111,7 @@ import { fileURLToPath } from 'url';
 // Outil unifié pour le serveur
 const server = new FastMCP({
   name: 'discord-mcp-server',
-  version: '2.0.0',
+  version: '2.1.3',
 });
 
 // Outils unifiés principaux
@@ -64,6 +119,7 @@ import { registerMemberTools } from './tools/members.js';
 import { registerRoleTools } from './tools/roles.js';
 import { registerChannelTools } from './tools/channels.js';
 import { registerInteractionTools } from './tools/interactions.js';
+import { registerUnifiedTools } from './tools/unified.js';
 
 // Outils existants conservés
 import { registerEmbedTools } from './tools/embeds.js';
@@ -108,7 +164,7 @@ function findEnvPath(): string {
 }
 
 const envPath = findEnvPath();
-Logger.debug(`📂 Chargement .env depuis: ${envPath}`);
+serverLogger.debug({ envPath }, '📂 Loading environment');
 config({ path: envPath });
 
 // Configuration
@@ -122,11 +178,17 @@ const botConfig = {
 };
 
 // Debug: Afficher les variables d'environnement au démarrage
-// Logger.error('🔍 Debug ENV:');
-//   : 'NON DÉFINI/DEFAULT';
-// Logger.error(`  Token Status: ${tokenPreview}`);
-// Logger.error('  DISCORD_BOT_TOKEN:', process.env.DISCORD_BOT_TOKEN ? '✅ Présent' : '❌ Absent');
-// Logger.error('  NODE_ENV:', process.env.NODE_ENV);
+const token = botConfig.token;
+const tokenStatus = token && token !== 'YOUR_BOT_TOKEN' 
+  ? `✅ Present (${token.substring(0, 5)}...${token.substring(token.length - 5)})` 
+  : '❌ Absent or default';
+
+serverLogger.info({
+  tokenStatus,
+  guildId: botConfig.guildId !== 'YOUR_GUILD_ID' ? 'SET' : 'MISSING',
+  adminUserId: botConfig.adminUserId,
+  environment: botConfig.environment
+}, '🔍 Environment Initialization');
 
 // Initialisation du serveur MCP
 // (Déjà fait plus haut)
@@ -172,23 +234,22 @@ async function updateEmbed(embedId: string): Promise<void> {
   if (!embedInfo) return;
 
   try {
-    Logger.info(`🔄 [Auto-Update] Mise à jour embed ${embedId} (${embedInfo.updateCount + 1})`);
+    serverLogger.info({ embedId, updateCount: embedInfo.updateCount + 1 }, '🔄 [Auto-Update] Updating embed');
 
-    // Récupérer le client
     const client = await ensureDiscordConnection();
     const channel = await client.channels.fetch(embedInfo.channelId);
 
     if (!channel || !('messages' in channel)) {
-      Logger.error(`❌ [Auto-Update] Canal ${embedInfo.channelId} invalide`);
+      serverLogger.error({ channelId: embedInfo.channelId }, '❌ [Auto-Update] Invalid channel');
       autoUpdateEmbeds.delete(embedId);
       return;
     }
 
     // Récupérer le message
-    const message = await channel.messages.fetch(embedInfo.messageId);
+    const message = await (channel as any).messages.fetch(embedInfo.messageId);
 
     if (!message) {
-      Logger.error(`❌ [Auto-Update] Message ${embedInfo.messageId} introuvable`);
+      serverLogger.error({ messageId: embedInfo.messageId }, '❌ [Auto-Update] Message not found');
       autoUpdateEmbeds.delete(embedId);
       return;
     }
@@ -277,9 +338,9 @@ async function updateEmbed(embedId: string): Promise<void> {
     embedInfo.lastUpdate = Date.now();
     embedInfo.updateCount++;
 
-    Logger.info(`✅ [Auto-Update] Embed ${embedId} mis à jour (${embedInfo.updateCount} fois)`);
-  } catch (error) {
-    Logger.error(`❌ [Auto-Update] Erreur pour ${embedId}:`, error);
+    serverLogger.info({ embedId, updateCount: embedInfo.updateCount }, '✅ [Auto-Update] Embed updated');
+  } catch (err) {
+    serverLogger.error({ err, embedId }, '❌ [Auto-Update] Update failed');
   }
 }
 
@@ -318,8 +379,8 @@ function saveStateToFile() {
       };
       await fs.promises.writeFile(STATUS_FILE, JSON.stringify(state, null, 2));
       // Logger.debug('💾 État sauvegardé (async):', state);
-    } catch {
-      // Logger.error('❌ Erreur sauvegarde async:', error);
+    } catch (err) {
+      serverLogger.error({ err }, '❌ Async save error');
     }
   }, 2000);
 }
@@ -659,7 +720,7 @@ function replaceVariables(text: string, variables: Record<string, string> = {}):
 // ============================================================================
 
 async function cleanup() {
-  Logger.error('\n🧹 Nettoyage...');
+  serverLogger.info('🧹 Cleanup in progress...');
   try {
     // Nettoyer le timer de sauvegarde
     if (saveTimeout) {
@@ -675,43 +736,39 @@ async function cleanup() {
     // Nettoyer la map de rate limiting
     // rateLimitMap.clear();
 
-    Logger.info('✅ Nettoyage terminé');
-  } catch (e) {
-    Logger.error('Erreur nettoyage:', e);
+    serverLogger.info('✅ Cleanup complete');
+  } catch (err) {
+    serverLogger.error({ err }, '❌ Cleanup error');
   }
 }
 
 process.on('SIGINT', async () => {
-  Logger.error('\nSignal SIGINT reçu');
+  serverLogger.info('🛑 SIGINT received');
   await cleanup();
+  logger.flush();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
-  Logger.error('\nSignal SIGTERM reçu');
-  Logger.warn('\nSignal SIGTERM reçu');
+  serverLogger.info('🛑 SIGTERM received');
   await cleanup();
+  logger.flush();
   process.exit(0);
 });
 
-// Gestion des erreurs non capturées pour éviter les crashes
-process.on('uncaughtException', error => {
-  // Ignorer les erreurs EPIPE (stderr cassé) pour éviter les boucles infinies
-  if ((error as any)?.code === 'EPIPE') return;
-  Logger.error('❌ Erreur non capturée:', error);
-  Logger.error('Stack trace:', error.stack);
-  // Ne pas quitter, laisser le serveur continuer
-});
+// Les gestionnaires globaux sont déjà définis au début du fichier.
 
-// Limite de mémoire pour éviter les freezes
+// Limite de mémoire pour éviter les freezes - Check périodique
 const MEMORY_LIMIT = 512 * 1024 * 1024; // 512 MB
-if (process.memoryUsage().heapUsed > MEMORY_LIMIT) {
-  Logger.error('⚠️ Limite de mémoire atteinte:', process.memoryUsage());
-  // Forcer le garbage collection si disponible
-  if ((global as any).gc) {
-    (global as any).gc();
+setInterval(() => {
+  const mem = process.memoryUsage();
+  if (mem.heapUsed > MEMORY_LIMIT) {
+    serverLogger.warn({ mem }, '⚠️ Memory limit reached');
+    if ((global as any).gc) {
+      (global as any).gc();
+    }
   }
-}
+}, 60000); // Check toutes les minutes
 
 // ============================================================================
 // GESTIONNAIRE D'INTERACTIONS
@@ -724,6 +781,7 @@ if (process.memoryUsage().heapUsed > MEMORY_LIMIT) {
 // ============================================================================
 
 // Outils unifiés (remplacent plusieurs anciens fichiers)
+registerUnifiedTools(server); // ⭐ 10 outils unifiés (FILE, MESSAGE, EMBED, CHANNEL, ROLE, MEMBER, POLL, BUTTON, MENU, SERVER)
 registerMemberTools(server); // 11 outils (membres + modération)
 registerRoleTools(server); // 5 outils (rôles)
 registerChannelTools(server); // 5 outils (canaux)
@@ -744,40 +802,58 @@ registerFileUploadTools(server);
 registerFileDownloadTools(server);
 
 // ============================================================================
+// OUTIL DE RÉINITIALISATION 🔄
+// ============================================================================
+
+server.addTool({
+  name: 'reset_discord_connection',
+  description: 'Réinitialise le circuit-breaker du token et force une nouvelle tentative de connexion Discord.',
+  execute: async () => {
+    serverLogger.warn('🔄 [MCP] Discord connection reset requested');
+    const bridge = DiscordBridge.getInstance(botConfig.token);
+    bridge.resetTokenInvalid();
+    
+    try {
+      await ensureDiscordConnection();
+      return {
+        content: [{ type: 'text', text: '✅ Discord connection reset and re-established successfully.' }],
+      };
+    } catch (err: any) {
+      serverLogger.error({ err }, '❌ Reset failed');
+      return {
+        isError: true,
+        content: [{ type: 'text', text: `❌ Reset failed: ${err.message}` }],
+      };
+    }
+  },
+});
+
+// ============================================================================
 // FONCTION PRINCIPALE
 // ============================================================================
 
 async function main() {
-  Logger.info('🚀 Préparation Discord MCP v2.1.2...');
+  serverLogger.info({ version: '2.1.3' }, '🚀 Preparing Discord MCP');
 
   try {
-    // 1. Initialiser la connexion Discord AVANT de démarrer le serveur MCP
-    // Cela permet aux outils d'avoir un client prêt immédiatement
-    try {
-      Logger.info('🔗 Connexion à Discord...');
-      await ensureDiscordConnection();
-      Logger.info('✅ Client Discord prêt');
-    } catch (error) {
-      Logger.warn(
-        '⚠️ Échec connexion Discord initiale (sera réessayé au premier appel):',
-        (error as Error).message
-      );
-    }
+    serverLogger.info({
+      name: 'discord-mcp-server',
+      version: '2.1.3',
+      tools: 88,
+      env: botConfig.environment
+    }, '📊 Status');
 
-    Logger.info('📊 Status:');
-    Logger.info(`   • Nom: discord-mcp-server`);
-    Logger.info(`   • Version: 2.1.2`);
-    Logger.info(`   • Outils: 88 enregistrés`);
-    Logger.info(`   • Environment: ${botConfig.environment}`);
+    serverLogger.info('🚀 Starting MCP Server (STDIO)...');
 
-    // 2. Démarrer le serveur MCP (Ceci est bloquant en mode STDIO)
-    Logger.info('🚀 Démarrage du serveur MCP (STDIO)...');
+    ensureDiscordConnection()
+      .then(() => serverLogger.info('✅ Discord Client Ready'))
+      .catch((err) => serverLogger.warn({ err }, '⚠️ Initial Discord connection failed (will retry)'));
+
     await server.start();
 
-    // Si on arrive ici, c'est que le serveur s'est arrêté proprement
-    Logger.info('👋 Serveur MCP arrêté');
-  } catch (error) {
-    Logger.error('❌ Erreur fatale au démarrage:', error);
+    serverLogger.info('👋 MCP Server stopped');
+  } catch (err) {
+    serverLogger.fatal({ err }, '❌ FATAL ERROR ON STARTUP');
     await cleanup();
     process.exit(1);
   }

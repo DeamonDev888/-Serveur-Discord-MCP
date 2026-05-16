@@ -34,6 +34,13 @@ export const botConfig = {
   activity: 'MCP Server v2.0 - 88 outils complets',
   adminUserId: process.env.ADMIN_USER_ID || 'YOUR_ADMIN_USER_ID',
   environment: process.env.NODE_ENV || 'development',
+  
+  // Canaux spéciaux
+  sentinelChannelId: process.env.SENTINEL_CHANNEL_ID || '1460428956518846466', // Canal Sentinel (alertes capitulation)
+  
+  // Configuration retry
+  maxRetries: 3,
+  retryDelay: 1000, // ms
 };
 
 export default botConfig;

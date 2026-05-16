@@ -11,7 +11,7 @@
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "start:bridge": "node scripts/start.js",
-    "check": "node -e \"import('./src/config.js').then(m=>console.log('Configuration OK')).catch(e=>{console.error('Configuration:',e.message);process.exit(1)})\"",
+    "check": "npx tsx -e \"import('./src/config.ts').then(m=>console.log('Configuration OK')).catch(e=>{console.error('Configuration:',e.message);process.exit(1)})\"",
     "clean": "node -e \"import fs from 'node:fs'; if(fs.existsSync('dist')) fs.rmSync('dist',{recursive:true}); const files=fs.readdirSync('.').filter(f=>f.endsWith('.log')); files.forEach(f=>fs.unlinkSync(f)); console.log('Cleaned')\"",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts",
@@ -34,6 +34,9 @@
     "discord.js": "^14.17.3",
     "dotenv": "^16.3.1",
     "fastmcp": "^3.29.0",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
+    "pino-roll": "^2.2.0",
     "sharp": "^0.34.5",
     "zod": "^3.22.4"
   },

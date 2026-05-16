@@ -357,8 +357,86 @@ export function parseTable(tableText: string): string {
   return tableText;
 }
 
+// ============================================================================
+// GUIDANCE MESSAGES - Images dans les embeds Discord
+// ============================================================================
+
+// Les 4 positions d'images dans un embed Discord:
+// ┌──────────────────────────────────────────────┐
+// │ [authorIcon 16x16]  authorName                │ ← authorIcon (haut-gauche, minuscule)
+// │                                              │
+// │  description                                 │
+// │                                              │
+// │  ┌─────────┐                                 │
+// │  │thumbnail│  field: value                  │ ← thumbnail (haut-droite, ~80x80)
+// │  │ 80x80   │                                 │
+// │  └─────────┘                                 │
+// │                                              │
+// │  field: value                                │
+// │                                              │
+// │  [footerIcon 16x16] footerText               │ ← footerIcon (bas-gauche, minuscule)
+// │                    ┌────────────────────┐   │
+// │                    │      image          │   │ ← image (bas, grande, ~400x250)
+// │                    │    400x250 max      │   │
+// │                    └────────────────────┘   │
+// └──────────────────────────────────────────────┘
+//
+// ⚠️  authorIcon et footerIcon = TRÈS PETIT (16x16 Discord) - icônes uniquement
+// ⚠️  thumbnail = PETIT (80x80) - logos, avatars
+// ⚠️  image = GRAND (400x250) - illustrations, screenshots
+
+/**
+ * Position          | Taille Discord    | Usage idéal
+ * ------------------|------------------|---------------------------
+ * authorIcon         | 16x16px (TRÈS petit) | Logos tiny, avatars mini
+ * thumbnail          | 80x80px (petit)      | Logos, avatars, badges
+ * image              | 400x250px (GRAND)    | Illustrations, photos
+ * footerIcon         | 16x16px (TRÈS petit) | Icônes tiny, status dots
+ */
+
+/**
+ * Génère un message d'erreur détaillé avec solution pour les URLs d'images
+ */
 export function generateGuidanceMessage(urlType: string, providedUrl: string): string {
-  return `❌ URL externe détectée pour ${urlType}: ${providedUrl}`;
+  const position = {
+    thumbnail: { size: '80x80px (petit)', ideal: 'logos, avatars, badges', position: 'haut-droite' },
+    image: { size: '400x250px (GRAND)', ideal: 'illustrations, screenshots, photos', position: 'bas' },
+    authorIcon: { size: '16x16px (TRÈS petit)', ideal: 'logos tiny, avatars mini', position: 'haut-gauche' },
+    footerIcon: { size: '16x16px (TRÈS petit)', ideal: 'icônes tiny', position: 'bas-gauche' },
+  };
+
+  const info = position[urlType as keyof typeof position] || {
+    size: 'inconnue',
+    ideal: 'logos ou illustrations',
+    position: 'dans l\'embed'
+  };
+
+  return `❌ **URL externe non autorisée pour \`${urlType}\`**
+
+📍 Position: ${info.position} | Taille Discord: ${info.size}
+💡 Usage idéal: ${info.ideal}
+
+🔗 URL fournie: \`${providedUrl}\`
+
+✅ **SOLUTIONS:**
+
+1. **Utilisez list_images()** pour obtenir une URL valide:
+   \`\`\`
+   list_images({symbols: ['BTC', 'ETH']})  // Crypto
+   list_images({symbols: 'AAPL'})           // Actions
+   list_images({symbols: 'DISCORD'})        // Services
+   list_images({symbols: 'VERCEL'})         // Tech
+   \`\`\`
+
+2. **Domaines autorisés** (automatique si vous utilisez list_images):
+   • cdn.simpleicons.org, simpleicons.org (icônes)
+   • cdn.discordapp.com, media.discordapp.net
+   • images.unsplash.com (photos)
+   • assets.coingecko.com (crypto logos)
+   • Et 500+ logos dans la base locale
+
+3. **Pour authorIcon/footerIcon**: utilisez une image très petite (16x16)
+   ListImages retourne des images optimisées pour cette taille.`;
 }
 
 export function generateSvgFooterMessage(providedUrl: string): string {
@@ -367,4 +445,177 @@ export function generateSvgFooterMessage(providedUrl: string): string {
 
 export function generateSvgAuthorMessage(providedUrl: string): string {
   return `❌ URL SVG détectée pour authorIcon: ${providedUrl}`;
+}
+
+// ============================================================================
+// CONSTANTES ET FONCTIONS DE LIMITES DISCORD (OFFICIELLES)
+// ============================================================================
+
+// Limites Discord pour les embeds (officielles)
+// ⚠️ 2000 chars total par embed (title+description+fields+footer+author)
+export const DISCORD_EMBED_LIMITS = {
+  TITLE_MAX: 256,
+  DESCRIPTION_MAX: 4096,
+  FIELD_NAME_MAX: 256,
+  FIELD_VALUE_MAX: 1024,
+  FOOTER_TEXT_MAX: 2048,
+  AUTHOR_NAME_MAX: 256,
+  TOTAL_EMBED_CHARS: 2000, // ⚠️ Limite stricte Discord
+  FIELDS_MAX: 25,
+  FIELDS_INLINE_MAX: 3,
+};
+
+/**
+ * Tronque une chaîne à maxLength avec suffixe "..." si coupée
+ */
+function truncateString(str: string, maxLength: number): string {
+  if (!str || str.length <= maxLength) return str;
+  return str.substring(0, maxLength - 3) + '...';
+}
+
+/**
+ * Tronque un texte d'embed avec message de fallback pour l'agent
+ */
+function smartTruncateEmbedField(
+  content: string,
+  maxLength: number,
+  fieldName: string
+): { content: string; truncated: boolean; originalLength: number; warning: string | null } {
+  if (!content) return { content, truncated: false, originalLength: 0, warning: null };
+
+  const originalLength = content.length;
+  if (originalLength <= maxLength) {
+    return { content, truncated: false, originalLength, warning: null };
+  }
+
+  const truncated = truncateString(content, maxLength);
+  const warning = `⚠️ [${fieldName}] Tronqué: ${originalLength} → ${maxLength} chars. Conseil: Utilisez pagination ou réduisez le contenu pour la prochaine tentative.`;
+
+  return { content: truncated, truncated: true, originalLength, warning };
+}
+
+/**
+ * Valide ET tronque tous les champs d'un embed pour respecter les limites Discord
+ * Retourne un rapport détaillé pour l'agent avec instructions de fallback
+ * 
+ * 💡 Cette fonction PREVIENT les crashs silencieux en tronquant AVANT l'envoi
+ * et en informant l'agent des corrections nécessaires.
+ */
+export function validateAndTruncateEmbed(args: {
+  title?: string;
+  description?: string;
+  authorName?: string;
+  footerText?: string;
+  fields?: Array<{ name: string; value: string; inline?: boolean }>;
+}): {
+  args: any;
+  truncated: boolean;
+  warnings: string[];
+  totalChars: number;
+  report: string;
+} {
+  const warnings: string[] = [];
+  const truncatedFields: string[] = [];
+
+  // Clone args pour éviter mutation
+  const safeArgs = JSON.parse(JSON.stringify(args));
+
+  // Tronquer title
+  if (safeArgs.title) {
+    const result = smartTruncateEmbedField(safeArgs.title, DISCORD_EMBED_LIMITS.TITLE_MAX, 'title');
+    safeArgs.title = result.content;
+    if (result.truncated && result.warning) {
+      warnings.push(result.warning);
+      truncatedFields.push(`title`);
+    }
+  }
+
+  // Tronquer description (la plus fréquente à dépasser)
+  if (safeArgs.description) {
+    const result = smartTruncateEmbedField(safeArgs.description, DISCORD_EMBED_LIMITS.DESCRIPTION_MAX, 'description');
+    safeArgs.description = result.content;
+    if (result.truncated && result.warning) {
+      warnings.push(result.warning);
+      truncatedFields.push(`description`);
+    }
+  }
+
+  // Tronquer authorName
+  if (safeArgs.authorName) {
+    const result = smartTruncateEmbedField(safeArgs.authorName, DISCORD_EMBED_LIMITS.AUTHOR_NAME_MAX, 'authorName');
+    safeArgs.authorName = result.content;
+    if (result.truncated && result.warning) {
+      warnings.push(result.warning);
+      truncatedFields.push(`authorName`);
+    }
+  }
+
+  // Tronquer footerText
+  if (safeArgs.footerText) {
+    const result = smartTruncateEmbedField(safeArgs.footerText, DISCORD_EMBED_LIMITS.FOOTER_TEXT_MAX, 'footerText');
+    safeArgs.footerText = result.content;
+    if (result.truncated && result.warning) {
+      warnings.push(result.warning);
+      truncatedFields.push(`footerText`);
+    }
+  }
+
+  // Tronquer fields
+  if (safeArgs.fields && safeArgs.fields.length > 0) {
+    safeArgs.fields = safeArgs.fields.map((field: any, index: number) => {
+      const truncatedName = smartTruncateEmbedField(field.name, DISCORD_EMBED_LIMITS.FIELD_NAME_MAX, `fields[${index}].name`);
+      const truncatedValue = smartTruncateEmbedField(field.value, DISCORD_EMBED_LIMITS.FIELD_VALUE_MAX, `fields[${index}].value`);
+
+      if (truncatedName.truncated || truncatedValue.truncated) {
+        truncatedFields.push(`field[${index}]`);
+      }
+
+      return {
+        ...field,
+        name: truncatedName.content,
+        value: truncatedValue.content,
+      };
+    });
+  }
+
+  // =====================================================
+  // VALIDATION TOTALE 2000 CHARS (limite stricte Discord)
+  // =====================================================
+  const TOTAL_EMBED_LIMIT = 2000;
+  
+  // Calculer total AVANT validation
+  const totalChars =
+    (safeArgs.title?.length || 0) +
+    (safeArgs.description?.length || 0) +
+    (safeArgs.authorName?.length || 0) +
+    (safeArgs.footerText?.length || 0) +
+    (safeArgs.fields || []).reduce((sum: number, f: any) => sum + (f.name?.length || 0) + (f.value?.length || 0), 0);
+  
+  if (totalChars > TOTAL_EMBED_LIMIT) {
+    const excess = totalChars - TOTAL_EMBED_LIMIT;
+    warnings.push(
+      `⚠️ [TOTAL] Dépassement limite Discord: ${totalChars}/${TOTAL_EMBED_LIMIT} chars (+${excess}). ` +
+      `Réduisez le contenu total ou utilisez pagination.`
+    );
+    truncatedFields.push('TOTAL');
+  }
+
+  // Build report
+  let report = '';
+  if (truncatedFields.length > 0) {
+    report = `📝 **CONTENU TRONQUÉ** (limites Discord: ${totalChars}/${TOTAL_EMBED_LIMIT} chars total/embed)\n`;
+    report += `Champs affectés: ${truncatedFields.join(', ')}\n`;
+    report += `\n💡 **INSTRUCTIONS POUR L'AGENT (Fallback):**\n`;
+    report += `1. Pour la prochaine tentative: réduisez la description ou utilisez pagination\n`;
+    report += `2. Pour du contenu long: splittez en plusieurs embeds successifs\n`;
+    report += `3. Ou envoyez le surplus via le paramètre 'content' (hors embed)\n`;
+  }
+
+  return {
+    args: safeArgs,
+    truncated: truncatedFields.length > 0,
+    warnings,
+    totalChars,
+    report,
+  };
 }
