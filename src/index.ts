@@ -843,15 +843,26 @@ async function main() {
       env: botConfig.environment
     }, '📊 Status');
 
-    serverLogger.info('🚀 Starting MCP Server (STDIO)...');
+    const httpPort = parseInt(process.env.FASTMCP_PORT || '3141', 10);
+    const httpHost = process.env.FASTMCP_HOST || 'localhost';
+    const httpEndpoint = process.env.FASTMCP_ENDPOINT || '/mcp';
+
+    serverLogger.info('🚀 Starting MCP Server...');
 
     ensureDiscordConnection()
       .then(() => serverLogger.info('✅ Discord Client Ready'))
       .catch((err) => serverLogger.warn({ err }, '⚠️ Initial Discord connection failed (will retry)'));
 
-    await server.start();
-
-    serverLogger.info('👋 MCP Server stopped');
+    await server.start({
+      transportType: 'httpStream',
+      httpStream: {
+        port: httpPort,
+        host: httpHost,
+        endpoint: httpEndpoint as `/${string}`,
+        stateless: true,
+      },
+    });
+    serverLogger.info(`✅ [BOOT] MCP Server started on HTTP SSE ${httpHost}:${httpPort}${httpEndpoint}`);
   } catch (err) {
     serverLogger.fatal({ err }, '❌ FATAL ERROR ON STARTUP');
     await cleanup();

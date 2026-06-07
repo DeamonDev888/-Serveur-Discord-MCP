@@ -95,12 +95,53 @@ export const FileUploadParamsSchema = z.object({
   spoiler: z.boolean().optional().default(false),
   description: z.string().optional(),
 });
+// JSON Schema pour l'enregistrement MCP (type: "object" au root)
+//noinspection JSUnusedLocalTypes
+type FileUploadParams = z.infer<typeof FileUploadParamsSchema>;
+//noinspection JSUnusedLocalTypes
+type FileDownloadParams = { action: 'download'; url: string; fileName?: string };
+type FileParams = FileUploadParams | FileDownloadParams;
+
+export const FileParamsJsonSchema = {
+  type: "object",
+  anyOf: [
+    {
+      type: "object",
+      properties: {
+        action: { const: "upload" },
+        channelId: { type: "string" },
+        filePath: { type: "string" },
+        fileName: { type: "string" },
+        message: { type: "string" },
+        spoiler: { type: "boolean" },
+        description: { type: "string" },
+      },
+      required: ["action", "channelId", "filePath"],
+      additionalProperties: false,
+    },
+    {
+      type: "object",
+      properties: {
+        action: { const: "download" },
+        url: { type: "string", format: "uri" },
+        fileName: { type: "string" },
+      },
+      required: ["action", "url"],
+      additionalProperties: false,
+    },
+  ],
+} as const;
+
 export const FileDownloadParamsSchema = z.object({
   action: z.literal('download'),
   url: z.string().url().describe('URL du fichier à télécharger'),
   fileName: z.string().optional().describe('Nom local de sauvegarde'),
 });
-export const FileParamsSchema = z.union([FileUploadParamsSchema, FileDownloadParamsSchema]);
+
+export const FileParamsSchema = z.discriminatedUnion("action", [
+  FileUploadParamsSchema,
+  FileDownloadParamsSchema,
+]);
 
 // Limites fichiers
 const FILE_LIMITS = {
@@ -886,47 +927,15 @@ function parseDuration(str: string): number | null {
   return value * multipliers[unit];
 }
 
-// ================================================================================
+// ===============================================================================
 // ENREGISTREMENT DES OUTILS UNIFIÉS
-// ================================================================================
+// ===============================================================================
 
 export function registerUnifiedTools(server: FastMCP) {
-  
-  // --------------------------------------------------------------------------
-  // 1. FILE - Upload/Download
-  // --------------------------------------------------------------------------
-  server.addTool({
-    name: 'file',
-    description: `📁 FILE TOOL - Upload ou téléchargement de fichiers Discord
 
-ACTIONS:
-  • upload  - Envoie un fichier local vers un canal Discord
-  • download - Télécharge un fichier depuis une URL
-
-UPLOAD PARAMS:
-  action: "upload"
-  channelId: ID du canal destination
-  filePath: Chemin local du fichier
-  fileName: Nom personnalisé (optionnel)
-  message: Message accompagnant (optionnel)
-  spoiler: true/false (optionnel)
-  description: Description embed (optionnel)
-
-LIMITE: 25MB images, 100MB vidéo/audio, 8MB documents
-
-EXEMPLE:
-  { "action": "upload", "channelId": "123", "filePath": "/path/to/file.pdf", "message": "Voici le fichier" }`,
-    parameters: FileParamsSchema,
-    execute: async (args) => {
-      try {
-        return await executeFileTool(args);
-      } catch (error: any) {
-        Logger.error('❌ [file]', error.message);
-        return `❌ Erreur: ${error.message}`;
-      }
-    },
-  });
-
+  // NOTE: L'outil 'file' unifié (upload/download) a été retiré car son schema
+  // z.discriminatedUnion génère un format incompatible avec le SDK MCP 1.29.
+  // Utiliser à la place: 'uploader_fichier' et 'telecharger_fichier' (outils séparés).
   // --------------------------------------------------------------------------
   // 2. MESSAGE - Send/Edit/Delete/Read/React
   // --------------------------------------------------------------------------

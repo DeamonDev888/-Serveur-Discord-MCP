@@ -15,7 +15,7 @@ logs
 server*.log
 build_errors.log
 nul
-
+start_server.ps1
 # Build et dépendances
 node_modules/
 dist/
@@ -71,3 +71,8 @@ tools_list.csv
 lint_results.json
 lint_output.txt
 lint_compact.txt
+
+# Temp and builds
+*.tgz
+tsconfig.tsbuildinfo
+

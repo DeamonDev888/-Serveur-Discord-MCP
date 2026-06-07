@@ -1,0 +1,10 @@
+# Force LF line endings for shell scripts and JS source — prevents the
+# "Bourne-Again shell script, ... with CRLF line terminators" bug that
+# breaks launch.sh on Linux when the file is authored on Windows.
+#
+# See skill: devops/npm-package-publishing ("CRLF + UTF-8 BOM = broken bash")
+*.sh        text eol=lf
+scripts/*   text eol=lf
+bin/*.sh    text eol=lf
+bin/*.js    text eol=lf
+*.bat       text eol=crlf

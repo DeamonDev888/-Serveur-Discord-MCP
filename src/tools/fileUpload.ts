@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AttachmentBuilder, EmbedBuilder } from 'discord.js';
+import { AttachmentBuilder } from 'discord.js';
 import { readFile, stat } from 'fs/promises';
 import { extname } from 'path';
 import Logger from '../utils/logger.js';
@@ -138,37 +138,6 @@ export const createAttachmentFromFile = async (
   }
 };
 
-// Créer un embed pour l'upload
-export const createFileUploadEmbed = (
-  fileName: string,
-  fileSize: number,
-  description?: string,
-  spoiler: boolean = false
-) => {
-  const sizeMB = (fileSize / 1024 / 1024).toFixed(2);
-  const extension = extname(fileName).toLowerCase();
-  const mimeType = getMimeTypeFromExtension(extension);
-  const fileType = getFileType(mimeType);
-
-  const iconMap: { [key: string]: string } = {
-    image: '🖼️',
-    video: '🎥',
-    audio: '🎵',
-    document: '📄',
-  };
-
-  return new EmbedBuilder()
-    .setTitle(`${spoiler ? '🚫' : iconMap[fileType] || '📎'} Fichier Uploadé`)
-    .setColor(0x00ff00)
-    .setDescription(description || `Fichier **${fileName}** uploadé avec succès`)
-    .addFields({
-      name: 'Informations',
-      value: `**Nom:** ${fileName}\n**Taille:** ${sizeMB} MB\n**Type:** ${fileType}`,
-      inline: true,
-    })
-    .setTimestamp();
-};
-
 // ============================================================================
 // ENREGISTREMENT DE L'OUTIL MCP
 // ============================================================================
@@ -215,23 +184,14 @@ export function registerFileUploadTools(server: FastMCP) {
           return `❌ ${attachmentResult.error}`;
         }
 
-        // Créer l'embed d'information
-        const fileName = args.fileName || args.filePath.split(/[/\\]/).pop() || 'fichier';
-        const embed = createFileUploadEmbed(
-          fileName,
-          attachmentResult.size!,
-          args.description,
-          args.spoiler
-        );
-
         // Envoyer le message avec le fichier
         const message = await channel.send({
           content: args.message,
-          embeds: [embed],
           files: [attachmentResult.attachment],
         });
 
-        return `✅ Fichier uploadé | Taille: ${(attachmentResult.size! / 1024 / 1024).toFixed(2)} MB | ID: ${message.id}`;
+        const attachmentUrl = message.attachments.first()?.url || '';
+        return `✅ Fichier uploadé | URL: ${attachmentUrl} | ID: ${message.id}`;
       } catch (error: any) {
         Logger.error(`❌ [file_upload]`, error.message);
         return `❌ Erreur: ${error.message}`;
