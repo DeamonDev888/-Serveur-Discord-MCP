@@ -1,0 +1,29 @@
+🔒 SÉCURITÉ & AUTH
+Q1. Le Bearer Token est-il actif sur le VPS ?
+Oui, il est 100% actif. Suite à notre déploiement, OverMind a chargé la variable OVERMIND_MCP_SECRET depuis le .env et tourne en HTTP Stream authentifié. Sans le header Authorization: Bearer <votre_token>, toute tentative de connexion réseau est rejetée en 401 Unauthorized.
+Q2. Patcher SEC-4 (fuite des clés API) : Upstream ou PR locale ?
+Nous pouvons le patcher localement très rapidement dans le fichier 
+get_agent_configs.ts
+ en masquant les variables du bloc env contenant les termes KEY ou TOKEN. C'est une modification simple de quelques lignes de JS.
+Q3. Isolation réseau de db_net vs hermes_net ?
+Le conteneur de base de données overmind-postgres-pgvector est isolé dans le réseau agents_db_net. Il n'a aucun port ouvert sur l'hôte et n'est pas connecté à hermes_net. Donc, un conteneur compromis sur hermes_net (comme Hermes) ne peut pas contacter directement PostgreSQL. Il doit passer par le serveur OverMind MCP, qui fait office de garde-barrière grâce à l'authentification Bearer Token.
+🏗️ ARCHITECTURE & SERVICES
+Q4. Usage de Redis : Indispensable avant Temporal ?
+Non, Redis est prévu comme cache volatil de contexte court-terme pour les runners. Comme il n'est pas encore câblé dans le code des runners locaux et que Temporal est déjà dans le dépôt pour la gestion d'états longs, Redis n'est pas du tout une priorité immédiate.
+Q5. Pourquoi Temporal est-il désactivé dans le compose ?
+Temporal requiert l'exécution d'un conteneur d'initialisation de schéma de base de données au démarrage (ce qui complexifie le compose). Votre co-dev l'avait désactivé pour simplifier le développement local. Nous pourrons le réactiver proprement dans une phase ultérieure en lui associant son propre schéma DB.
+Q6. Le co-dev est-il toujours sur le projet ? oui. Il est actuellement en mode red teaming et sur les installations de production. Pas de dév concret.
+🤖 AGENTS & CAS D'USAGE
+Q7. Quels sont vos 3 cas d'usage prioritaires ?
+Développement assisté (Expert Coding avec Claude Code / GLM).
+OSINT / Veille automatisée (workflows autonomes de recherche).
+Traitement automatisé -sous profil de chef de projet- des documents d'un projet complexe avec mise à jour des supports, reportings et KPI.
+Q8. Le VPS (12 Go RAM) a-t-il la capacité pour 4+ agents + Temporal + PG + Redis ?
+Oui. Le VPS consomme ~2-3 Go à vide. Avec la limite stricte de 1.5 Go de RAM par agent configurée dans le compose, 4 agents en parallèle consommeront 6 Go. En ajoutant l'infrastructure (Postgres, Kuma, etc.), la consommation oscillera autour de 9-10 Go maximum, ce qui passe sans problème.
+Q9. Conteneur Hermes Agent : Version payante ou gratuite ?
+C'est la version open-source et gratuite (MIT/Apache) de Nous Research. Aucune licence n'est requise.
+🗺️ FEUILLE DE ROUTE
+Q10. Quelle est la priorité pour les 2 prochaines semaines ?
+Je vous recommande l'Option 🅰️ Sécuriser (finaliser SEC-4 pour masquer vos clés API dans les configs d'agents, et valider le hardening Docker) afin d'avoir une Phase 1 propre avant de passer aux fonctions de Swarm et de workflows persistants.
+Q11. Workflow CI/CD ou SSH manuel ?
+Actuellement, tout se fait manuellement via SSH/SCP (packaging local puis extraction sur le VPS). Mettre en place un pipeline automatisé (ex: via GitHub Actions) est une excellente idée à planifier pour la suite.

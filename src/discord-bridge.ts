@@ -5,6 +5,8 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
 } from 'discord.js';
+import * as fs from 'fs';
+import * as path from 'path';
 import { bridgeLogger, logger } from './logger.js';
 import { interactionHandler } from './utils/interactionHandler.js';
 
@@ -110,8 +112,6 @@ export class DiscordBridge {
 
   private persistCircuitBreaker(): void {
     try {
-      const fs = require('fs');
-      const path = require('path');
       const filePath = path.join(process.cwd(), 'data', 'circuit-breaker.json');
       const dir = path.dirname(filePath);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -127,8 +127,6 @@ export class DiscordBridge {
 
   private loadCircuitBreaker(): void {
     try {
-      const fs = require('fs');
-      const path = require('path');
       const filePath = path.join(process.cwd(), 'data', 'circuit-breaker.json');
       if (fs.existsSync(filePath)) {
         const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -144,8 +142,6 @@ export class DiscordBridge {
 
   private clearCircuitBreakerFile(): void {
     try {
-      const fs = require('fs');
-      const path = require('path');
       const filePath = path.join(process.cwd(), 'data', 'circuit-breaker.json');
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);

@@ -1092,7 +1092,7 @@ export function registerEmbedTools(server: FastMCP) {
         .boolean()
         .optional()
         .describe('🎯 Affiche le guide interactif complet avec exemples et conseils'),
-      channelId: z.string().describe('ID du canal Discord'),
+      channelId: z.string().optional().describe('ID du canal Discord (requis sauf si help=true)'),
       title: z
         .string()
         .optional()
@@ -1178,7 +1178,7 @@ export function registerEmbedTools(server: FastMCP) {
         .array(
           z.object({
             label: z.string(),
-            style: z.enum(['Primary', 'Secondary', 'Success', 'Danger']).default('Primary'),
+            style: z.enum(['Primary', 'Secondary', 'Success', 'Danger', 'Link']).default('Primary').describe("Style du bouton (Link = pour action='link', auto-détecté sinon)"),
             emoji: z.string().optional(),
             action: z
               .enum([
@@ -1314,35 +1314,10 @@ export function registerEmbedTools(server: FastMCP) {
         .optional()
         .describe('Dégradé de couleurs'),
       theme: z
-        .enum([
-          'data_report',
-          'status_update',
-          'product_showcase',
-          'leaderboard',
-          'tech_announcement',
-          'social_feed',
-          'dashboard',
-          'noel',
-          'minimal',
-          'cyber_code',
-          'cyberpunk',
-          'gaming',
-          'corporate',
-          'sunset',
-          'ocean',
-          'halloween',
-          'vector_pg',
-          'claude_code',
-          'mcp',
-          'sentinel_alpha',
-          'deep_logic',
-          'matrix_rain',
-          'trading_master',
-          'nebula_vision',
-        ])
+        .string()
         .optional()
         .describe(
-          'Thème visuel (Couleurs & template texte). NOTE: Les images/icones ne sont PLUS automatiques. CONSEIL: Utilisez list_images({category: "nom_du_theme"}) pour trouver les assets visuels appropriés (ex: cyberpunk, gaming, minimal, etc.)'
+          'Thème visuel (data_report, status_update, product_showcase, leaderboard, tech_announcement, social_feed, dashboard, noel, minimal, cyber_code, cyberpunk, gaming, corporate, sunset, ocean, halloween, vector_pg, claude_code, mcp, sentinel_alpha, deep_logic, matrix_rain, trading_master, nebula_vision). Thème invalide = fallback automatique vers custom.'
         ),
       themeOptions: z
         .object({
@@ -1506,6 +1481,11 @@ export function registerEmbedTools(server: FastMCP) {
         return `${guide.join('\n')}\n\n💻 **EXEMPLE DE CODE:**\n\`\`\`typescript\n${example}\n\`\`\`\n\n📚 **DOCUMENTATION COMPLÈTE:**\nVoir GUIDE_CREER_EMBED_INTUITIF.md pour tous les exemples !`;
       }
 
+      // Validation: channelId requis quand help=false
+      if (!args.channelId) {
+        return `❌ **ERREUR: channelId est requis**\n\nUtilisez \`help: true\` pour voir la documentation.`;
+      }
+
       // Validation intelligente avec conseils
       const validation = embedHelper.INTELLIGENT_VALIDATION.validate(args);
       embedHelper.INTELLIGENT_VALIDATION.displayResults(validation);
@@ -1589,9 +1569,22 @@ export function registerEmbedTools(server: FastMCP) {
         }
 
         if (args.theme) {
-          // Utilise applyTheme qui contient tous les nouveaux contenus riches
-          const themedData = applyTheme(args.theme, args);
-          embedData = { ...embedData, ...themedData };
+          // Liste des thèmes valides pour validation
+          const VALID_THEMES = [
+            'data_report', 'status_update', 'product_showcase', 'leaderboard',
+            'tech_announcement', 'social_feed', 'dashboard', 'noel', 'minimal',
+            'cyber_code', 'cyberpunk', 'gaming', 'corporate', 'sunset', 'ocean',
+            'halloween', 'vector_pg', 'claude_code', 'mcp', 'sentinel_alpha',
+            'deep_logic', 'matrix_rain', 'trading_master', 'nebula_vision'
+          ];
+
+          if (!VALID_THEMES.includes(args.theme)) {
+            Logger.warn(`[EMBEDS] Thème invalide '${args.theme}' - Fallback vers custom`);
+          } else {
+            // Utilise applyTheme qui contient tous les nouveaux contenus riches
+            const themedData = applyTheme(args.theme, args);
+            embedData = { ...embedData, ...themedData };
+          }
         }
 
         const embed = new EmbedBuilder();
@@ -2027,6 +2020,7 @@ export function registerEmbedTools(server: FastMCP) {
             Secondary: ButtonStyle.Secondary,
             Success: ButtonStyle.Success,
             Danger: ButtonStyle.Danger,
+            Link: ButtonStyle.Link,
           };
 
           const row = new ActionRowBuilder<ButtonBuilder>();
