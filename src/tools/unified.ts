@@ -2,45 +2,45 @@
  * ================================================================================
  * OUTILS MCP UNIFIÉS - CONSOLIDATION 39 → 10 OUTILS
  * ================================================================================
- * 
+ *
  * RATIONALE:
  * - 39 outils détaillés étaient trop nombreux et peu utilisés
  * - Les agents LLM gèrent mal les longues listes d'outils
  * - Consolidation par domaine avec paramètre 'action' pour varier le comportement
- * 
+ *
  * ANCIENS OUTILS → NOUVEAUX:
- * 
+ *
  * FILE (2 → 1):
  *   - uploader_fichier, telecharger_fichier → file (action: upload|download)
- * 
+ *
  * MESSAGE (5 → 1):
  *   - envoyer_message, edit_message, delete_message, read_messages, add_reaction → message (action: send|edit|delete|read|react)
- * 
+ *
  * EMBED (3 → 1):
  *   - creer_embed, edit_embed, get_embed_details → embed (action: create|edit|get)
- * 
+ *
  * CHANNEL (5 → 1):
  *   - create_channel, edit_channel, delete_channel, list_channels, get_channels, set_channel_permissions → channel (action: create|edit|delete|list|permissions)
- * 
+ *
  * ROLE (4 → 1):
  *   - create_role, edit_role, delete_role, list_roles, set_role_permissions → role (action: create|edit|delete|list|permissions)
- * 
+ *
  * MEMBER (15 → 1):
- *   - list_members, get_user_info, move_member, timeout_member, warn_member, ban_member, kick_member, unban_member, 
+ *   - list_members, get_user_info, move_member, timeout_member, warn_member, ban_member, kick_member, unban_member,
  *     add_role_to_member, remove_role_from_member, remove_timeout → member (action: list|info|move|timeout|warn|ban|kick|unban|role_add|role_remove)
- * 
+ *
  * POLL (2 → 1):
  *   - create_poll, vote_poll → poll (action: create|vote)
- * 
+ *
  * BUTTON (1 → 1):
  *   - create_button → button (action: create|register)
- * 
+ *
  * MENU (1 → 1):
  *   - create_menu → menu (action: create|register)
- * 
+ *
  * SERVER (2 → 1):
  *   - get_server_info, reset_discord_connection → server (action: info|reset)
- * 
+ *
  * ================================================================================
  */
 
@@ -60,8 +60,15 @@ import { readFile, stat } from 'fs/promises';
 import { extname } from 'path';
 import Logger from '../utils/logger.js';
 import { ensureDiscordConnection, formatDuration } from './common.js';
-import { isLocalLogoUrl, validateAndTruncateEmbed, DISCORD_EMBED_LIMITS } from './embeds.js';
+import {
+  isLocalLogoUrl,
+  validateAndTruncateEmbed,
+  DISCORD_EMBED_LIMITS,
+  VALID_THEMES,
+} from './embeds.js';
 import { applyTheme, generateGuidanceMessage } from './embeds_utils.js';
+import { executeListEmbeds, executeGetEmbedDetails, executeUpdateEmbed } from './editEmbed.js';
+import { executeCreerEmbedLite } from './creerEmbedLite.js';
 import {
   upsertPersistentButton,
   upsertPersistentMenu,
@@ -103,30 +110,30 @@ type FileDownloadParams = { action: 'download'; url: string; fileName?: string }
 type FileParams = FileUploadParams | FileDownloadParams;
 
 export const FileParamsJsonSchema = {
-  type: "object",
+  type: 'object',
   anyOf: [
     {
-      type: "object",
+      type: 'object',
       properties: {
-        action: { const: "upload" },
-        channelId: { type: "string" },
-        filePath: { type: "string" },
-        fileName: { type: "string" },
-        message: { type: "string" },
-        spoiler: { type: "boolean" },
-        description: { type: "string" },
+        action: { const: 'upload' },
+        channelId: { type: 'string' },
+        filePath: { type: 'string' },
+        fileName: { type: 'string' },
+        message: { type: 'string' },
+        spoiler: { type: 'boolean' },
+        description: { type: 'string' },
       },
-      required: ["action", "channelId", "filePath"],
+      required: ['action', 'channelId', 'filePath'],
       additionalProperties: false,
     },
     {
-      type: "object",
+      type: 'object',
       properties: {
-        action: { const: "download" },
-        url: { type: "string", format: "uri" },
-        fileName: { type: "string" },
+        action: { const: 'download' },
+        url: { type: 'string', format: 'uri' },
+        fileName: { type: 'string' },
       },
-      required: ["action", "url"],
+      required: ['action', 'url'],
       additionalProperties: false,
     },
   ],
@@ -138,7 +145,7 @@ export const FileDownloadParamsSchema = z.object({
   fileName: z.string().optional().describe('Nom local de sauvegarde'),
 });
 
-export const FileParamsSchema = z.discriminatedUnion("action", [
+export const FileParamsSchema = z.discriminatedUnion('action', [
   FileUploadParamsSchema,
   FileDownloadParamsSchema,
 ]);
@@ -167,16 +174,28 @@ function getFileType(mimeType: string): string {
 
 function getMimeType(extension: string): string {
   const map: Record<string, string> = {
-    '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
-    '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml',
-    '.mp4': 'video/mp4', '.webm': 'video/webm', '.mov': 'video/quicktime',
-    '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ogg': 'audio/ogg',
-    '.pdf': 'application/pdf', '.txt': 'text/plain', '.json': 'application/json',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.svg': 'image/svg+xml',
+    '.mp4': 'video/mp4',
+    '.webm': 'video/webm',
+    '.mov': 'video/quicktime',
+    '.mp3': 'audio/mpeg',
+    '.wav': 'audio/wav',
+    '.ogg': 'audio/ogg',
+    '.pdf': 'application/pdf',
+    '.txt': 'text/plain',
+    '.json': 'application/json',
   };
   return map[extension.toLowerCase()] || 'application/octet-stream';
 }
 
-async function checkFileSize(filePath: string): Promise<{ valid: boolean; size: number; error?: string }> {
+async function checkFileSize(
+  filePath: string
+): Promise<{ valid: boolean; size: number; error?: string }> {
   try {
     const stats = await stat(filePath);
     const ext = extname(filePath);
@@ -184,7 +203,11 @@ async function checkFileSize(filePath: string): Promise<{ valid: boolean; size: 
     const fileType = getFileType(mimeType);
     const limit = FILE_LIMITS[fileType as keyof typeof FILE_LIMITS] || FILE_LIMITS.default;
     if (stats.size > limit) {
-      return { valid: false, size: stats.size, error: `Fichier trop volumineux. Limite: ${(limit / 1024 / 1024).toFixed(1)}MB` };
+      return {
+        valid: false,
+        size: stats.size,
+        error: `Fichier trop volumineux. Limite: ${(limit / 1024 / 1024).toFixed(1)}MB`,
+      };
     }
     return { valid: true, size: stats.size };
   } catch (error) {
@@ -196,7 +219,7 @@ async function checkFileSize(filePath: string): Promise<{ valid: boolean; size: 
 // OUTIL 2: MESSAGE - Send/Edit/Delete/Read/React
 // ================================================================================
 
-export const MessageActionSchema = z.enum(['send', 'edit', 'delete', 'read', 'react']);
+export const MessageActionSchema = z.enum(['envoyer', 'modifier', 'supprimer', 'lire', 'reagir']);
 export const MessageParamsSchema = z.object({
   action: MessageActionSchema,
   // Common
@@ -220,25 +243,54 @@ export const MessageParamsSchema = z.object({
 // OUTIL 3: EMBED - Create/Edit/Get
 // ================================================================================
 
-export const EmbedActionSchema = z.enum(['create', 'edit', 'get']);
+export const EmbedActionSchema = z.enum(['creer', 'modifier', 'obtenir', 'lister', 'themes']);
 export const EmbedBaseParamsSchema = z.object({
   // COMMON
   channelId: DiscordIdSchema.optional().describe('Canal pour create'),
   messageId: DiscordIdSchema.optional().describe('Message pour edit/get'),
-  embedId: z.string().optional().describe('ID interne de l\'embed'),
+  embedId: z.string().optional().describe("ID interne de l'embed"),
+  // LIST
+  limit: z
+    .number()
+    .min(1)
+    .max(100)
+    .optional()
+    .default(50)
+    .describe('Nombre de messages à scanner [lister]'),
   // THEME
-  theme: z.enum([
-    'default', 'info', 'success', 'warning', 'error', 'dark', 'light',
-    'blurple', 'green', 'red', 'yellow', 'orange', 'pink', 'purple',
-    'gold', 'neon', 'cyberpunk', 'sunset', 'ocean', 'forest', 'midnight',
-  ]).optional().describe('Thème prédéfini'),
+  theme: z
+    .enum([
+      'default',
+      'info',
+      'success',
+      'warning',
+      'error',
+      'dark',
+      'light',
+      'blurple',
+      'green',
+      'red',
+      'yellow',
+      'orange',
+      'pink',
+      'purple',
+      'gold',
+      'neon',
+      'cyberpunk',
+      'sunset',
+      'ocean',
+      'forest',
+      'midnight',
+    ])
+    .optional()
+    .describe('Thème prédéfini'),
   // BASIC FIELDS
-  title: z.string().optional().describe('Titre de l\'embed'),
+  title: z.string().optional().describe("Titre de l'embed"),
   description: z.string().optional().describe('Description (max 4096 chars)'),
   color: z.string().optional().describe('Couleur hex (#RRGGBB)'),
   url: z.string().optional().describe('URL cliquable sur le titre'),
   // AUTHOR
-  authorName: z.string().optional().describe('Nom de l\'auteur'),
+  authorName: z.string().optional().describe("Nom de l'auteur"),
   authorIcon: z.string().optional().describe('Icône auteur (URL)'),
   authorUrl: z.string().optional().describe('URL auteur'),
   // IMAGE
@@ -248,18 +300,26 @@ export const EmbedBaseParamsSchema = z.object({
   footerText: z.string().optional().describe('Texte footer'),
   footerIcon: z.string().optional().describe('Icône footer (URL)'),
   // FIELDS
-  fields: z.array(z.object({
-    name: z.string(),
-    value: z.string(),
-    inline: z.boolean().optional().default(false),
-  })).optional().describe('Champs additionnels (max 25)'),
+  fields: z
+    .array(
+      z.object({
+        name: z.string(),
+        value: z.string(),
+        inline: z.boolean().optional().default(false),
+      })
+    )
+    .optional()
+    .describe('Champs additionnels (max 25)'),
   // OPTIONS
   timestamp: z.boolean().optional().default(false).describe('Ajouter timestamp'),
-  autoUpdate: z.object({
-    enabled: z.boolean(),
-    intervalSeconds: z.number().optional().default(60),
-    source: z.string().optional().describe('Fonction JS à évaluer pour mettre à jour'),
-  }).optional().describe('Mise à jour automatique'),
+  autoUpdate: z
+    .object({
+      enabled: z.boolean(),
+      intervalSeconds: z.number().optional().default(60),
+      source: z.string().optional().describe('Fonction JS à évaluer pour mettre à jour'),
+    })
+    .optional()
+    .describe('Mise à jour automatique'),
   enableAnalytics: z.boolean().optional().default(false),
   saveAsTemplate: z.string().optional().describe('Nom du template à sauvegarder'),
   pagination: z.boolean().optional().default(false).describe('Activer pagination si >10 fields'),
@@ -278,7 +338,13 @@ export const EmbedParamsSchema = z.object({
 // OUTIL 4: CHANNEL - Create/Edit/Delete/List/Permissions
 // ================================================================================
 
-export const ChannelActionSchema = z.enum(['create', 'edit', 'delete', 'list', 'permissions']);
+export const ChannelActionSchema = z.enum([
+  'creer',
+  'modifier',
+  'supprimer',
+  'lister',
+  'permissions',
+]);
 export const ChannelParamsSchema = z.object({
   action: ChannelActionSchema,
   // Common
@@ -292,12 +358,16 @@ export const ChannelParamsSchema = z.object({
   // list
   filterType: z.enum(['all', 'text', 'voice', 'category']).optional().default('all'),
   // permissions
-  permissions: z.array(z.object({
-    type: z.enum(['role', 'member']),
-    id: DiscordIdSchema,
-    allow: z.array(z.string()).optional(),
-    deny: z.array(z.string()).optional(),
-  })).optional(),
+  permissions: z
+    .array(
+      z.object({
+        type: z.enum(['role', 'member']),
+        id: DiscordIdSchema,
+        allow: z.array(z.string()).optional(),
+        deny: z.array(z.string()).optional(),
+      })
+    )
+    .optional(),
   // Common
   reason: z.string().optional(),
 });
@@ -306,7 +376,7 @@ export const ChannelParamsSchema = z.object({
 // OUTIL 5: ROLE - Create/Edit/Delete/List/Permissions
 // ================================================================================
 
-export const RoleActionSchema = z.enum(['create', 'edit', 'delete', 'list', 'permissions']);
+export const RoleActionSchema = z.enum(['creer', 'modifier', 'supprimer', 'lister', 'permissions']);
 export const RoleParamsSchema = z.object({
   action: RoleActionSchema,
   // Common
@@ -331,12 +401,21 @@ export const RoleParamsSchema = z.object({
 // ================================================================================
 
 export const MemberActionSchema = z.enum([
-  'list', 'info', 'move', 'timeout', 'warn', 'ban', 'kick', 'unban', 'role_add', 'role_remove'
+  'lister',
+  'info',
+  'deplacer',
+  'timeout',
+  'avertir',
+  'bannir',
+  'expulser',
+  'debannir',
+  'ajouter_role',
+  'retirer_role',
 ]);
 export const MemberParamsSchema = z.object({
   action: MemberActionSchema,
   // Common target
-  userId: DiscordIdSchema.optional().describe('ID de l\'utilisateur'),
+  userId: DiscordIdSchema.optional().describe("ID de l'utilisateur"),
   // list
   limit: z.number().min(1).max(100).optional().default(20),
   search: z.string().optional(),
@@ -348,7 +427,12 @@ export const MemberParamsSchema = z.object({
   duration: z.string().optional().describe('Durée (ex: 1h, 30m, 7d) [timeout]'),
   reason: z.string().optional(),
   // warn/ban/kick
-  severity: z.number().min(1).max(10).optional().describe('Gravité 1-10 (1-3 soft, 4-6 medium, 7-10 hard)'),
+  severity: z
+    .number()
+    .min(1)
+    .max(10)
+    .optional()
+    .describe('Gravité 1-10 (1-3 soft, 4-6 medium, 7-10 hard)'),
   // ban
   deleteMessagesDays: z.number().min(0).max(7).optional().default(0),
   // role_add/role_remove
@@ -359,7 +443,7 @@ export const MemberParamsSchema = z.object({
 // OUTIL 7: POLL - Create/Vote
 // ================================================================================
 
-export const PollActionSchema = z.enum(['create', 'vote']);
+export const PollActionSchema = z.enum(['creer', 'voter']);
 export const PollParamsSchema = z.object({
   action: PollActionSchema,
   channelId: DiscordIdSchema.optional(),
@@ -375,13 +459,16 @@ export const PollParamsSchema = z.object({
 // OUTIL 8: BUTTON - Create/Register
 // ================================================================================
 
-export const ButtonActionSchema = z.enum(['create', 'register']);
+export const ButtonActionSchema = z.enum(['creer', 'enregistrer']);
 export const ButtonParamsSchema = z.object({
   action: ButtonActionSchema,
   channelId: DiscordIdSchema.optional(),
   messageId: DiscordIdSchema.optional(),
   label: z.string().optional(),
-  style: z.enum(['primary', 'secondary', 'success', 'danger', 'link']).optional().default('primary'),
+  style: z
+    .enum(['primary', 'secondary', 'success', 'danger', 'link'])
+    .optional()
+    .default('primary'),
   emoji: z.string().optional(),
   url: z.string().optional().describe('Pour style link'),
   customId: z.string().optional(),
@@ -392,7 +479,7 @@ export const ButtonParamsSchema = z.object({
 // OUTIL 9: MENU - Create/Register
 // ================================================================================
 
-export const MenuActionSchema = z.enum(['create', 'register']);
+export const MenuActionSchema = z.enum(['creer', 'enregistrer']);
 export const MenuParamsSchema = z.object({
   action: MenuActionSchema,
   channelId: DiscordIdSchema.optional(),
@@ -400,13 +487,17 @@ export const MenuParamsSchema = z.object({
   placeholder: z.string().optional(),
   minValues: z.number().optional().default(1),
   maxValues: z.number().optional().default(1),
-  options: z.array(z.object({
-    label: z.string(),
-    value: z.string(),
-    description: z.string().optional(),
-    emoji: z.string().optional(),
-    default: z.boolean().optional().default(false),
-  })).optional(),
+  options: z
+    .array(
+      z.object({
+        label: z.string(),
+        value: z.string(),
+        description: z.string().optional(),
+        emoji: z.string().optional(),
+        default: z.boolean().optional().default(false),
+      })
+    )
+    .optional(),
   customId: z.string().optional(),
 });
 
@@ -414,7 +505,7 @@ export const MenuParamsSchema = z.object({
 // OUTIL 10: SERVER - Info/Reset
 // ================================================================================
 
-export const ServerActionSchema = z.enum(['info', 'reset']);
+export const ServerActionSchema = z.enum(['info', 'reinitialiser']);
 export const ServerParamsSchema = z.object({
   action: ServerActionSchema,
 });
@@ -423,59 +514,62 @@ export const ServerParamsSchema = z.object({
 // COMPATIBILITÉ BACKWARD - Ancien nom → nouveau tool + action
 // ================================================================================
 
-const TOOL_NAME_MAPPING: Record<string, { tool: string; action: string; params: Record<string, any> }> = {
+const TOOL_NAME_MAPPING: Record<
+  string,
+  { tool: string; action: string; params: Record<string, any> }
+> = {
   // FILE
-  'uploader_fichier': { tool: 'file', action: 'upload', params: {} },
-  'telecharger_fichier': { tool: 'file', action: 'download', params: {} },
+  uploader_fichier: { tool: 'file', action: 'upload', params: {} },
+  telecharger_fichier: { tool: 'file', action: 'download', params: {} },
   // MESSAGE
-  'envoyer_message': { tool: 'message', action: 'send', params: {} },
-  'edit_message': { tool: 'message', action: 'edit', params: {} },
-  'delete_message': { tool: 'message', action: 'delete', params: {} },
-  'read_messages': { tool: 'message', action: 'read', params: {} },
-  'add_reaction': { tool: 'message', action: 'react', params: {} },
+  envoyer_message: { tool: 'message', action: 'send', params: {} },
+  edit_message: { tool: 'message', action: 'edit', params: {} },
+  delete_message: { tool: 'message', action: 'delete', params: {} },
+  read_messages: { tool: 'message', action: 'read', params: {} },
+  add_reaction: { tool: 'message', action: 'react', params: {} },
   // EMBED
-  'creer_embed': { tool: 'embed', action: 'create', params: {} },
-  'update_embed': { tool: 'embed', action: 'edit', params: {} },
-  'get_embed_details': { tool: 'embed', action: 'get', params: {} },
-  'list_embeds': { tool: 'embed', action: 'list', params: {} },
+  creer_embed: { tool: 'embed', action: 'create', params: {} },
+  update_embed: { tool: 'embed', action: 'edit', params: {} },
+  get_embed_details: { tool: 'embed', action: 'get', params: {} },
+  list_embeds: { tool: 'embed', action: 'list', params: {} },
   // CHANNEL
-  'create_channel': { tool: 'channel', action: 'create', params: {} },
-  'edit_channel': { tool: 'channel', action: 'edit', params: {} },
-  'delete_channel': { tool: 'channel', action: 'delete', params: {} },
-  'list_channels': { tool: 'channel', action: 'list', params: {} },
-  'get_channels': { tool: 'channel', action: 'list', params: {} },
-  'set_channel_permissions': { tool: 'channel', action: 'permissions', params: {} },
+  create_channel: { tool: 'channel', action: 'create', params: {} },
+  edit_channel: { tool: 'channel', action: 'edit', params: {} },
+  delete_channel: { tool: 'channel', action: 'delete', params: {} },
+  list_channels: { tool: 'channel', action: 'list', params: {} },
+  get_channels: { tool: 'channel', action: 'list', params: {} },
+  set_channel_permissions: { tool: 'channel', action: 'permissions', params: {} },
   // ROLE
-  'create_role': { tool: 'role', action: 'create', params: {} },
-  'edit_role': { tool: 'role', action: 'edit', params: {} },
-  'delete_role': { tool: 'role', action: 'delete', params: {} },
-  'list_roles': { tool: 'role', action: 'list', params: {} },
-  'set_role_permissions': { tool: 'role', action: 'permissions', params: {} },
+  create_role: { tool: 'role', action: 'create', params: {} },
+  edit_role: { tool: 'role', action: 'edit', params: {} },
+  delete_role: { tool: 'role', action: 'delete', params: {} },
+  list_roles: { tool: 'role', action: 'list', params: {} },
+  set_role_permissions: { tool: 'role', action: 'permissions', params: {} },
   // MEMBER
-  'list_members': { tool: 'member', action: 'list', params: {} },
-  'get_user_info': { tool: 'member', action: 'info', params: {} },
-  'move_member': { tool: 'member', action: 'move', params: {} },
-  'timeout_member': { tool: 'member', action: 'timeout', params: {} },
-  'warn_member': { tool: 'member', action: 'warn', params: {} },
-  'ban_member': { tool: 'member', action: 'ban', params: {} },
-  'kick_member': { tool: 'member', action: 'kick', params: {} },
-  'unban_member': { tool: 'member', action: 'unban', params: {} },
-  'add_role_to_member': { tool: 'member', action: 'role_add', params: {} },
-  'remove_role_from_member': { tool: 'member', action: 'role_remove', params: {} },
-  'remove_timeout': { tool: 'member', action: 'timeout', params: {} },
+  list_members: { tool: 'member', action: 'list', params: {} },
+  get_user_info: { tool: 'member', action: 'info', params: {} },
+  move_member: { tool: 'member', action: 'move', params: {} },
+  timeout_member: { tool: 'member', action: 'timeout', params: {} },
+  warn_member: { tool: 'member', action: 'warn', params: {} },
+  ban_member: { tool: 'member', action: 'ban', params: {} },
+  kick_member: { tool: 'member', action: 'kick', params: {} },
+  unban_member: { tool: 'member', action: 'unban', params: {} },
+  add_role_to_member: { tool: 'member', action: 'role_add', params: {} },
+  remove_role_from_member: { tool: 'member', action: 'role_remove', params: {} },
+  remove_timeout: { tool: 'member', action: 'timeout', params: {} },
   // POLL
-  'create_poll': { tool: 'poll', action: 'create', params: {} },
-  'vote_poll': { tool: 'poll', action: 'vote', params: {} },
+  create_poll: { tool: 'poll', action: 'create', params: {} },
+  vote_poll: { tool: 'poll', action: 'vote', params: {} },
   // BUTTON
-  'create_button': { tool: 'button', action: 'create', params: {} },
+  create_button: { tool: 'button', action: 'create', params: {} },
   // MENU
-  'create_menu': { tool: 'menu', action: 'create', params: {} },
+  create_menu: { tool: 'menu', action: 'create', params: {} },
   // SERVER
-  'get_server_info': { tool: 'server', action: 'info', params: {} },
-  'reset_discord_connection': { tool: 'server', action: 'reset', params: {} },
+  get_server_info: { tool: 'server', action: 'info', params: {} },
+  reset_discord_connection: { tool: 'server', action: 'reset', params: {} },
   // MISC
-  'code_preview': { tool: 'misc', action: 'code_preview', params: {} },
-  'list_images': { tool: 'misc', action: 'list_images', params: {} },
+  code_preview: { tool: 'misc', action: 'code_preview', params: {} },
+  list_images: { tool: 'misc', action: 'list_images', params: {} },
 };
 
 // ================================================================================
@@ -484,33 +578,35 @@ const TOOL_NAME_MAPPING: Record<string, { tool: string; action: string; params: 
 
 async function executeFileTool(args: z.infer<typeof FileParamsSchema>): Promise<string> {
   const { action } = args;
-  
+
   if (action === 'upload') {
-    const { channelId, filePath, fileName, message, spoiler, description } = args as z.infer<typeof FileUploadParamsSchema>;
-    
+    const { channelId, filePath, fileName, message, spoiler, description } = args as z.infer<
+      typeof FileUploadParamsSchema
+    >;
+
     const sizeCheck = await checkFileSize(filePath);
     if (!sizeCheck.valid) {
       return `❌ ${sizeCheck.error}`;
     }
-    
+
     const client = await ensureDiscordConnection();
     const channel = await client.channels.fetch(channelId);
     if (!channel || !('send' in channel)) {
       return '❌ Canal invalide';
     }
-    
+
     const fileBuffer = await readFile(filePath);
     const originalName = fileName || filePath.split(/[/\\]/).pop() || 'fichier';
     const finalName = spoiler ? `SPOILER_${originalName}` : originalName;
-    
+
     const attachment = new AttachmentBuilder(fileBuffer, { name: finalName });
-    
+
     if (description) {
       const fileEmbed = new EmbedBuilder()
         .setDescription(description)
         .setColor(0x00ff00)
         .setTimestamp();
-      
+
       const msg = await channel.send({
         content: message || null,
         files: [attachment],
@@ -518,52 +614,52 @@ async function executeFileTool(args: z.infer<typeof FileParamsSchema>): Promise<
       });
       return `✅ Fichier uploadé | ID: ${msg.id} | Size: ${(sizeCheck.size / 1024 / 1024).toFixed(2)}MB`;
     }
-    
+
     const msg = await channel.send({
       content: message || null,
       files: [attachment],
     });
-    
+
     return `✅ Fichier uploadé | ID: ${msg.id} | Size: ${(sizeCheck.size / 1024 / 1024).toFixed(2)}MB`;
   }
-  
+
   if (action === 'download') {
     const { url, fileName } = args as z.infer<typeof FileDownloadParamsSchema>;
     // Téléchargement via fetch - à implémenter selon besoin
     return `📥 Téléchargement: ${url} → ${fileName || 'local'}`;
   }
-  
+
   return '❌ Action file invalide';
 }
 
 async function executeMessageTool(args: z.infer<typeof MessageParamsSchema>): Promise<string> {
   const { action, channelId, messageId, content, newContent, limit, json, emoji, reason } = args;
-  
+
   const client = await ensureDiscordConnection();
   const channel = await client.channels.fetch(channelId);
   if (!channel || !('send' in channel)) {
     throw new Error('Canal invalide');
   }
-  
+
   switch (action) {
-    case 'send':
-      if (!content) return '❌ content requis pour send';
+    case 'envoyer':
+      if (!content) return '❌ content requis pour envoyer';
       const msg = await channel.send(content);
       return `✅ Message envoyé | ID: ${msg.id}`;
-    
-    case 'edit':
-      if (!messageId || !newContent) return '❌ messageId + newContent requis pour edit';
+
+    case 'modifier':
+      if (!messageId || !newContent) return '❌ messageId + newContent requis pour modifier';
       const editMsg = await channel.messages.fetch(messageId);
       await editMsg.edit(newContent);
       return `✅ Message modifié | ID: ${messageId}`;
-    
-    case 'delete':
-      if (!messageId) return '❌ messageId requis pour delete';
+
+    case 'supprimer':
+      if (!messageId) return '❌ messageId requis pour supprimer';
       const delMsg = await channel.messages.fetch(messageId);
       await delMsg.delete();
       return `✅ Message supprimé | ID: ${messageId}${reason ? ` | Raison: ${reason}` : ''}`;
-    
-    case 'read':
+
+    case 'lire':
       const messages = await channel.messages.fetch({ limit: limit || 10 });
       if (json) {
         const data = messages.map(m => ({
@@ -576,13 +672,13 @@ async function executeMessageTool(args: z.infer<typeof MessageParamsSchema>): Pr
       }
       const list = messages.map(m => `• ${m.author.username}: ${m.content}`).join('\n');
       return `📖 ${messages.size} messages:\n${list}`;
-    
-    case 'react':
-      if (!messageId || !emoji) return '❌ messageId + emoji requis pour react';
+
+    case 'reagir':
+      if (!messageId || !emoji) return '❌ messageId + emoji requis pour reagir';
       const reactMsg = await channel.messages.fetch(messageId);
       await reactMsg.react(emoji);
       return `✅ Réaction ${emoji} ajoutée`;
-    
+
     default:
       return '❌ Action message invalide';
   }
@@ -590,47 +686,133 @@ async function executeMessageTool(args: z.infer<typeof MessageParamsSchema>): Pr
 
 async function executeEmbedTool(args: any): Promise<string> {
   const { action } = args;
-  
-  // NOTE: L'implémentation complète de creer_embed est dans embeds.ts
-  // Cette fonction sert de redirection pour l'outil unifié
-  
-  if (action === 'create') {
-    // Déléguer à l'implémentation existante de creer_embed
-    // En attendant la refonte complète, on fait un appel direct
-    const { channelId, ...embedArgs } = args;
-    if (!channelId) return '❌ channelId requis pour creer_embed';
-    
-    // Import dynamique pour éviter les circular deps
-    const { registerEmbedTools } = await import('./embeds.js');
-    // Retourner un message guide vers l'outil original
-    return `📝 Pour créer un embed, utilisez les paramètres: title, description, color, fields, etc. L'outil deleguera automatiquement à creer_embed.`;
+
+  if (action === 'creer') {
+    if (!args.channelId) return '❌ channelId requis pour creer un embed';
+    if (!args.title) return '❌ title requis pour creer un embed';
+    if (!args.description) return '❌ description requise pour creer un embed';
+    // Délègue à executeCreerEmbedLite (helper dans creerEmbedLite.ts).
+    // gestion_embeds est maintenant un dispatcher fonctionnel.
+    // Pour les features avancées (theme, buttons, persistence), utiliser
+    // creer_embed directement.
+    return await executeCreerEmbedLite(args as any);
   }
-  
-  if (action === 'edit') {
-    if (!args.messageId) return '❌ messageId requis pour edit embed';
-    return `✏️ Edit embed: ${args.messageId}`;
+
+  if (action === 'modifier') {
+    if (!args.messageId) return '❌ messageId requis pour modifier un embed';
+    // Délègue à executeUpdateEmbed (helper exporté depuis editEmbed.ts).
+    // gestion_embeds est maintenant un dispatcher fonctionnel vers update_embed.
+    return await executeUpdateEmbed(args as any);
   }
-  
-  if (action === 'get') {
-    if (!args.messageId) return '❌ messageId requis pour get embed';
-    return `📋 Get embed: ${args.messageId}`;
+
+  if (action === 'obtenir') {
+    if (!args.messageId) return '❌ messageId requis pour obtenir les détails';
+    return await executeGetEmbedDetails({
+      channelId: args.channelId,
+      messageId: args.messageId,
+      embedIndex: args.embedIndex,
+    });
   }
-  
+
+  if (action === 'lister') {
+    if (!args.channelId) return '❌ channelId requis pour lister les embeds';
+    return await executeListEmbeds({
+      channelId: args.channelId,
+      limit: args.limit,
+    });
+  }
+
+  if (action === 'themes') {
+    // Catalogue généré dynamiquement depuis VALID_THEMES (cf. POC #2)
+    return buildThemesCatalog();
+  }
+
   return '❌ Action embed invalide';
 }
 
+// Catalogue des themes — généré dynamiquement depuis VALID_THEMES (embeds.ts)
+// Source unique de vérité: si on ajoute un theme dans embeds.ts, il apparaît
+// automatiquement ici sans avoir à modifier ce fichier.
+const THEME_DESCRIPTIONS: Record<string, { name: string; color: string; usage: string }> = {
+  data_report: {
+    name: 'Rapport de données',
+    color: '#2F3136',
+    usage: 'Dashboards, analytics, métriques',
+  },
+  status_update: {
+    name: 'Status service',
+    color: '#2ECC71',
+    usage: 'Statut système, santé services',
+  },
+  product_showcase: { name: 'Vitrine produit', color: '#3498DB', usage: 'Démo, feature highlight' },
+  leaderboard: { name: 'Classement', color: '#F1C40F', usage: 'Top X, ranking' },
+  tech_announcement: { name: 'Annonce tech', color: '#9B59B6', usage: 'Releases, changelogs' },
+  social_feed: { name: 'Feed social', color: '#EB459E', usage: 'Posts, activité communauté' },
+  dashboard: { name: 'Dashboard', color: '#1ABC9C', usage: 'Métriques live' },
+  noel: { name: 'Noël', color: '#C0392B', usage: 'Saison festive' },
+  minimal: { name: 'Minimal', color: '#95A5A6', usage: 'Sobre, lisible' },
+  cyber_code: { name: 'Cyber Code', color: '#00FF00', usage: 'Code, terminal, dev' },
+  cyberpunk: { name: 'Cyberpunk', color: '#FF00FF', usage: 'Futuriste dystopique' },
+  gaming: { name: 'Gaming', color: '#E74C3C', usage: 'Jeux, esport' },
+  corporate: { name: 'Corporate', color: '#34495E', usage: 'Pro, B2B' },
+  sunset: { name: 'Sunset', color: '#E67E22', usage: 'Chill, événement' },
+  ocean: { name: 'Ocean', color: '#006994', usage: 'Calme, pro aquatique' },
+  halloween: { name: 'Halloween', color: '#D35400', usage: 'Saison horreur' },
+  vector_pg: { name: 'Vector PG', color: '#16A085', usage: 'BD, illustration' },
+  claude_code: { name: 'Claude Code', color: '#D97706', usage: 'Code IA, assistant dev' },
+  mcp: { name: 'MCP', color: '#0EA5E9', usage: 'Model Context Protocol' },
+  sentinel_alpha: { name: 'Sentinel Alpha', color: '#FFD700', usage: '🚨 Trading signals' },
+  deep_logic: { name: 'Deep Logic', color: '#2C3E50', usage: 'Raisonnement, analysis' },
+  matrix_rain: { name: 'Matrix Rain', color: '#00FF41', usage: '🕶️ Hacker, ASCII art' },
+  trading_master: { name: 'Trading Master', color: '#00FF85', usage: '💰 Finance, momentum' },
+  nebula_vision: { name: 'Nebula Vision', color: '#8E44AD', usage: '🌌 AI vision' },
+};
+
+function buildThemesCatalog(): string {
+  const header = `🎨 CATALOGUE DES ${VALID_THEMES.length} THEMES D'EMBED
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+THÈMES SUPPORTÉS PAR creer_embed (source: VALID_THEMES dans embeds.ts)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+`;
+  const lines = (VALID_THEMES as readonly string[]).map(t => {
+    const d = THEME_DESCRIPTIONS[t] || { name: t, color: '#000', usage: '—' };
+    return `• ${t.padEnd(20)} — ${d.name} (${d.color})\n                  Usage: ${d.usage}`;
+  });
+  const footer = `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+UTILISATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Passez le nom du theme au paramètre 'theme' lors de la creation:
+{
+  "action": "creer",
+  "channelId": "123",
+  "title": "Mon titre",
+  "description": "Ma description",
+  "theme": "minimal"
+}
+
+NOTE: Le theme definit la COULEUR de la barre latérale gauche + le formatage.
+Pour le reste (titre, description, image, etc.), utilisez les autres parametres.`;
+  return header + lines.join('\n') + footer;
+}
+
 async function executeChannelTool(args: z.infer<typeof ChannelParamsSchema>): Promise<string> {
-  const { action, channelId, name, type, categoryId, newName, filterType, permissions, reason } = args;
-  
+  const { action, channelId, name, type, categoryId, newName, filterType, permissions, reason } =
+    args;
+
   const client = await ensureDiscordConnection();
   const guild = client.guilds.cache.first();
   if (!guild) return '❌ Aucun serveur';
-  
+
   switch (action) {
-    case 'list': {
+    case 'lister': {
       await guild.channels.fetch();
       let channels = Array.from(guild.channels.cache.values());
-      
+
       if (filterType && filterType !== 'all') {
         const typeMap: Record<string, number> = {
           text: ChannelType.GuildText,
@@ -639,53 +821,62 @@ async function executeChannelTool(args: z.infer<typeof ChannelParamsSchema>): Pr
         };
         channels = channels.filter(c => c.type === typeMap[filterType]);
       }
-      
+
       channels.sort((a, b) => a.name.localeCompare(b.name));
       const emoji: Record<number, string> = {
         [ChannelType.GuildText]: '💬',
         [ChannelType.GuildVoice]: '🔊',
         [ChannelType.GuildCategory]: '📁',
       };
-      
-      const list = channels.map(c => {
-        const cat = c.parent ? ` (${c.parent.name})` : '';
-        return `${emoji[c.type] || '📌'} **${c.name}**${cat} [${c.id}]`;
-      }).join('\n');
-      
+
+      const list = channels
+        .map(c => {
+          const cat = c.parent ? ` (${c.parent.name})` : '';
+          return `${emoji[c.type] || '📌'} **${c.name}**${cat} [${c.id}]`;
+        })
+        .join('\n');
+
       return `📋 **${channels.length} canaux** (${filterType}):\n\n${list}`;
     }
-    
-    case 'create': {
-      if (!name) return '❌ name requis pour create channel';
-      const typeMap: Record<string, number> = { text: ChannelType.GuildText, voice: ChannelType.GuildVoice };
-      const channelData: any = { name, type: typeMap[type || 'text'] || ChannelType.GuildText, reason };
+
+    case 'creer': {
+      if (!name) return '❌ name requis pour creer channel';
+      const typeMap: Record<string, number> = {
+        text: ChannelType.GuildText,
+        voice: ChannelType.GuildVoice,
+      };
+      const channelData: any = {
+        name,
+        type: typeMap[type || 'text'] || ChannelType.GuildText,
+        reason,
+      };
       if (categoryId) channelData.parent = categoryId;
-      
+
       const channel = await guild.channels.create(channelData);
       return `✅ Canal **${channel.name}** créé (ID: ${channel.id})`;
     }
-    
-    case 'edit': {
+
+    case 'modifier': {
       if (!channelId) return '❌ channelId requis pour edit channel';
       const channel = await guild.channels.fetch(channelId);
       if (!channel) return `❌ Canal ${channelId} introuvable`;
-      
+
       const updateData: any = {};
       if (newName) updateData.name = newName;
       if (categoryId) updateData.parent = categoryId;
-      
+
       await channel.edit(updateData);
       return `✅ Canal modifié`;
     }
-    
-    case 'delete': {
+
+    case 'supprimer': {
       if (!channelId) return '❌ channelId requis pour delete channel';
       const channel = await guild.channels.fetch(channelId);
       if (!channel) return `❌ Canal ${channelId} introuvable`;
       await channel.delete(reason);
       return `✅ Canal supprimé`;
     }
-    
+
     case 'permissions': {
       if (!channelId || !permissions) return '❌ channelId + permissions requis';
       const channel = await guild.channels.fetch(channelId);
@@ -701,206 +892,243 @@ async function executeChannelTool(args: z.infer<typeof ChannelParamsSchema>): Pr
       }
       return `✅ Permissions mises à jour`;
     }
-    
+
     default:
       return '❌ Action channel invalide';
   }
 }
 
 async function executeRoleTool(args: z.infer<typeof RoleParamsSchema>): Promise<string> {
-  const { action, roleId, name, color, hoist, mentionable, permissions, newName, includePermissions, allow, deny } = args;
-  
+  const {
+    action,
+    roleId,
+    name,
+    color,
+    hoist,
+    mentionable,
+    permissions,
+    newName,
+    includePermissions,
+    allow,
+    deny,
+  } = args;
+
   const client = await ensureDiscordConnection();
   const guild = client.guilds.cache.first();
   if (!guild) return '❌ Aucun serveur';
-  
+
   switch (action) {
-    case 'list': {
+    case 'lister': {
       await guild.roles.fetch();
       const roles = Array.from(guild.roles.cache.values())
         .sort((a, b) => b.position - a.position)
         .filter(r => r.name !== '@everyone');
-      
-      const list = roles.map(r => {
-        const perms = includePermissions ? `\n   ${r.permissions.toArray().join(', ')}` : '';
-        return `• **${r.name}** (${r.id})${r.color ? ` 🎨 ${r.hexColor}` : ''}${perms}`;
-      }).join('\n');
-      
+
+      const list = roles
+        .map(r => {
+          const perms = includePermissions ? `\n   ${r.permissions.toArray().join(', ')}` : '';
+          return `• **${r.name}** (${r.id})${r.color ? ` 🎨 ${r.hexColor}` : ''}${perms}`;
+        })
+        .join('\n');
+
       return `📋 **${roles.length} rôles**:\n\n${list}`;
     }
-    
-    case 'create': {
-      if (!name) return '❌ name requis pour create role';
+
+    case 'creer': {
+      if (!name) return '❌ name requis pour creer role';
       const roleData: any = { hoist: hoist || false, mentionable: mentionable || false };
       if (color) roleData.color = parseInt(color.replace('#', ''), 16);
       if (permissions) roleData.permissions = permissions;
-      
+
       const role = await guild.roles.create(roleData);
       return `✅ Rôle **${role.name}** créé (ID: ${role.id})`;
     }
-    
-    case 'edit': {
+
+    case 'modifier': {
       if (!roleId) return '❌ roleId requis pour edit role';
       const role = await guild.roles.fetch(roleId);
       if (!role) return `❌ Rôle ${roleId} introuvable`;
-      
+
       const updateData: any = {};
       if (newName) updateData.name = newName;
       if (color) updateData.color = parseInt(color.replace('#', ''), 16);
       if (hoist !== undefined) updateData.hoist = hoist;
       if (mentionable !== undefined) updateData.mentionable = mentionable;
-      
+
       await role.edit(updateData);
       return `✅ Rôle **${role.name}** modifié`;
     }
-    
-    case 'delete': {
+
+    case 'supprimer': {
       if (!roleId) return '❌ roleId requis pour delete role';
       const role = await guild.roles.fetch(roleId);
       if (!role) return `❌ Rôle ${roleId} introuvable`;
       await role.delete();
       return `✅ Rôle supprimé`;
     }
-    
+
     case 'permissions': {
       if (!roleId || (!allow && !deny)) return '❌ roleId + allow/deny requis';
       const role = await guild.roles.fetch(roleId);
       if (!role) return `❌ Rôle ${roleId} introuvable`;
-      
+
       const updateData: any = {};
       if (allow) updateData.permissions = allow;
       await role.edit(updateData);
       return `✅ Permissions du rôle mises à jour`;
     }
-    
+
     default:
       return '❌ Action role invalide';
   }
 }
 
 async function executeMemberTool(args: z.infer<typeof MemberParamsSchema>): Promise<string> {
-  const { action, userId, limit, search, sortBy, includeBots, channelId, duration, reason, severity, deleteMessagesDays, roleId } = args;
-  
+  const {
+    action,
+    userId,
+    limit,
+    search,
+    sortBy,
+    includeBots,
+    channelId,
+    duration,
+    reason,
+    severity,
+    deleteMessagesDays,
+    roleId,
+  } = args;
+
   const client = await ensureDiscordConnection();
   const guild = client.guilds.cache.first();
   if (!guild) return '❌ Aucun serveur';
-  
+
   switch (action) {
-    case 'list': {
+    case 'lister': {
       await guild.members.fetch();
       let members = Array.from(guild.members.cache.values());
-      
+
       if (!includeBots) members = members.filter(m => !m.user.bot);
       if (search) {
         const s = search.toLowerCase();
-        members = members.filter(m => 
-          m.user.username.toLowerCase().includes(s) || m.displayName.toLowerCase().includes(s)
+        members = members.filter(
+          m => m.user.username.toLowerCase().includes(s) || m.displayName.toLowerCase().includes(s)
         );
       }
-      
+
       members.sort((a, b) => {
         switch (sortBy) {
-          case 'name': return a.displayName.localeCompare(b.displayName);
-          case 'id': return a.user.id.localeCompare(b.user.id);
-          default: return a.joinedAt ? a.joinedAt.getTime() - (b.joinedAt?.getTime() || 0) : 0;
+          case 'name':
+            return a.displayName.localeCompare(b.displayName);
+          case 'id':
+            return a.user.id.localeCompare(b.user.id);
+          default:
+            return a.joinedAt ? a.joinedAt.getTime() - (b.joinedAt?.getTime() || 0) : 0;
         }
       });
-      
+
       members = members.slice(0, limit || 20);
-      const list = members.map(m => {
-        const status = m.presence?.status || 'offline';
-        const emoji = { online: '🟢', idle: '🌙', dnd: '🔴', offline: '⚫' }[status] || '⚫';
-        return `${emoji} **${m.displayName}** (${m.user.username})${m.user.bot ? ' [🤖]' : ''}`;
-      }).join('\n');
-      
+      const list = members
+        .map(m => {
+          const status = m.presence?.status || 'offline';
+          const emoji = { online: '🟢', idle: '🌙', dnd: '🔴', offline: '⚫' }[status] || '⚫';
+          return `${emoji} **${m.displayName}** (${m.user.username})${m.user.bot ? ' [🤖]' : ''}`;
+        })
+        .join('\n');
+
       return `📋 **${members.length} membres**:\n\n${list}`;
     }
-    
+
     case 'info': {
       if (!userId) return '❌ userId requis pour info';
       const member = await guild.members.fetch(userId).catch(() => null);
       if (!member) return `❌ Membre ${userId} introuvable`;
-      
+
       const joined = member.joinedAt?.toISOString() || 'Inconnu';
       const created = member.user.createdAt.toISOString();
-      
-      return `👤 **${member.displayName}**\n` +
+
+      return (
+        `👤 **${member.displayName}**\n` +
         `Username: ${member.user.username}\n` +
         `ID: ${member.user.id}\n` +
         `Bot: ${member.user.bot ? 'Oui' : 'Non'}\n` +
         `Rejoint: ${joined}\n` +
-        `Compte créé: ${created}`;
+        `Compte créé: ${created}`
+      );
     }
-    
-    case 'move': {
+
+    case 'deplacer': {
       if (!userId || !channelId) return '❌ userId + channelId requis pour move';
       const member = await guild.members.fetch(userId);
       const channel = await client.channels.fetch(channelId);
       if (!channel || !('voice' in channel)) return '❌ Canal vocal introuvable';
       await member.voice.setChannel(channel as any);
-      return `✅ ${member.displayName} déplacé vers ${('name' in channel) ? channel.name : channelId}`;
+      return `✅ ${member.displayName} déplacé vers ${'name' in channel ? channel.name : channelId}`;
     }
-    
+
     case 'timeout': {
       if (!userId) return '❌ userId requis pour timeout';
       const member = await guild.members.fetch(userId);
       const ms = duration ? parseDuration(duration) : null;
-      
+
       if (ms === null) {
         // Retirer le timeout
         await member.timeout(null, reason);
         return `✅ Timeout retiré pour ${member.displayName}`;
       }
-      
+
       await member.timeout(ms, reason);
       return `✅ Timeout ${duration} appliqué à ${member.displayName}`;
     }
-    
-    case 'warn': {
+
+    case 'avertir': {
       if (!userId || !reason) return '❌ userId + reason requis pour warn';
       const member = await guild.members.fetch(userId);
       const sev = severity || 1;
       const emoji = sev <= 3 ? '⚠️' : sev <= 6 ? '🔶' : '🔴';
-      
+
       // Envoyer un message dans le canal (ou DM) pour le warn
       return `${emoji} **WARN [${sev}/10]** ${member.displayName}\nRaison: ${reason}`;
     }
-    
-    case 'ban': {
+
+    case 'bannir': {
       if (!userId) return '❌ userId requis pour ban';
-      await guild.members.ban(userId, { deleteMessageSeconds: (deleteMessagesDays || 0) * 86400, reason });
+      await guild.members.ban(userId, {
+        deleteMessageSeconds: (deleteMessagesDays || 0) * 86400,
+        reason,
+      });
       return `🔨 **BAN** ${userId}${reason ? ` | Raison: ${reason}` : ''}`;
     }
-    
-    case 'kick': {
+
+    case 'expulser': {
       if (!userId) return '❌ userId requis pour kick';
       const member = await guild.members.fetch(userId);
       await member.kick(reason);
       return `👢 **KICK** ${member.displayName}${reason ? ` | Raison: ${reason}` : ''}`;
     }
-    
-    case 'unban': {
+
+    case 'debannir': {
       if (!userId) return '❌ userId requis pour unban';
       await guild.bans.remove(userId, reason);
       return `✅ **UNBAN** ${userId}`;
     }
-    
-    case 'role_add': {
+
+    case 'ajouter_role': {
       if (!userId || !roleId) return '❌ userId + roleId requis pour role_add';
       const member = await guild.members.fetch(userId);
       const role = await guild.roles.fetch(roleId);
       await member.roles.add(role);
       return `✅ Rôle ${role.name} ajouté à ${member.displayName}`;
     }
-    
-    case 'role_remove': {
+
+    case 'retirer_role': {
       if (!userId || !roleId) return '❌ userId + roleId requis pour role_remove';
       const member = await guild.members.fetch(userId);
       const role = await guild.roles.fetch(roleId);
       await member.roles.remove(role);
       return `✅ Rôle ${role.name} retiré de ${member.displayName}`;
     }
-    
+
     default:
       return '❌ Action member invalide';
   }
@@ -913,17 +1141,17 @@ async function executeMemberTool(args: z.infer<typeof MemberParamsSchema>): Prom
 function parseDuration(str: string): number | null {
   const match = str.match(/^(\d+)([hmsd])$/);
   if (!match) return null;
-  
+
   const value = parseInt(match[1]);
   const unit = match[2];
-  
+
   const multipliers: Record<string, number> = {
     s: 1000,
     m: 60000,
     h: 3600000,
     d: 86400000,
   };
-  
+
   return value * multipliers[unit];
 }
 
@@ -932,15 +1160,14 @@ function parseDuration(str: string): number | null {
 // ===============================================================================
 
 export function registerUnifiedTools(server: FastMCP) {
-
   // NOTE: L'outil 'file' unifié (upload/download) a été retiré car son schema
   // z.discriminatedUnion génère un format incompatible avec le SDK MCP 1.29.
   // Utiliser à la place: 'uploader_fichier' et 'telecharger_fichier' (outils séparés).
   // --------------------------------------------------------------------------
-  // 2. MESSAGE - Send/Edit/Delete/Read/React
+  // 2. GESTION MESSAGES - Envoyer/Modifier/Supprimer/Lire/React
   // --------------------------------------------------------------------------
   server.addTool({
-    name: 'message',
+    name: 'gestion_messages',
     description: `💬 MESSAGE TOOL - Gestion complète des messages Discord
 
 ACTIONS:
@@ -976,27 +1203,29 @@ REACT PARAMS:
 EXEMPLE:
   { "action": "send", "channelId": "123", "content": "Hello!" }`,
     parameters: MessageParamsSchema,
-    execute: async (args) => {
+    execute: async args => {
       try {
         return await executeMessageTool(args);
       } catch (error: any) {
-        Logger.error('❌ [message]', error.message);
+        Logger.error('❌ [gestion_messages]', error.message);
         return `❌ Erreur: ${error.message}`;
       }
     },
   });
 
   // --------------------------------------------------------------------------
-  // 3. EMBED - Create/Edit/Get
+  // 3. GESTION EMBEDS - Creer/Modifier/Obtenir
   // --------------------------------------------------------------------------
   server.addTool({
-    name: 'embed',
+    name: 'gestion_embeds',
     description: `🎨 EMBED TOOL - Créer et gérer des embeds Discord riches
 
 ACTIONS:
-  • create - Créer un nouvel embed dans un canal
-  • edit   - Modifier un embed existant
-  • get    - Récupérer les détails d'un embed
+  • creer    - Créer un nouvel embed (supporte themes prédéfinis)
+  • modifier - Modifier un embed existant (alias: update_embed)
+  • obtenir  - Récupérer les détails complets d'un embed (alias: get_embed_details)
+  • lister   - Lister tous les embeds d'un channel (alias: list_embeds)
+  • themes   - Lister les 22 themes disponibles avec description et cas d'usage
 
 CREATE PARAMS:
   channelId: ID du canal destination
@@ -1020,21 +1249,21 @@ EDIT PARAMS:
 EXEMPLE:
   { "action": "create", "channelId": "123", "title": "Titre", "description": "Desc", "color": "#ff0000" }`,
     parameters: EmbedParamsSchema,
-    execute: async (args) => {
+    execute: async args => {
       try {
         return await executeEmbedTool(args);
       } catch (error: any) {
-        Logger.error('❌ [embed]', error.message);
+        Logger.error('❌ [gestion_embeds]', error.message);
         return `❌ Erreur: ${error.message}`;
       }
     },
   });
 
   // --------------------------------------------------------------------------
-  // 4. CHANNEL - Create/Edit/Delete/List/Permissions
+  // 4. GESTION CANAUX - Creer/Modifier/Supprimer/Lister/Permissions
   // --------------------------------------------------------------------------
   server.addTool({
-    name: 'channel',
+    name: 'gestion_canaux',
     description: `📁 CHANNEL TOOL - Gestion des canaux Discord
 
 ACTIONS:
@@ -1068,21 +1297,21 @@ EXEMPLE:
   { "action": "list", "filterType": "text" }
   { "action": "create", "name": "nouveau-canal", "type": "text" }`,
     parameters: ChannelParamsSchema,
-    execute: async (args) => {
+    execute: async args => {
       try {
         return await executeChannelTool(args);
       } catch (error: any) {
-        Logger.error('❌ [channel]', error.message);
+        Logger.error('❌ [gestion_canaux]', error.message);
         return `❌ Erreur: ${error.message}`;
       }
     },
   });
 
   // --------------------------------------------------------------------------
-  // 5. ROLE - Create/Edit/Delete/List/Permissions
+  // 5. GESTION ROLES - Creer/Modifier/Supprimer/Lister/Permissions
   // --------------------------------------------------------------------------
   server.addTool({
-    name: 'role',
+    name: 'gestion_roles',
     description: `🎭 ROLE TOOL - Gestion des rôles Discord
 
 ACTIONS:
@@ -1113,21 +1342,21 @@ EXEMPLE:
   { "action": "list" }
   { "action": "create", "name": "VIP", "color": "#ffd700", "hoist": true }`,
     parameters: RoleParamsSchema,
-    execute: async (args) => {
+    execute: async args => {
       try {
         return await executeRoleTool(args);
       } catch (error: any) {
-        Logger.error('❌ [role]', error.message);
+        Logger.error('❌ [gestion_roles]', error.message);
         return `❌ Erreur: ${error.message}`;
       }
     },
   });
 
   // --------------------------------------------------------------------------
-  // 6. MEMBER - Moderation unifiée avec severity grading
+  // 6. GESTION MEMBRES - Moderation unifiee avec severity grading
   // --------------------------------------------------------------------------
   server.addTool({
-    name: 'member',
+    name: 'gestion_membres',
     description: `👥 MEMBER TOOL - Gestion des membres et modération graduée
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -1177,21 +1406,21 @@ SEVERITY GRADING (pour warn/timeout):
 EXEMPLE COMPLEX:
   { "action": "warn", "userId": "123", "reason": "Publicité non autorisée", "severity": 5 }`,
     parameters: MemberParamsSchema,
-    execute: async (args) => {
+    execute: async args => {
       try {
         return await executeMemberTool(args);
       } catch (error: any) {
-        Logger.error('❌ [member]', error.message);
+        Logger.error('❌ [gestion_membres]', error.message);
         return `❌ Erreur: ${error.message}`;
       }
     },
   });
 
   // --------------------------------------------------------------------------
-  // 7. POLL - Create/Vote (placeholder - à implémenter si utilisé)
+  // 7. GESTION SONDAGES - Creer/Voter
   // --------------------------------------------------------------------------
   server.addTool({
-    name: 'poll',
+    name: 'gestion_sondages',
     description: `📊 POLL TOOL - Créer et gérer des sondages
 
 ACTIONS:
@@ -1212,10 +1441,10 @@ VOTE PARAMS:
 EXEMPLE:
   { "action": "create", "channelId": "123", "question": "Couleur préférée?", "options": ["Rouge", "Bleu", "Vert"] }`,
     parameters: PollParamsSchema,
-    execute: async (args) => {
+    execute: async args => {
       try {
         const { action } = args;
-        if (action === 'create') {
+        if (action === 'creer') {
           return `📊 Sondage créé: ${args.question}`;
         }
         return `🗳️ Vote enregistré pour l'option ${args.optionIndex}`;
@@ -1226,10 +1455,10 @@ EXEMPLE:
   });
 
   // --------------------------------------------------------------------------
-  // 8. BUTTON - Create/Register (placeholder)
+  // 8. GESTION BOUTONS - Creer/Enregistrer
   // --------------------------------------------------------------------------
   server.addTool({
-    name: 'button',
+    name: 'gestion_boutons',
     description: `🔘 BUTTON TOOL - Créer des boutons interactifs
 
 ACTIONS:
@@ -1249,11 +1478,11 @@ PARAMS:
 EXEMPLE:
   { "action": "create", "label": "Cliquez-moi!", "style": "primary", "emoji": "👍" }`,
     parameters: ButtonParamsSchema,
-    execute: async (args) => {
+    execute: async args => {
       try {
         const { action, label, style, emoji, url, customId, disabled } = args;
-        
-        if (action === 'create') {
+
+        if (action === 'creer') {
           const btn = new ButtonBuilder()
             .setLabel(label || 'Button')
             .setStyle(ButtonStyle[style?.toUpperCase() || 'PRIMARY'])
@@ -1261,10 +1490,10 @@ EXEMPLE:
           if (emoji) btn.setEmoji(emoji);
           if (url) btn.setURL(url);
           if (customId) btn.setCustomId(customId);
-          
+
           return `🔘 Bouton créé:\n\`\`\`json\n${JSON.stringify(btn.toJSON(), null, 2)}\n\`\`\``;
         }
-        
+
         return '✅ Bouton enregistré';
       } catch (error: any) {
         return `❌ Erreur: ${error.message}`;
@@ -1273,10 +1502,10 @@ EXEMPLE:
   });
 
   // --------------------------------------------------------------------------
-  // 9. MENU - Create/Register (placeholder)
+  // 9. GESTION MENUS - Creer/Enregistrer
   // --------------------------------------------------------------------------
   server.addTool({
-    name: 'menu',
+    name: 'gestion_menus',
     description: `📋 MENU TOOL - Créer des menus dropdown
 
 ACTIONS:
@@ -1292,26 +1521,28 @@ PARAMS:
 EXEMPLE:
   { "action": "create", "placeholder": "Choisir une option", "options": [{ "label": "Option 1", "value": "opt1" }] }`,
     parameters: MenuParamsSchema,
-    execute: async (args) => {
+    execute: async args => {
       try {
         const { options, placeholder, minValues, maxValues } = args;
-        
+
         if (!options || options.length === 0) {
           return '❌ options requis pour create menu';
         }
-        
+
         const menu = new StringSelectMenuBuilder()
           .setPlaceholder(placeholder || 'Sélectionner...')
           .setMinValues(minValues || 1)
           .setMaxValues(maxValues || 1)
-          .addOptions(options.map(opt => ({
-            label: opt.label,
-            value: opt.value,
-            description: opt.description,
-            emoji: opt.emoji,
-            default: opt.default,
-          })));
-        
+          .addOptions(
+            options.map(opt => ({
+              label: opt.label,
+              value: opt.value,
+              description: opt.description,
+              emoji: opt.emoji,
+              default: opt.default,
+            }))
+          );
+
         return `📋 Menu créé:\n\`\`\`json\n${JSON.stringify(menu.toJSON(), null, 2)}\n\`\`\``;
       } catch (error: any) {
         return `❌ Erreur: ${error.message}`;
@@ -1320,10 +1551,10 @@ EXEMPLE:
   });
 
   // --------------------------------------------------------------------------
-  // 10. SERVER - Info/Reset
+  // 10. GESTION SERVEUR - Info/Reinitialiser
   // --------------------------------------------------------------------------
   server.addTool({
-    name: 'server',
+    name: 'gestion_serveur',
     description: `🖥️ SERVER TOOL - Informations et contrôle du serveur
 
 ACTIONS:
@@ -1340,35 +1571,37 @@ EXEMPLE:
   { "action": "info" }
   { "action": "reset" }`,
     parameters: ServerParamsSchema,
-    execute: async (args) => {
+    execute: async args => {
       try {
         const { action } = args;
-        
+
         if (action === 'info') {
           const client = await ensureDiscordConnection();
           const guild = client.guilds.cache.first();
           if (!guild) return '❌ Aucun serveur disponible';
-          
-          return `🖥️ **${guild.name}**\n` +
+
+          return (
+            `🖥️ **${guild.name}**\n` +
             `ID: ${guild.id}\n` +
             `Membres: ${guild.memberCount}\n` +
             `Canaux: ${guild.channels.cache.size}\n` +
             `Rôles: ${guild.roles.cache.size}\n` +
-            `Créé le: ${guild.createdAt.toISOString()}`;
+            `Créé le: ${guild.createdAt.toISOString()}`
+          );
         }
-        
-        if (action === 'reset') {
+
+        if (action === 'reinitialiser') {
           const { DiscordBridge } = await import('../discord-bridge.js');
           const { botConfig } = await import('./common.js');
           const bridge = DiscordBridge.getInstance(botConfig.token);
           bridge.resetTokenInvalid();
-          
+
           const { ensureDiscordConnection: reconnect } = await import('./common.js');
           await reconnect();
-          
+
           return '✅ Connexion Discord réinitialisée';
         }
-        
+
         return '❌ Action invalide';
       } catch (error: any) {
         return `❌ Erreur: ${error.message}`;
@@ -1379,20 +1612,20 @@ EXEMPLE:
   // --------------------------------------------------------------------------
   // COMPATIBILITÉ BACKWARD - Redirecteur d'anciens noms vers nouveaux tools
   // --------------------------------------------------------------------------
-  
+
   // Les anciens noms d'outils sont registrados comme aliases via un handler spécial
   // qui traduit les anciens paramètres vers le nouveau format
-  
+
   const legacyToolNames = Object.keys(TOOL_NAME_MAPPING);
-  
+
   // Pour chaque ancien nom, créer un tool handler de compatibilité
   for (const oldName of legacyToolNames) {
     const mapping = TOOL_NAME_MAPPING[oldName];
-    
-    // On n'enregistre pas explicitement chaque ancien nom - 
+
+    // On n'enregistre pas explicitement chaque ancien nom -
     // à la place, on les liste comme deprecated dans la description du nouveau tool
     // Le client MCP doit gérer le routing côté appelant
-    
+
     // NOTE: Si le serveur MCP ne supporte pas le routing dynamique des noms d'outils,
     // cette compatibilité devra être gérée par le caller (l'agent LLM)
   }
