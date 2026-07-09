@@ -188,67 +188,140 @@ Le serveur Discord MCP offre **10 outils unifiés** avec actions Enum pour une m
 npm install -g discord-mcp-pro
 ```
 
-### 2. Variables d'environnement
+Le package installe automatiquement un binaire `discord-mcp` dans votre PATH. Lancez-le simplement :
 
-Créez un fichier `.env` à la racine :
+```bash
+discord-mcp
+```
+
+> 💡 **Au premier install**, un message d'aide complet s'affiche (création du bot, .env, configuration MCP). Pas besoin de revenir ici.
+
+### 2. Créer un bot Discord
+
+1. Allez sur https://discord.com/developers/applications
+2. **New Application** → donnez-lui un nom
+3. **Bot** section → **Add Bot** → copiez le **Token** (c'est votre `DISCORD_TOKEN`)
+4. Activez les **Privileged Gateway Intents** :
+   - ✅ **Server Members Intent**
+   - ✅ **Message Content Intent**
+5. **OAuth2 → URL Generator** :
+   - Scopes : `bot`, `applications.commands`
+   - Bot Permissions : `Administrator` (ou granular si vous savez ce que vous faites)
+   - Ouvrez l'URL générée pour inviter le bot
+
+### 3. Variables d'environnement
+
+Créez un fichier `.env` (le wrapper `discord-mcp` cherche automatiquement dans cet ordre) :
+
+| Priorité | Localisation | Usage |
+|---|---|---|
+| 1 | `./.env` (cwd) | Override local, idéal pour tests |
+| 2 | `$HOME/.env` | Config globale partagée |
+| 3 | `<pkg dir>/.env` | Config système |
+
+Contenu minimum :
 
 ```env
 # Token Discord du bot (obligatoire)
-DISCORD_TOKEN=votre_token_ici
+DISCORD_TOKEN=your-bot-token-here
 
-# Client ID Discord (optionnel)
-DISCORD_CLIENT_ID=votre_client_id_ici
-
-# Guild ID pour les opérations de serveur (optionnel)
-DISCORD_GUILD_ID=votre_guild_id_ici
+# Guild ID (optionnel, recommandé pour limiter les opérations serveur)
+DISCORD_GUILD_ID=123456789012345678
 ```
 
-### 3. Configuration MCP (.mcp.json)
+Variables complètes (voir `.env.example` à la racine du repo) :
 
-Ajoutez à votre configuration MCP (globale ou par projet) :
+| Variable | Obligatoire | Description |
+|---|---|---|
+| `DISCORD_TOKEN` | ✅ Oui | Token du bot (https://discord.com/developers) |
+| `DISCORD_GUILD_ID` | Non | Limite les opérations à un serveur spécifique |
+| `DISCORD_CLIENT_ID` | Non | Pour OAuth flow |
+| `ADMIN_USER_ID` | Non | Restreint les commandes admin à cet utilisateur |
+| `BOT_PREFIX` | Non | Préfixe des commandes texte (défaut: `!`) |
+| `LOG_LEVEL` | Non | `info` / `debug` / `warn` / `error` |
 
-**Windows:**
+### 4. Wire to your MCP client
+
+Le serveur MCP écoute par défaut sur `http://localhost:3141/mcp`.
+
+#### Claude Desktop
+
+Éditez votre fichier de config MCP :
+
+| OS | Chemin |
+|---|---|
+| macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Linux | `~/.config/Claude/claude_desktop_config.json` |
+| Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
+
 ```json
 {
   "mcpServers": {
     "discord": {
-      "command": "node",
-      "args": ["C:\\Users\\VOTRE_USER\\AppData\\Roaming\\npm\\node_modules\\discord-mcp-pro\\dist\\index.js"]
+      "command": "discord-mcp",
+      "args": []
     }
   }
 }
 ```
 
-**macOS/Linux:**
+> 💡 **Pourquoi `"command": "discord-mcp"` plutôt qu'un chemin absolu ?** Parce que `npm install -g` ajoute le binaire à votre PATH automatiquement. Si vous avez installé via npm, cette config marche partout, multi-OS, sans chemin codé en dur.
+
+#### Hermes / Kilo / Cline / Cursor / autres
+
+Même format JSON dans leur config respective :
+
 ```json
 {
   "mcpServers": {
     "discord": {
-      "command": "node",
-      "args": ["/usr/local/lib/node_modules/discord-mcp-pro/dist/index.js"]
+      "command": "discord-mcp",
+      "args": [],
+      "env": {
+        "DISCORD_TOKEN": "${env:DISCORD_TOKEN}",
+        "DISCORD_GUILD_ID": "${env:DISCORD_GUILD_ID}"
+      }
     }
   }
 }
 ```
 
-> 💡 Avec l'installation npm globale, le chemin reste le même après chaque mise à jour !
+### 5. Premier lancement
 
----
+```bash
+discord-mcp
+```
 
-## 🤖 Configuration du Bot Discord
+Vous devriez voir :
 
-1. **Créez un bot** sur le [Portail Développeur](https://discord.com/developers/applications)
+```
+[INFO] [serveur_discord] === DÉBUT ENREGISTREMENT DES OUTILS EMBEDS ===
+[INFO] [serveur_discord] Ajout de l'outil creer_embed...
+...
+✓ discord-mcp-pro ready (17 tools, http://localhost:3141/mcp)
+```
 
-2. **Activez les intents** :
-   - ✅ Server Members Intent
-   - ✅ Message Content Intent
+Si vous voyez `Cannot find dist/index.js`, réinstallez avec :
 
-3. **Invitez le bot** avec les permissions :
-   - Gérer les messages
-   - Envoyer des messages
-   - Intégrer des liens
-   - Ajouter des réactions
-   - Utiliser les emojis externes
+```bash
+npm install -g discord-mcp-pro --force
+```
+
+### 6. Mise à jour
+
+```bash
+npm update -g discord-mcp-pro
+```
+
+Pour repasser en local dev :
+
+```bash
+git clone https://github.com/DeamonDev888/-Serveur-Discord-MCP.git
+cd -Serveur-Discord-MCP
+npm install
+npm run build
+npm run dev
+```
 
 ---
 
