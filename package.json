@@ -1,6 +1,6 @@
 {
   "name": "discord-mcp-pro",
-  "version": "2.1.6",
+  "version": "2.1.7",
   "description": "A comprehensive MCP server for Discord interaction with 10 unified tools - embeds, messages, members, roles, channels, polls, buttons, menus, files, and server management",
   "main": "dist/index.js",
   "type": "module",
