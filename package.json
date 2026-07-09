@@ -1,9 +1,12 @@
 {
   "name": "discord-mcp-pro",
-    "version": "2.1.6",
+  "version": "2.1.6",
   "description": "A comprehensive MCP server for Discord interaction with 10 unified tools - embeds, messages, members, roles, channels, polls, buttons, menus, files, and server management",
   "main": "dist/index.js",
   "type": "module",
+  "bin": {
+    "discord-mcp": "bin/discord-mcp.js"
+  },
   "author": "DeaMoN888",
   "license": "MIT",
   "repository": {
@@ -44,7 +47,8 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "prebuild": "node scripts/prebuild.mjs",
     "postbuild": "node scripts/postbuild.mjs",
-    "mcp:test": "node dist/index.js"
+    "mcp:test": "node dist/index.js",
+    "postinstall": "node scripts/postinstall.cjs"
   },
   "dependencies": {
     "discord.js": "^14.17.3",
@@ -68,6 +72,8 @@
   },
   "files": [
     "dist",
-    "bin"
+    "bin",
+    "README.md",
+    "LICENSE"
   ]
 }
