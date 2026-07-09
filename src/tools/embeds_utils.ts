@@ -274,6 +274,26 @@ ${opts.progress !== undefined ? `**PRESSURE:** ${generateProgressBar(opts.progre
       break;
   }
 
+  // ============================================================================
+  // 🛡️ POC #3: PRÉSERVATION DU DESCRIPTION UTILISATEUR
+  // ============================================================================
+  // Certains themes (sentinel_alpha, matrix_rain, trading_master, halloween...)
+  // OVERWRITENT complètement themedArgs.description avec leur template ANSI/code
+  // blocks. Le description que l'utilisateur a passé est alors PERDU.
+  //
+  // On le ré-injecte en suffixe si:
+  //   1. L'utilisateur a passé un description initial non-vide
+  //   2. ET ce description n'apparaît PAS déjà dans le rendu final
+  //      (cas où le theme le préfixe mais ne le perd pas — ex: cyber_code)
+  //
+  // Le label [USER_NOTE] le rend clairement visible comme "ce que l'agent voulait dire".
+  const userDescription = typeof args.description === 'string' ? args.description.trim() : '';
+  const finalDescription = typeof themedArgs.description === 'string' ? themedArgs.description : '';
+  if (userDescription && !finalDescription.includes(userDescription)) {
+    const separator = finalDescription ? '\n\n' : '';
+    themedArgs.description = `${finalDescription}${separator}**[USER_NOTE]** ${userDescription}`;
+  }
+
   return themedArgs;
 }
 
@@ -399,16 +419,28 @@ export function parseTable(tableText: string): string {
  */
 export function generateGuidanceMessage(urlType: string, providedUrl: string): string {
   const position = {
-    thumbnail: { size: '80x80px (petit)', ideal: 'logos, avatars, badges', position: 'haut-droite' },
-    image: { size: '400x250px (GRAND)', ideal: 'illustrations, screenshots, photos', position: 'bas' },
-    authorIcon: { size: '16x16px (TRÈS petit)', ideal: 'logos tiny, avatars mini', position: 'haut-gauche' },
+    thumbnail: {
+      size: '80x80px (petit)',
+      ideal: 'logos, avatars, badges',
+      position: 'haut-droite',
+    },
+    image: {
+      size: '400x250px (GRAND)',
+      ideal: 'illustrations, screenshots, photos',
+      position: 'bas',
+    },
+    authorIcon: {
+      size: '16x16px (TRÈS petit)',
+      ideal: 'logos tiny, avatars mini',
+      position: 'haut-gauche',
+    },
     footerIcon: { size: '16x16px (TRÈS petit)', ideal: 'icônes tiny', position: 'bas-gauche' },
   };
 
   const info = position[urlType as keyof typeof position] || {
     size: 'inconnue',
     ideal: 'logos ou illustrations',
-    position: 'dans l\'embed'
+    position: "dans l'embed",
   };
 
   return `❌ **URL externe non autorisée pour \`${urlType}\`**
@@ -497,7 +529,7 @@ function smartTruncateEmbedField(
 /**
  * Valide ET tronque tous les champs d'un embed pour respecter les limites Discord
  * Retourne un rapport détaillé pour l'agent avec instructions de fallback
- * 
+ *
  * 💡 Cette fonction PREVIENT les crashs silencieux en tronquant AVANT l'envoi
  * et en informant l'agent des corrections nécessaires.
  */
@@ -532,7 +564,11 @@ export function validateAndTruncateEmbed(args: {
 
   // Tronquer description (la plus fréquente à dépasser)
   if (safeArgs.description) {
-    const result = smartTruncateEmbedField(safeArgs.description, DISCORD_EMBED_LIMITS.DESCRIPTION_MAX, 'description');
+    const result = smartTruncateEmbedField(
+      safeArgs.description,
+      DISCORD_EMBED_LIMITS.DESCRIPTION_MAX,
+      'description'
+    );
     safeArgs.description = result.content;
     if (result.truncated && result.warning) {
       warnings.push(result.warning);
@@ -542,7 +578,11 @@ export function validateAndTruncateEmbed(args: {
 
   // Tronquer authorName
   if (safeArgs.authorName) {
-    const result = smartTruncateEmbedField(safeArgs.authorName, DISCORD_EMBED_LIMITS.AUTHOR_NAME_MAX, 'authorName');
+    const result = smartTruncateEmbedField(
+      safeArgs.authorName,
+      DISCORD_EMBED_LIMITS.AUTHOR_NAME_MAX,
+      'authorName'
+    );
     safeArgs.authorName = result.content;
     if (result.truncated && result.warning) {
       warnings.push(result.warning);
@@ -552,7 +592,11 @@ export function validateAndTruncateEmbed(args: {
 
   // Tronquer footerText
   if (safeArgs.footerText) {
-    const result = smartTruncateEmbedField(safeArgs.footerText, DISCORD_EMBED_LIMITS.FOOTER_TEXT_MAX, 'footerText');
+    const result = smartTruncateEmbedField(
+      safeArgs.footerText,
+      DISCORD_EMBED_LIMITS.FOOTER_TEXT_MAX,
+      'footerText'
+    );
     safeArgs.footerText = result.content;
     if (result.truncated && result.warning) {
       warnings.push(result.warning);
@@ -563,8 +607,16 @@ export function validateAndTruncateEmbed(args: {
   // Tronquer fields
   if (safeArgs.fields && safeArgs.fields.length > 0) {
     safeArgs.fields = safeArgs.fields.map((field: any, index: number) => {
-      const truncatedName = smartTruncateEmbedField(field.name, DISCORD_EMBED_LIMITS.FIELD_NAME_MAX, `fields[${index}].name`);
-      const truncatedValue = smartTruncateEmbedField(field.value, DISCORD_EMBED_LIMITS.FIELD_VALUE_MAX, `fields[${index}].value`);
+      const truncatedName = smartTruncateEmbedField(
+        field.name,
+        DISCORD_EMBED_LIMITS.FIELD_NAME_MAX,
+        `fields[${index}].name`
+      );
+      const truncatedValue = smartTruncateEmbedField(
+        field.value,
+        DISCORD_EMBED_LIMITS.FIELD_VALUE_MAX,
+        `fields[${index}].value`
+      );
 
       if (truncatedName.truncated || truncatedValue.truncated) {
         truncatedFields.push(`field[${index}]`);
@@ -582,20 +634,23 @@ export function validateAndTruncateEmbed(args: {
   // VALIDATION TOTALE 2000 CHARS (limite stricte Discord)
   // =====================================================
   const TOTAL_EMBED_LIMIT = 2000;
-  
+
   // Calculer total AVANT validation
   const totalChars =
     (safeArgs.title?.length || 0) +
     (safeArgs.description?.length || 0) +
     (safeArgs.authorName?.length || 0) +
     (safeArgs.footerText?.length || 0) +
-    (safeArgs.fields || []).reduce((sum: number, f: any) => sum + (f.name?.length || 0) + (f.value?.length || 0), 0);
-  
+    (safeArgs.fields || []).reduce(
+      (sum: number, f: any) => sum + (f.name?.length || 0) + (f.value?.length || 0),
+      0
+    );
+
   if (totalChars > TOTAL_EMBED_LIMIT) {
     const excess = totalChars - TOTAL_EMBED_LIMIT;
     warnings.push(
       `⚠️ [TOTAL] Dépassement limite Discord: ${totalChars}/${TOTAL_EMBED_LIMIT} chars (+${excess}). ` +
-      `Réduisez le contenu total ou utilisez pagination.`
+        `Réduisez le contenu total ou utilisez pagination.`
     );
     truncatedFields.push('TOTAL');
   }
