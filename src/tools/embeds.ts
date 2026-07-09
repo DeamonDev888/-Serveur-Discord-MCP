@@ -94,8 +94,43 @@ export const DISCORD_EMBED_LIMITS = {
   AUTHOR_NAME_MAX: 256,
   TOTAL_EMBED_CHARS: 2000, // ⚠️ Limite stricte Discord (pas 6000!)
   FIELDS_MAX: 25,
-  FIELDS_INLINE_MAX: 3,
 };
+
+// ============================================================================
+// 🎨 CATALOGUE DES THEMES (SOURCE UNIQUE DE VÉRITÉ)
+// ============================================================================
+// Liste des 24 themes supportés par creer_embed (validés par le tool).
+// Exporté pour réutilisation dans unified.ts (gestion_embeds dispatcher) et
+// partout où on doit lister les themes disponibles.
+
+export const VALID_THEMES = [
+  'data_report',
+  'status_update',
+  'product_showcase',
+  'leaderboard',
+  'tech_announcement',
+  'social_feed',
+  'dashboard',
+  'noel',
+  'minimal',
+  'cyber_code',
+  'cyberpunk',
+  'gaming',
+  'corporate',
+  'sunset',
+  'ocean',
+  'halloween',
+  'vector_pg',
+  'claude_code',
+  'mcp',
+  'sentinel_alpha',
+  'deep_logic',
+  'matrix_rain',
+  'trading_master',
+  'nebula_vision',
+] as const;
+
+export type ThemeName = (typeof VALID_THEMES)[number];
 
 /**
  * Tronque une chaîne à maxLength avec suffixe "..." si coupée
@@ -162,7 +197,11 @@ export function validateAndTruncateEmbed(args: {
 
   // Tronquer description (la plus fréquente à dépasser)
   if (safeArgs.description) {
-    const result = smartTruncateEmbedField(safeArgs.description, DISCORD_EMBED_LIMITS.DESCRIPTION_MAX, 'description');
+    const result = smartTruncateEmbedField(
+      safeArgs.description,
+      DISCORD_EMBED_LIMITS.DESCRIPTION_MAX,
+      'description'
+    );
     safeArgs.description = result.content;
     if (result.truncated && result.warning) {
       warnings.push(result.warning);
@@ -172,7 +211,11 @@ export function validateAndTruncateEmbed(args: {
 
   // Tronquer authorName
   if (safeArgs.authorName) {
-    const result = smartTruncateEmbedField(safeArgs.authorName, DISCORD_EMBED_LIMITS.AUTHOR_NAME_MAX, 'authorName');
+    const result = smartTruncateEmbedField(
+      safeArgs.authorName,
+      DISCORD_EMBED_LIMITS.AUTHOR_NAME_MAX,
+      'authorName'
+    );
     safeArgs.authorName = result.content;
     if (result.truncated && result.warning) {
       warnings.push(result.warning);
@@ -182,7 +225,11 @@ export function validateAndTruncateEmbed(args: {
 
   // Tronquer footerText
   if (safeArgs.footerText) {
-    const result = smartTruncateEmbedField(safeArgs.footerText, DISCORD_EMBED_LIMITS.FOOTER_TEXT_MAX, 'footerText');
+    const result = smartTruncateEmbedField(
+      safeArgs.footerText,
+      DISCORD_EMBED_LIMITS.FOOTER_TEXT_MAX,
+      'footerText'
+    );
     safeArgs.footerText = result.content;
     if (result.truncated && result.warning) {
       warnings.push(result.warning);
@@ -193,8 +240,16 @@ export function validateAndTruncateEmbed(args: {
   // Tronquer fields
   if (safeArgs.fields && safeArgs.fields.length > 0) {
     safeArgs.fields = safeArgs.fields.map((field: any, index: number) => {
-      const truncatedName = smartTruncateEmbedField(field.name, DISCORD_EMBED_LIMITS.FIELD_NAME_MAX, `fields[${index}].name`);
-      const truncatedValue = smartTruncateEmbedField(field.value, DISCORD_EMBED_LIMITS.FIELD_VALUE_MAX, `fields[${index}].value`);
+      const truncatedName = smartTruncateEmbedField(
+        field.name,
+        DISCORD_EMBED_LIMITS.FIELD_NAME_MAX,
+        `fields[${index}].name`
+      );
+      const truncatedValue = smartTruncateEmbedField(
+        field.value,
+        DISCORD_EMBED_LIMITS.FIELD_VALUE_MAX,
+        `fields[${index}].value`
+      );
 
       if (truncatedName.truncated || truncatedValue.truncated) {
         truncatedFields.push(`field[${index}]`);
@@ -214,7 +269,10 @@ export function validateAndTruncateEmbed(args: {
     (safeArgs.description?.length || 0) +
     (safeArgs.authorName?.length || 0) +
     (safeArgs.footerText?.length || 0) +
-    (safeArgs.fields || []).reduce((sum: number, f: any) => sum + (f.name?.length || 0) + (f.value?.length || 0), 0);
+    (safeArgs.fields || []).reduce(
+      (sum: number, f: any) => sum + (f.name?.length || 0) + (f.value?.length || 0),
+      0
+    );
 
   // Build report
   let report = '';
@@ -251,85 +309,85 @@ export function validateAndTruncateEmbed(args: {
 export function isLocalLogoUrl(url: string | undefined): boolean {
   if (!url) return false;
 
-// =====================================================
-// 4 POSITIONS D'IMAGES + BARRE COULEUR (LEFT BAR)
-// =====================================================
-//
-// ┌───────────────────────────────────────────────────────────────────┐
-// │                                                                   │
-// │ [authorIcon 16x16]                           [thumbnail 80x80]    │ ← Haut droit
-// │                                                                   │
-// │  Title                                                            │
-// │  Description...                                                   │
-// │                                                                   │ ←[COLOR_BAR 4px] gauche
-// │  ┌─────────────┬─────────────┬─────────────┐                      │
-// │  │ Field 1     │ Field 2     │ Field 3     │                      │
-// │  └─────────────┴─────────────┴─────────────┘                      │
-// │                                                                   │
-// │               [image 400x250]                                     │ ← Bas gauche
-// │              [footerIcon 16x16]                                   │   ← Bas
-// └───────────────────────────────────────────────────────────────────┘
-//
-// POSITIONS D'IMAGES:
-//   1. authorIcon  (16x16)  → Haut GAUCHE  - petite icône auteur
-//   2. thumbnail   (80x80)  → Haut DROITE  - logo/avatar principal
-//   3. footerIcon  (16x16)  → Bas GAUCHE   - petite icône footer
-//   4. image       (400x250)→ Bas DROITE   - grande image principale
-//
-// BARRE COULEUR (COLOR BAR):
-//   → 4px de large, sur le côté GAUCHE de l'embed
-//   → Définit la "couleur" de l'embed (bandeau vertical)
-//   → Paramètre: color (0xRRGGBB hex)
-//   → Si non défini: utilise la couleur du thème ou 0x2c3e50 (défaut)
-//
-// ⚠️ LIMITES DISCORD:
-//   - TOTAL: 2000 chars max par embed (title + description + fields + footer)
-//   - title: 256 chars max
-//   - description: 4096 chars max
-//   - field name: 256 chars, field value: 1024 chars
-//   - footer text: 2048 chars max
-//   - author name: 256 chars max
-//   - 25 fields max par embed
-//
-// IMAGES - PERSISTANCE ET CDN:
-//   ┌──────────────────────────────────────────────────────────────────────┐
-//   │ 📎 ATTACHMENTS (upload_local / envoi fichier)                        │
-//   │   → URL: cdn.discordapp.com/attachments/...                         │
-//   │   → ✅ PERSISTANTE si le message existe                              │
-//   │   → ⚠️ MEURT si le message source est supprimé                        │
-//   │   → 💡 Stocker le message ID pour pouvoir re-fetch si besoin         │
-//   ├──────────────────────────────────────────────────────────────────────┤
-//   │ 🌐 URLs EXTERNES (CDN tiers)                                        │
-//   │   → URL: telle que fournie (imgur, unsplash, etc.)                   │
-//   │   → ⚠️ DÉPEND du CDN externe - peut mourir ou changer                │
-//   │   → ⚠️ BLOQUÉE si non dans TRUSTED_DOMAINS                          │
-//   │   → ✅ Pas de dépendance au message Discord                          │
-//   ├──────────────────────────────────────────────────────────────────────┤
-//   │ 💾 CDN DISCORD UPLOAD (upload_fichier)                               │
-//   │   → URL: https://cdn.discordapp.com/emojis/XXX.png?size=...          │
-//   │   → ✅ MEILLEURE durabilité que attachments                          │
-//   │   → ⚠️ Requiert que le bot ait uploadé un fichier                    │
-//   │   → ⚠️ ÉMOJI CUSTOM: expire si bot retiré du serveur                │
-//   └──────────────────────────────────────────────────────────────────────┘
-//
-// TRUSTED DOMAINS (URLs externes autorisées):
-//   • Icônes/Logos: cdn.simpleicons.org, img.icons凉tern.io
-//   • Crypto: assets.coingecko.com, cryptologos.cc, cryptoicons.org
-//   • Photos: images.unsplash.com, picsum.photos
-//   • Discord: cdn.discordapp.com, media.discordapp.net
-//   • Réseaux: pbs.twimg.com, abs.twimg.com, platform-lookaside.fbsbx.com
-//   • Images: i.imgur.com, i.postimg.cc, postimages.org
-//   • Wikis: upload.wikimedia.org, commons.wikimedia.org
-//   • GitHub: raw.githubusercontent.com, github.com, avatars.githubusercontent.com
-//   • CDNs: cdn.jsdelivr.net, cdnjs.cloudflare.com, unpkg.com
-//   • Émojis: asset.hqemoji.com, twemoji.maxcdn.com
-//
-// POUR UTILISER DES IMAGES EXTERNES NON-LISTÉES:
-//   1. Upload sur un domaine de confiance (imgur, discord, etc.)
-//   2. OU utilise l'outil 'upload_fichier' pour uploader via le bot
-//   3. Vérifie que l'URL est accessible publiquement ET directe (pas de SSO)
-//
-// =====================================================
+  // =====================================================
+  // 4 POSITIONS D'IMAGES + BARRE COULEUR (LEFT BAR)
+  // =====================================================
+  //
+  // ┌───────────────────────────────────────────────────────────────────┐
+  // │                                                                   │
+  // │ [authorIcon 16x16]                           [thumbnail 80x80]    │ ← Haut droit
+  // │                                                                   │
+  // │  Title                                                            │
+  // │  Description...                                                   │
+  // │                                                                   │ ←[COLOR_BAR 4px] gauche
+  // │  ┌─────────────┬─────────────┬─────────────┐                      │
+  // │  │ Field 1     │ Field 2     │ Field 3     │                      │
+  // │  └─────────────┴─────────────┴─────────────┘                      │
+  // │                                                                   │
+  // │               [image 400x250]                                     │ ← Bas gauche
+  // │              [footerIcon 16x16]                                   │   ← Bas
+  // └───────────────────────────────────────────────────────────────────┘
+  //
+  // POSITIONS D'IMAGES:
+  //   1. authorIcon  (16x16)  → Haut GAUCHE  - petite icône auteur
+  //   2. thumbnail   (80x80)  → Haut DROITE  - logo/avatar principal
+  //   3. footerIcon  (16x16)  → Bas GAUCHE   - petite icône footer
+  //   4. image       (400x250)→ Bas DROITE   - grande image principale
+  //
+  // BARRE COULEUR (COLOR BAR):
+  //   → 4px de large, sur le côté GAUCHE de l'embed
+  //   → Définit la "couleur" de l'embed (bandeau vertical)
+  //   → Paramètre: color (0xRRGGBB hex)
+  //   → Si non défini: utilise la couleur du thème ou 0x2c3e50 (défaut)
+  //
+  // ⚠️ LIMITES DISCORD:
+  //   - TOTAL: 2000 chars max par embed (title + description + fields + footer)
+  //   - title: 256 chars max
+  //   - description: 4096 chars max
+  //   - field name: 256 chars, field value: 1024 chars
+  //   - footer text: 2048 chars max
+  //   - author name: 256 chars max
+  //   - 25 fields max par embed
+  //
+  // IMAGES - PERSISTANCE ET CDN:
+  //   ┌──────────────────────────────────────────────────────────────────────┐
+  //   │ 📎 ATTACHMENTS (upload_local / envoi fichier)                        │
+  //   │   → URL: cdn.discordapp.com/attachments/...                         │
+  //   │   → ✅ PERSISTANTE si le message existe                              │
+  //   │   → ⚠️ MEURT si le message source est supprimé                        │
+  //   │   → 💡 Stocker le message ID pour pouvoir re-fetch si besoin         │
+  //   ├──────────────────────────────────────────────────────────────────────┤
+  //   │ 🌐 URLs EXTERNES (CDN tiers)                                        │
+  //   │   → URL: telle que fournie (imgur, unsplash, etc.)                   │
+  //   │   → ⚠️ DÉPEND du CDN externe - peut mourir ou changer                │
+  //   │   → ⚠️ BLOQUÉE si non dans TRUSTED_DOMAINS                          │
+  //   │   → ✅ Pas de dépendance au message Discord                          │
+  //   ├──────────────────────────────────────────────────────────────────────┤
+  //   │ 💾 CDN DISCORD UPLOAD (upload_fichier)                               │
+  //   │   → URL: https://cdn.discordapp.com/emojis/XXX.png?size=...          │
+  //   │   → ✅ MEILLEURE durabilité que attachments                          │
+  //   │   → ⚠️ Requiert que le bot ait uploadé un fichier                    │
+  //   │   → ⚠️ ÉMOJI CUSTOM: expire si bot retiré du serveur                │
+  //   └──────────────────────────────────────────────────────────────────────┘
+  //
+  // TRUSTED DOMAINS (URLs externes autorisées):
+  //   • Icônes/Logos: cdn.simpleicons.org, img.icons凉tern.io
+  //   • Crypto: assets.coingecko.com, cryptologos.cc, cryptoicons.org
+  //   • Photos: images.unsplash.com, picsum.photos
+  //   • Discord: cdn.discordapp.com, media.discordapp.net
+  //   • Réseaux: pbs.twimg.com, abs.twimg.com, platform-lookaside.fbsbx.com
+  //   • Images: i.imgur.com, i.postimg.cc, postimages.org
+  //   • Wikis: upload.wikimedia.org, commons.wikimedia.org
+  //   • GitHub: raw.githubusercontent.com, github.com, avatars.githubusercontent.com
+  //   • CDNs: cdn.jsdelivr.net, cdnjs.cloudflare.com, unpkg.com
+  //   • Émojis: asset.hqemoji.com, twemoji.maxcdn.com
+  //
+  // POUR UTILISER DES IMAGES EXTERNES NON-LISTÉES:
+  //   1. Upload sur un domaine de confiance (imgur, discord, etc.)
+  //   2. OU utilise l'outil 'upload_fichier' pour uploader via le bot
+  //   3. Vérifie que l'URL est accessible publiquement ET directe (pas de SSO)
+  //
+  // =====================================================
   //
   // ⚠️ Ordre visuel: authorIcon/title/thumbnail → fields → image → footer
   // ⚠️ image et footerIcon ne sont PAS sur la même ligne
@@ -339,52 +397,52 @@ export function isLocalLogoUrl(url: string | undefined): boolean {
   // =====================================================
   const TRUSTED_DOMAINS = [
     // Icônes/Logos
-    'cdn.simpleicons.org',    // SimpleIcons (DES MILLIERS d'icônes)
-    'simpleicons.org',        // Fallback
-    'img.icons凉tern.io',     // Icons (alternatif)
-    
+    'cdn.simpleicons.org', // SimpleIcons (DES MILLIERS d'icônes)
+    'simpleicons.org', // Fallback
+    'img.icons凉tern.io', // Icons (alternatif)
+
     // Crypto/Finance
-    'assets.coingecko.com',   // CoinGecko logos
-    'cryptologos.cc',         // Crypto logos
-    'cryptoicons.org',        // Crypto icons
-    
+    'assets.coingecko.com', // CoinGecko logos
+    'cryptologos.cc', // Crypto logos
+    'cryptoicons.org', // Crypto icons
+
     // Images/Photos
-    'images.unsplash.com',    // Photos haute qualité
-    'unsplash.com',           // Fallback
-    'picsum.photos',          // Photos aléatoires
-    
+    'images.unsplash.com', // Photos haute qualité
+    'unsplash.com', // Fallback
+    'picsum.photos', // Photos aléatoires
+
     // Discord
-    'cdn.discordapp.com',     // Discord CDN
-    'media.discordapp.net',   // Discord media
-    
+    'cdn.discordapp.com', // Discord CDN
+    'media.discordapp.net', // Discord media
+
     // Réseaux sociaux
-    'pbs.twimg.com',           // Twitter/X photos
-    'abs.twimg.com',           // Twitter/X abs
+    'pbs.twimg.com', // Twitter/X photos
+    'abs.twimg.com', // Twitter/X abs
     'platform-lookaside.fbsbx.com', // Facebook
-    
+
     // Hébergement images
-    'i.imgur.com',            // Imgur
-    'imgur.com',              // Fallback imgur
-    'i.postimg.cc',           // Postimages
-    'postimages.org',         // Postimages
-    
+    'i.imgur.com', // Imgur
+    'imgur.com', // Fallback imgur
+    'i.postimg.cc', // Postimages
+    'postimages.org', // Postimages
+
     // Wikis/Médias libres
-    'upload.wikimedia.org',   // Wikipedia commons
-    'commons.wikimedia.org',  // Wikimedia
-    
+    'upload.wikimedia.org', // Wikipedia commons
+    'commons.wikimedia.org', // Wikimedia
+
     // GitHub
     'raw.githubusercontent.com', // GitHub raw
-    'github.com',             // GitHub
+    'github.com', // GitHub
     'avatars.githubusercontent.com', // GitHub avatars
-    
+
     // CDNs divers
-    'cdn.jsdelivr.net',       // jsDelivr CDN
-    'cdnjs.cloudflare.com',   // cdnjs
-    'unpkg.com',              // unpkg
-    
+    'cdn.jsdelivr.net', // jsDelivr CDN
+    'cdnjs.cloudflare.com', // cdnjs
+    'unpkg.com', // unpkg
+
     // Hébergement diverse
-    'asset.hqemoji.com',      // Emojis
-    'twemoji.maxcdn.com',     // Twitter emojis
+    'asset.hqemoji.com', // Emojis
+    'twemoji.maxcdn.com', // Twitter emojis
   ];
 
   // Vérifier si l'URL provient d'un CDN fiable
@@ -1066,7 +1124,7 @@ export function registerEmbedTools(server: FastMCP) {
    • image: Grande image (bas)
    • thumbnail: Petite image (haut-droite)
    • buttons: Boutons interactifs (max 5)
-   • fields: Champs de données (max 10)
+   • fields: Champs de données (max 25 — limite API Discord)
 
 🖼️ IMAGES: 4 positions disponibles
    • authorIcon (haut-gauche) - PETITE (16x16px Discord)
@@ -1178,7 +1236,10 @@ export function registerEmbedTools(server: FastMCP) {
         .array(
           z.object({
             label: z.string(),
-            style: z.enum(['Primary', 'Secondary', 'Success', 'Danger', 'Link']).default('Primary').describe("Style du bouton (Link = pour action='link', auto-détecté sinon)"),
+            style: z
+              .enum(['Primary', 'Secondary', 'Success', 'Danger', 'Link'])
+              .default('Primary')
+              .describe("Style du bouton (Link = pour action='link', auto-détecté sinon)"),
             emoji: z.string().optional(),
             action: z
               .enum([
@@ -1569,16 +1630,9 @@ export function registerEmbedTools(server: FastMCP) {
         }
 
         if (args.theme) {
-          // Liste des thèmes valides pour validation
-          const VALID_THEMES = [
-            'data_report', 'status_update', 'product_showcase', 'leaderboard',
-            'tech_announcement', 'social_feed', 'dashboard', 'noel', 'minimal',
-            'cyber_code', 'cyberpunk', 'gaming', 'corporate', 'sunset', 'ocean',
-            'halloween', 'vector_pg', 'claude_code', 'mcp', 'sentinel_alpha',
-            'deep_logic', 'matrix_rain', 'trading_master', 'nebula_vision'
-          ];
-
-          if (!VALID_THEMES.includes(args.theme)) {
+          // Validation: utilise la constante module-level VALID_THEMES (source unique)
+          // au lieu d'une liste hardcodée ici (cf. POC #2)
+          if (!(VALID_THEMES as readonly string[]).includes(args.theme)) {
             Logger.warn(`[EMBEDS] Thème invalide '${args.theme}' - Fallback vers custom`);
           } else {
             // Utilise applyTheme qui contient tous les nouveaux contenus riches
@@ -1594,14 +1648,18 @@ export function registerEmbedTools(server: FastMCP) {
         // 📏 LIMITES DISCORD - TRONCATION INTELLIGENTE (2000 CHARS MAX)
         // Évite les crashs silencieux en tronquant ET en informant l'agent
         // ============================================================================
-        const { args: truncatedArgs, truncated, warnings: truncationWarnings, report: truncationReport } =
-          validateAndTruncateEmbed({
-            title: dataToUse.title,
-            description: dataToUse.description,
-            authorName: dataToUse.authorName,
-            footerText: dataToUse.footerText,
-            fields: dataToUse.fields as Array<{ name: string; value: string; inline?: boolean }>,
-          });
+        const {
+          args: truncatedArgs,
+          truncated,
+          warnings: truncationWarnings,
+          report: truncationReport,
+        } = validateAndTruncateEmbed({
+          title: dataToUse.title,
+          description: dataToUse.description,
+          authorName: dataToUse.authorName,
+          footerText: dataToUse.footerText,
+          fields: dataToUse.fields as Array<{ name: string; value: string; inline?: boolean }>,
+        });
 
         // Appliquer les args tronqués
         if (truncated) {
@@ -2295,7 +2353,7 @@ export function registerEmbedTools(server: FastMCP) {
         // ============================================================================
         let message;
         let sendError = null;
-        
+
         for (let attempt = 1; attempt <= botConfig.maxRetries; attempt++) {
           try {
             message = await channel.send({
@@ -2308,14 +2366,16 @@ export function registerEmbedTools(server: FastMCP) {
             break; // Succès
           } catch (error: any) {
             sendError = error;
-            Logger.warn(`[EMBEDS] Tentative ${attempt}/${botConfig.maxRetries} échouée: ${error.message}`);
-            
+            Logger.warn(
+              `[EMBEDS] Tentative ${attempt}/${botConfig.maxRetries} échouée: ${error.message}`
+            );
+
             if (attempt < botConfig.maxRetries) {
               await new Promise(resolve => setTimeout(resolve, botConfig.retryDelay * attempt));
             }
           }
         }
-        
+
         if (sendError) {
           Logger.error(`[EMBEDS] Échec définitif après ${botConfig.maxRetries} tentatives`);
           throw sendError;
