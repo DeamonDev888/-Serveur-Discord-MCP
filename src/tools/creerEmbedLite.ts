@@ -28,6 +28,7 @@
 import { z } from 'zod';
 import type { FastMCP } from 'fastmcp';
 import { EmbedBuilder } from 'discord.js';
+import type { EmbedAuthorOptions, EmbedFooterOptions } from 'discord.js';
 import { ensureDiscordConnection } from './common.js';
 import Logger from '../utils/logger.js';
 import { validateAndTruncateEmbed, DISCORD_EMBED_LIMITS } from './embeds.js';
@@ -117,28 +118,32 @@ export async function executeCreerEmbedLite(args: {
       embed.setColor(0x5865f2); // Default Discord blurple
     }
 
-    if (args.url) embed.setURL(args.url);
+    // FIX: Filter empty strings — Discord.js rejects url="" and iconURL="" with "Received one or more errors"
+    if (typeof args.url === 'string' && args.url.trim()) embed.setURL(args.url.trim());
 
     // Author (avec fix invisible char si icon sans name — bug Discord connu)
-    if (args.authorName || args.authorIcon) {
-      embed.setAuthor({
-        name: args.authorName ?? '\u200b',
-        url: args.authorUrl,
-        iconURL: args.authorIcon,
-      });
+    const _authorName = typeof args.authorName === 'string' && args.authorName.trim() ? args.authorName : null;
+    const _authorIcon = typeof args.authorIcon === 'string' && args.authorIcon.trim() ? args.authorIcon.trim() : null;
+    const _authorUrl = typeof args.authorUrl === 'string' && args.authorUrl.trim() ? args.authorUrl.trim() : null;
+    if (_authorName || _authorIcon) {
+      const _authorOpts: EmbedAuthorOptions = { name: _authorName ?? '\u200b' };
+      if (_authorUrl) _authorOpts.url = _authorUrl;
+      if (_authorIcon) _authorOpts.iconURL = _authorIcon;
+      embed.setAuthor(_authorOpts);
     }
 
     // Footer (idem fix invisible char)
-    if (args.footerText || args.footerIcon) {
-      embed.setFooter({
-        text: args.footerText ?? '\u200b',
-        iconURL: args.footerIcon,
-      });
+    const _footerText = typeof args.footerText === 'string' && args.footerText.trim() ? args.footerText : null;
+    const _footerIcon = typeof args.footerIcon === 'string' && args.footerIcon.trim() ? args.footerIcon.trim() : null;
+    if (_footerText || _footerIcon) {
+      const _footerOpts: EmbedFooterOptions = { text: _footerText ?? '\u200b' };
+      if (_footerIcon) _footerOpts.iconURL = _footerIcon;
+      embed.setFooter(_footerOpts);
     }
 
     // Images
-    if (args.thumbnail) embed.setThumbnail(args.thumbnail);
-    if (args.image) embed.setImage(args.image);
+    if (typeof args.thumbnail === 'string' && args.thumbnail.trim()) embed.setThumbnail(args.thumbnail.trim());
+    if (typeof args.image === 'string' && args.image.trim()) embed.setImage(args.image.trim());
 
     // Fields (avec mapping inline bool)
     if (data.fields && data.fields.length > 0) {

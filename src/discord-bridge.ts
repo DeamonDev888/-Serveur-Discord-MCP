@@ -65,7 +65,7 @@ export class DiscordBridge {
   private failedAttempts = 0;
   private retryAfter = 0; // epoch ms — earliest next attempt
   private static readonly LOGIN_TIMEOUT_MS = 60_000;
-  private static readonly BACKOFF_BASE_MS = 5_000;  // 5s minimum (was 1s)
+  private static readonly BACKOFF_BASE_MS = 5_000; // 5s minimum (was 1s)
   private static readonly BACKOFF_MAX_MS = 30 * 60_000; // 30min max (was 5min)
   private static readonly CIRCUIT_BREAK_FILE = './data/circuit-breaker.json';
   private static readonly MAX_FAILURES_BEFORE_CIRCUIT = 10;
@@ -115,11 +115,14 @@ export class DiscordBridge {
       const filePath = path.join(process.cwd(), 'data', 'circuit-breaker.json');
       const dir = path.dirname(filePath);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(filePath, JSON.stringify({
-        tripped: true,
-        timestamp: Date.now(),
-        failures: this.failedAttempts,
-      }));
+      fs.writeFileSync(
+        filePath,
+        JSON.stringify({
+          tripped: true,
+          timestamp: Date.now(),
+          failures: this.failedAttempts,
+        })
+      );
     } catch (err) {
       bridgeLogger.error({ err }, '❌ [Bridge] Failed to persist circuit breaker');
     }
@@ -132,7 +135,9 @@ export class DiscordBridge {
         const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
         this.circuitBreakerTripped = data.tripped || false;
         if (this.circuitBreakerTripped) {
-          bridgeLogger.warn('⚠️ [Bridge] Circuit breaker was tripped previously. Connection blocked until reset.');
+          bridgeLogger.warn(
+            '⚠️ [Bridge] Circuit breaker was tripped previously. Connection blocked until reset.'
+          );
         }
       }
     } catch (err) {
@@ -154,10 +159,14 @@ export class DiscordBridge {
   async getClient(): Promise<Client> {
     bridgeLogger.debug('🔍 [TRACE] getClient called');
     if (this.tokenInvalid) {
-      throw new Error('TokenInvalid: Discord token is flagged as invalid. Use reset_discord_connection tool to retry.');
+      throw new Error(
+        'TokenInvalid: Discord token is flagged as invalid. Use reset_discord_connection tool to retry.'
+      );
     }
     if (this.circuitBreakerTripped) {
-      throw new Error('CircuitBreakerTripped: Discord connection blocked due to repeated failures. Restart required.');
+      throw new Error(
+        'CircuitBreakerTripped: Discord connection blocked due to repeated failures. Restart required.'
+      );
     }
     if (this.client && this.client.isReady()) {
       bridgeLogger.debug('🚀 [Bridge] Client already ready - immediate use');
@@ -174,7 +183,7 @@ export class DiscordBridge {
     if (now < this.retryAfter) {
       const waitSec = Math.ceil((this.retryAfter - now) / 1000);
       throw new Error(
-        `RateLimitBackoff: Discord login backoff active for ${waitSec}s more (failed attempts: ${this.failedAttempts}).`,
+        `RateLimitBackoff: Discord login backoff active for ${waitSec}s more (failed attempts: ${this.failedAttempts}).`
       );
     }
 
@@ -211,7 +220,7 @@ export class DiscordBridge {
       this.failedAttempts++;
       const waitMs = Math.min(
         DiscordBridge.BACKOFF_BASE_MS * Math.pow(2, Math.max(0, this.failedAttempts - 1)),
-        DiscordBridge.BACKOFF_MAX_MS,
+        DiscordBridge.BACKOFF_MAX_MS
       );
       this.retryAfter = Date.now() + waitMs;
 
@@ -221,14 +230,19 @@ export class DiscordBridge {
         this.persistCircuitBreaker();
         bridgeLogger.fatal(
           { attempts: this.failedAttempts },
-          `🔴 [Bridge] CIRCUIT BREAKER TRIPPED after ${this.failedAttempts} failures. Discord connection BLOCKED. Restart required to reset.`,
+          `🔴 [Bridge] CIRCUIT BREAKER TRIPPED after ${this.failedAttempts} failures. Discord connection BLOCKED. Restart required to reset.`
         );
         return; // Don't even try to reconnect anymore
       }
 
       bridgeLogger.error(
-        { err, attempts: this.failedAttempts, nextRetryInSec: Math.ceil(waitMs / 1000), circuitBreaker: `${this.failedAttempts}/${DiscordBridge.MAX_FAILURES_BEFORE_CIRCUIT}` },
-        `❌ [Bridge] ${label} — backoff ${Math.ceil(waitMs / 1000)}s before next attempt`,
+        {
+          err,
+          attempts: this.failedAttempts,
+          nextRetryInSec: Math.ceil(waitMs / 1000),
+          circuitBreaker: `${this.failedAttempts}/${DiscordBridge.MAX_FAILURES_BEFORE_CIRCUIT}`,
+        },
+        `❌ [Bridge] ${label} — backoff ${Math.ceil(waitMs / 1000)}s before next attempt`
       );
     };
 
@@ -238,7 +252,9 @@ export class DiscordBridge {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         onFailure(null, `Timeout connexion ${DiscordBridge.LOGIN_TIMEOUT_MS / 1000}s`);
-        reject(new Error(`Timeout de connexion Discord (${DiscordBridge.LOGIN_TIMEOUT_MS / 1000}s)`));
+        reject(
+          new Error(`Timeout de connexion Discord (${DiscordBridge.LOGIN_TIMEOUT_MS / 1000}s)`)
+        );
       }, DiscordBridge.LOGIN_TIMEOUT_MS);
 
       this.client!.once('clientReady', () => {
@@ -250,22 +266,24 @@ export class DiscordBridge {
         resolve(this.client!);
       });
 
-      this.client!.once('error', (err) => {
+      this.client!.once('error', err => {
         clearTimeout(timeout);
         onFailure(err, 'Discord error');
         reject(err);
       });
 
-      this.client!.once('warn', (warning) => {
+      this.client!.once('warn', warning => {
         bridgeLogger.warn({ warning }, '⚠️ [Bridge] Discord warning');
       });
 
-      this.client!.login(this.token).catch((err) => {
+      this.client!.login(this.token).catch(err => {
         clearTimeout(timeout);
         if (err.code === 'TokenInvalid' || (err.message && err.message.includes('invalid token'))) {
           this.tokenInvalid = true;
           this.connectionPromise = null;
-          bridgeLogger.fatal('🔴 [Bridge] INVALID TOKEN — circuit-breaker activated. No new connection attempts.');
+          bridgeLogger.fatal(
+            '🔴 [Bridge] INVALID TOKEN — circuit-breaker activated. No new connection attempts.'
+          );
         } else {
           onFailure(err, 'Login error');
         }
@@ -452,10 +470,13 @@ export class DiscordBridge {
     let wasHandled = false;
 
     // 🔥 VÉRIFIER L'ÉTAT DE L'INTERACTION dès le début
-    bridgeLogger.debug({
-      replied: interaction.replied,
-      deferred: interaction.deferred
-    }, '🔍 [Bridge] Interaction state');
+    bridgeLogger.debug(
+      {
+        replied: interaction.replied,
+        deferred: interaction.deferred,
+      },
+      '🔍 [Bridge] Interaction state'
+    );
 
     // Si l'interaction est déjà acquittée, ne rien faire
     if (interaction.replied || interaction.deferred) {
@@ -490,7 +511,10 @@ export class DiscordBridge {
     const persistentBtn = await getPersistentButton(customId); // C'est ici que la MAGIE opère (lecture disque fraîche)
 
     bridgeLogger.debug({ count: buttons.size }, '🔍 [Bridge] Custom buttons loaded');
-    bridgeLogger.debug({ customId, found: !!persistentBtn }, '🔍 [Bridge] Persistent button search');
+    bridgeLogger.debug(
+      { customId, found: !!persistentBtn },
+      '🔍 [Bridge] Persistent button search'
+    );
 
     // Fusionner la logique : on prend soit le custom, soit le persistant
     let button: any = buttons.get(customId);
@@ -505,10 +529,16 @@ export class DiscordBridge {
       bridgeLogger.debug({ customId }, '🔍 [Bridge] Using persistent configuration');
     }
 
-    bridgeLogger.debug({ customId, result: button ? 'FOUND' : 'NOT_FOUND' }, '🔍 [Bridge] Final button search result');
+    bridgeLogger.debug(
+      { customId, result: button ? 'FOUND' : 'NOT_FOUND' },
+      '🔍 [Bridge] Final button search result'
+    );
 
     if (button) {
-      bridgeLogger.debug({ button: JSON.stringify(button).substring(0, 500) }, '🔍 [Bridge] Button structure');
+      bridgeLogger.debug(
+        { button: JSON.stringify(button).substring(0, 500) },
+        '🔍 [Bridge] Button structure'
+      );
 
       // 🔥 CORRECTION: Détecter les actions custom avec différentes structures
       let actionData = null;
@@ -584,7 +614,10 @@ export class DiscordBridge {
                       const originalMessage = interaction.message;
                       if (originalMessage) {
                         await originalMessage.delete();
-                        bridgeLogger.debug({ customId }, '🗑️ [Bridge] Original message auto-deleted');
+                        bridgeLogger.debug(
+                          { customId },
+                          '🗑️ [Bridge] Original message auto-deleted'
+                        );
                       }
                     }
                   } catch (err) {
@@ -619,7 +652,9 @@ export class DiscordBridge {
                   bridgeLogger.debug({ err: e }, `⚠️ [Bridge] Impossible de désactiver le bouton:`);
                 }
               } else {
-                bridgeLogger.debug(`🔄 [Bridge] Bouton laissé actif (réponse publique - multi-click)`);
+                bridgeLogger.debug(
+                  `🔄 [Bridge] Bouton laissé actif (réponse publique - multi-click)`
+                );
               }
 
               return; // Terminé - on a répondu
@@ -704,7 +739,9 @@ export class DiscordBridge {
                 bridgeLogger.debug({ err: e }, `⚠️ [Bridge] Impossible de désactiver le bouton`);
               }
             } else {
-              bridgeLogger.debug(`🔄 [Bridge] Bouton laissé actif (réponse publique - multi-click)`);
+              bridgeLogger.debug(
+                `🔄 [Bridge] Bouton laissé actif (réponse publique - multi-click)`
+              );
             }
 
             return; // Terminé - on a répondu
@@ -734,7 +771,10 @@ export class DiscordBridge {
         wasHandled = true;
       }
     } else {
-      bridgeLogger.debug({ customId }, '🔄 [Bridge] interactionHandler skipped for embedv2_/pb_ button');
+      bridgeLogger.debug(
+        { customId },
+        '🔄 [Bridge] interactionHandler skipped for embedv2_/pb_ button'
+      );
     }
 
     // 🔥 HOT RELOAD: Exécution dynamique du code depuis le disque (Priorité sur le cache mémoire)
@@ -943,7 +983,9 @@ export class DiscordBridge {
           content: AUTO_RESPONSES.menu(customId, user.username, values),
           ephemeral: true,
         });
-        bridgeLogger.info(`🤖 [Auto-Handler] Réponse automatique envoyée pour le menu: ${customId}`);
+        bridgeLogger.info(
+          `🤖 [Auto-Handler] Réponse automatique envoyée pour le menu: ${customId}`
+        );
         wasHandled = true;
       } catch (error: any) {
         bridgeLogger.error({ err: error }, `❌ [Auto-Handler] Erreur réponse automatique`);
@@ -987,7 +1029,9 @@ export class DiscordBridge {
    */
   private async handleSlashCommand(interaction: any): Promise<void> {
     const commandName = interaction.commandName;
-    bridgeLogger.info(`⚡ [Bridge] Commande slash: ${commandName} par ${interaction.user.username}`);
+    bridgeLogger.info(
+      `⚡ [Bridge] Commande slash: ${commandName} par ${interaction.user.username}`
+    );
     // TODO: Implémenter les commandes slash si nécessaire
   }
 

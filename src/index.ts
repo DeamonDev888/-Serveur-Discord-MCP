@@ -14,17 +14,17 @@ const originalStdoutWrite = process.stdout.write.bind(process.stdout);
 
 // @ts-ignore
 process.stdout.write = (chunk: any, encoding?: any, callback?: any) => {
-  const str = typeof chunk === "string" ? chunk : chunk.toString();
+  const str = typeof chunk === 'string' ? chunk : chunk.toString();
   const trimmed = str.trim();
 
   // Allow JSON-RPC (starts with {) and empty/newline chunks
-  if (trimmed.startsWith("{") || trimmed.startsWith("[") || trimmed === "") {
+  if (trimmed.startsWith('{') || trimmed.startsWith('[') || trimmed === '') {
     // Additional safety: block arrays as they cause ZodError in most MCP SDKs
-    if (trimmed.startsWith("[")) {
+    if (trimmed.startsWith('[')) {
       try {
         const parsed = JSON.parse(trimmed);
         if (Array.isArray(parsed)) {
-          serverLogger.warn({ raw: str }, "🛡️ [SHIELD] Blocked array-as-JSON-RPC on stdout");
+          serverLogger.warn({ raw: str }, '🛡️ [SHIELD] Blocked array-as-JSON-RPC on stdout');
           return process.stderr.write(chunk, encoding as BufferEncoding, callback);
         }
       } catch (err) {
@@ -41,53 +41,63 @@ process.stdout.write = (chunk: any, encoding?: any, callback?: any) => {
 
 // Redirection globale des console.* vers stderr (via pino) pour double protection
 console.log = (...args) => {
-  serverLogger.debug({ args }, "[STDOUT-REDIRECT]");
+  serverLogger.debug({ args }, '[STDOUT-REDIRECT]');
 };
 
 console.error = (...args) => {
   // Capture l'erreur pour analyse
-  const errorMsg = args.map(arg => 
-    typeof arg === 'string' ? arg : JSON.stringify(arg, null, 2)
-  ).join(' ');
+  const errorMsg = args
+    .map(arg => (typeof arg === 'string' ? arg : JSON.stringify(arg, null, 2)))
+    .join(' ');
 
   // 🛡️ DÉTECTION DES ERREURS DE TRANSPORT (Zod Handshake Errors)
   if (
-    errorMsg.includes('ZodError') && 
-    (errorMsg.includes('method') || errorMsg.includes('unrecognized_keys') || errorMsg.includes('invalid_type') || errorMsg.includes('invalid_union'))
+    errorMsg.includes('ZodError') &&
+    (errorMsg.includes('method') ||
+      errorMsg.includes('unrecognized_keys') ||
+      errorMsg.includes('invalid_type') ||
+      errorMsg.includes('invalid_union'))
   ) {
-    serverLogger.debug({ 
-      context: "FastMCP_Transport_Handshake",
-      message: "Ignored transport noise (Zod Handshake Error)"
-    }, "🛡️ [SHIELD] Filtered transport noise");
+    serverLogger.debug(
+      {
+        context: 'FastMCP_Transport_Handshake',
+        message: 'Ignored transport noise (Zod Handshake Error)',
+      },
+      '🛡️ [SHIELD] Filtered transport noise'
+    );
     return;
   }
 
   // 📉 GESTION DU BRUIT (Faux positifs console.error des scrapers)
-  const isActuallyError = /exception|fail|fatal|critical|reject|timeout/i.test(errorMsg) && !/ZodError/i.test(errorMsg);
-  const isStatusNoise = /found|navigating to|scraping content|initialized|started|ZodError|FastMCP|waiting|loading|fetching/i.test(errorMsg);
+  const isActuallyError =
+    /exception|fail|fatal|critical|reject|timeout/i.test(errorMsg) && !/ZodError/i.test(errorMsg);
+  const isStatusNoise =
+    /found|navigating to|scraping content|initialized|started|ZodError|FastMCP|waiting|loading|fetching/i.test(
+      errorMsg
+    );
 
   if (isStatusNoise && !isActuallyError) {
-    serverLogger.info({ args }, "[STDERR-REDIRECT] Captured operational status");
+    serverLogger.info({ args }, '[STDERR-REDIRECT] Captured operational status');
   } else if (!isActuallyError) {
-    serverLogger.warn({ args }, "[STDERR-REDIRECT] Captured unknown stderr");
+    serverLogger.warn({ args }, '[STDERR-REDIRECT] Captured unknown stderr');
   } else {
-    serverLogger.error({ args }, "[STDERR-REDIRECT] Captured actual console.error");
+    serverLogger.error({ args }, '[STDERR-REDIRECT] Captured actual console.error');
   }
 };
 
 // 2. Gestionnaires d'erreurs globaux robustes
 function setupGlobalErrorHandlers() {
-  process.on("uncaughtException", (err) => {
-    if ((err as any)?.code === "EPIPE" || (err as any)?.syscall === "write") return;
-    serverLogger.fatal({ err }, "🚨 UNCAUGHT EXCEPTION");
+  process.on('uncaughtException', err => {
+    if ((err as any)?.code === 'EPIPE' || (err as any)?.syscall === 'write') return;
+    serverLogger.fatal({ err }, '🚨 UNCAUGHT EXCEPTION');
   });
 
-  process.on("unhandledRejection", (reason) => {
-    if ((reason as any)?.code === "EPIPE") return;
-    serverLogger.error({ reason }, "❌ UNHANDLED REJECTION");
+  process.on('unhandledRejection', reason => {
+    if ((reason as any)?.code === 'EPIPE') return;
+    serverLogger.error({ reason }, '❌ UNHANDLED REJECTION');
   });
 
-  process.on("SIGPIPE", () => {});
+  process.on('SIGPIPE', () => {});
 }
 
 setupGlobalErrorHandlers();
@@ -133,7 +143,7 @@ import { registerButtonFunctionTools } from './tools/registerButtonFunctions.js'
 import { registerCodePreviewTools } from './tools/codePreview.js';
 import { registerFileUploadTools } from './tools/fileUpload.js';
 import { registerFileDownloadTools } from './tools/fileDownload.js';
-import { registerEditEmbedTools } from './tools/editEmbed.js';
+import { registerEditEmbedTools, registerResolveMessageTool } from './tools/editEmbed.js';
 
 // Logger.info est d├⌐j├á s├╗r car il utilise process.stderr.write dans utils/logger.ts
 
@@ -179,16 +189,20 @@ const botConfig = {
 
 // Debug: Afficher les variables d'environnement au démarrage
 const token = botConfig.token;
-const tokenStatus = token && token !== 'YOUR_BOT_TOKEN' 
-  ? `✅ Present (${token.substring(0, 5)}...${token.substring(token.length - 5)})` 
-  : '❌ Absent or default';
+const tokenStatus =
+  token && token !== 'YOUR_BOT_TOKEN'
+    ? `✅ Present (${token.substring(0, 5)}...${token.substring(token.length - 5)})`
+    : '❌ Absent or default';
 
-serverLogger.info({
-  tokenStatus,
-  guildId: botConfig.guildId !== 'YOUR_GUILD_ID' ? 'SET' : 'MISSING',
-  adminUserId: botConfig.adminUserId,
-  environment: botConfig.environment
-}, '🔍 Environment Initialization');
+serverLogger.info(
+  {
+    tokenStatus,
+    guildId: botConfig.guildId !== 'YOUR_GUILD_ID' ? 'SET' : 'MISSING',
+    adminUserId: botConfig.adminUserId,
+    environment: botConfig.environment,
+  },
+  '🔍 Environment Initialization'
+);
 
 // Initialisation du serveur MCP
 // (Déjà fait plus haut)
@@ -234,7 +248,10 @@ async function updateEmbed(embedId: string): Promise<void> {
   if (!embedInfo) return;
 
   try {
-    serverLogger.info({ embedId, updateCount: embedInfo.updateCount + 1 }, '🔄 [Auto-Update] Updating embed');
+    serverLogger.info(
+      { embedId, updateCount: embedInfo.updateCount + 1 },
+      '🔄 [Auto-Update] Updating embed'
+    );
 
     const client = await ensureDiscordConnection();
     const channel = await client.channels.fetch(embedInfo.channelId);
@@ -338,7 +355,10 @@ async function updateEmbed(embedId: string): Promise<void> {
     embedInfo.lastUpdate = Date.now();
     embedInfo.updateCount++;
 
-    serverLogger.info({ embedId, updateCount: embedInfo.updateCount }, '✅ [Auto-Update] Embed updated');
+    serverLogger.info(
+      { embedId, updateCount: embedInfo.updateCount },
+      '✅ [Auto-Update] Embed updated'
+    );
   } catch (err) {
     serverLogger.error({ err, embedId }, '❌ [Auto-Update] Update failed');
   }
@@ -780,53 +800,62 @@ setInterval(() => {
 // ENREGISTREMENT DES OUTILS MCP UNIFIÉS (40 OUTILS)
 // ============================================================================
 
-// Outils unifiés (remplacent plusieurs anciens fichiers)
-registerUnifiedTools(server); // ⭐ 10 outils unifiés (FILE, MESSAGE, EMBED, CHANNEL, ROLE, MEMBER, POLL, BUTTON, MENU, SERVER)
-registerMemberTools(server); // 11 outils (membres + modération)
-registerRoleTools(server); // 5 outils (rôles)
-registerChannelTools(server); // 5 outils (canaux)
-registerInteractionTools(server); // 3 outils (boutons, menus, sondages)
+// Outils unifiés (10 outils consolidés avec actions en français)
+registerUnifiedTools(server);
 
-// Outils existants conservés
-registerEmbedTools(server);
-registerEditEmbedTools(server); // 🔧 Édition d'embeds (list, get details, update)
-registerMessageTools(server);
-registerListImagesTools(server); // Nouvel outil unifié (remplace emoji_theme + get_thumbnail)
+// Outils UNIQUES conservés (non dupliqués par les outils unifiés)
+registerEditEmbedTools(server); // 3 outils: list_embeds, get_embed_details, update_embed
+// (list/get sont aussi dans gestion_embeds, mais conservés
+//  ici pour rétro-compat. update_embed est la version
+//  full-fonctionnelle, gestion_embeds.modifier est un stub)
+registerResolveMessageTool(server); // 1 outil: resolve_message (résolution cross-canal)
+registerEmbedTools(server); // 1 outil: creer_embed (ULTRA-COMPLET: 1300+ lignes,
+//  validation, themes, persistance, génération code).
+// gestion_embeds.action=creer est un stub qui pointe ici.
+registerListImagesTools(server); // 1 outil unique: list_images (logos crypto/companies)
+registerCodePreviewTools(server); // 1 outil unique: code_preview
+registerFileUploadTools(server); // 1 outil unique: uploader_fichier
+registerFileDownloadTools(server); // 1 outil unique: telecharger_fichier
 
-registerServerTools(server);
-// registerWebhooksTools(server);
-// registerSystemTools(server);
-// registerButtonFunctionTools(server);
-registerCodePreviewTools(server);
-registerFileUploadTools(server);
-registerFileDownloadTools(server);
+// =============================================================================
+// OUTILS DÉSACTIVÉS (C2 consolidation: 49 → 20 outils, full français)
+// =============================================================================
+// registerMemberTools(server);     // 11 dupliqués -> gestion_membres
+// registerRoleTools(server);       //  5 dupliqués -> gestion_roles
+// registerChannelTools(server);    //  5 dupliqués -> gestion_canaux
+// registerInteractionTools(server);//  3 dupliqués -> gestion_boutons/gestion_menus/gestion_sondages
+// registerMessageTools(server);    //  5 dupliqués -> gestion_messages
+// registerServerTools(server);     //  4 dupliqués -> gestion_serveur
+// registerWebhooksTools(server);   //  0 outils (déjà commenté)
+// registerSystemTools(server);     //  0 outils (déjà commenté)
+// registerButtonFunctionTools(server); // 0 outils (déjà commenté)
 
 // ============================================================================
-// OUTIL DE RÉINITIALISATION 🔄
+// OUTIL DE RÉINITIALISATION 🔄 - DÉSACTIVÉ (C2 consolidation)
+// Maintenant intégré comme action 'reinitialiser' dans l'outil gestion_serveur
 // ============================================================================
-
-server.addTool({
-  name: 'reset_discord_connection',
-  description: 'Réinitialise le circuit-breaker du token et force une nouvelle tentative de connexion Discord.',
-  execute: async () => {
-    serverLogger.warn('🔄 [MCP] Discord connection reset requested');
-    const bridge = DiscordBridge.getInstance(botConfig.token);
-    bridge.resetTokenInvalid();
-    
-    try {
-      await ensureDiscordConnection();
-      return {
-        content: [{ type: 'text', text: '✅ Discord connection reset and re-established successfully.' }],
-      };
-    } catch (err: any) {
-      serverLogger.error({ err }, '❌ Reset failed');
-      return {
-        isError: true,
-        content: [{ type: 'text', text: `❌ Reset failed: ${err.message}` }],
-      };
-    }
-  },
-});
+// server.addTool({
+//   name: 'reset_discord_connection',
+//   description: 'Réinitialise le circuit-breaker du token et force une nouvelle tentative de connexion Discord.',
+//   execute: async () => {
+//     serverLogger.warn('🔄 [MCP] Discord connection reset requested');
+//     const bridge = DiscordBridge.getInstance(botConfig.token);
+//     bridge.resetTokenInvalid();
+//
+//     try {
+//       await ensureDiscordConnection();
+//       return {
+//         content: [{ type: 'text', text: '✅ Discord connection reset and re-established successfully.' }],
+//       };
+//     } catch (err: any) {
+//       serverLogger.error({ err }, '❌ Reset failed');
+//       return {
+//         isError: true,
+//         content: [{ type: 'text', text: `❌ Reset failed: ${err.message}` }],
+//       };
+//     }
+//   },
+// });
 
 // ============================================================================
 // FONCTION PRINCIPALE
@@ -836,12 +865,15 @@ async function main() {
   serverLogger.info({ version: '2.1.3' }, '🚀 Preparing Discord MCP');
 
   try {
-    serverLogger.info({
-      name: 'discord-mcp-server',
-      version: '2.1.3',
-      tools: 88,
-      env: botConfig.environment
-    }, '📊 Status');
+    serverLogger.info(
+      {
+        name: 'discord-mcp-server',
+        version: '2.1.3',
+        tools: 88,
+        env: botConfig.environment,
+      },
+      '📊 Status'
+    );
 
     const httpPort = parseInt(process.env.FASTMCP_PORT || '3141', 10);
     const httpHost = process.env.FASTMCP_HOST || 'localhost';
@@ -851,7 +883,9 @@ async function main() {
 
     ensureDiscordConnection()
       .then(() => serverLogger.info('✅ Discord Client Ready'))
-      .catch((err) => serverLogger.warn({ err }, '⚠️ Initial Discord connection failed (will retry)'));
+      .catch(err =>
+        serverLogger.warn({ err }, '⚠️ Initial Discord connection failed (will retry)')
+      );
 
     await server.start({
       transportType: 'httpStream',
@@ -862,7 +896,9 @@ async function main() {
         stateless: true,
       },
     });
-    serverLogger.info(`✅ [BOOT] MCP Server started on HTTP SSE ${httpHost}:${httpPort}${httpEndpoint}`);
+    serverLogger.info(
+      `✅ [BOOT] MCP Server started on HTTP SSE ${httpHost}:${httpPort}${httpEndpoint}`
+    );
   } catch (err) {
     serverLogger.fatal({ err }, '❌ FATAL ERROR ON STARTUP');
     await cleanup();

@@ -24,16 +24,25 @@ for (const f of readdirSync(ROOT)) {
 }
 console.log('[prebuild] cleaned dist/ + *.log');
 
-// 2. copy bin/ -> dist/bin/
-const srcBin = join(ROOT, 'bin', 'launch.js');
+// 2. copy bin/ -> dist/bin/ (supports .js or .cjs)
 const dstDir = join(ROOT, 'dist', 'bin');
-const dstBin = join(dstDir, 'launch.js');
-if (existsSync(srcBin)) {
+const launchJs = join(ROOT, 'bin', 'launch.js');
+const launchCjs = join(ROOT, 'bin', 'launch.cjs');
+let srcBin = null;
+let binName = '';
+if (existsSync(launchJs)) {
+  srcBin = launchJs;
+  binName = 'launch.js';
+} else if (existsSync(launchCjs)) {
+  srcBin = launchCjs;
+  binName = 'launch.cjs';
+}
+if (srcBin) {
   mkdirSync(dstDir, { recursive: true });
-  copyFileSync(srcBin, dstBin);
-  console.log('[prebuild] copied bin/launch.js -> dist/bin/launch.js');
+  copyFileSync(srcBin, join(dstDir, binName));
+  console.log(`[prebuild] copied bin/${binName} -> dist/bin/${binName}`);
 } else {
-  console.log('[prebuild] no bin/launch.js to copy (skipping)');
+  console.log('[prebuild] no bin/launch.{js,cjs} to copy (skipping)');
 }
 
 // 3. ensure logs/
