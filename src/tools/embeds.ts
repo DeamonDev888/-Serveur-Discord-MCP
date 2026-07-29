@@ -21,6 +21,7 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
 } from 'discord.js';
+import type { EmbedAuthorOptions, EmbedFooterOptions } from 'discord.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import Logger from '../utils/logger.js';
@@ -1791,14 +1792,16 @@ export function registerEmbedTools(server: FastMCP) {
           }
         }
 
-        if (dataToUse.url) embed.setURL(dataToUse.url);
+        // FIX: Filter empty strings — Discord.js rejects url="" with "Received one or more errors"
+        if (typeof dataToUse.url === 'string' && dataToUse.url.trim())
+          embed.setURL(dataToUse.url.trim());
 
         // ============================================================================
         // VÉRIFICATION DES URLs D'IMAGES - REDIRECTION SI EXTERNES
         // ============================================================================
 
         // Vérifier thumbnail
-        if (dataToUse.thumbnail) {
+        if (typeof dataToUse.thumbnail === 'string' && dataToUse.thumbnail.trim()) {
           if (!isLocalLogoUrl(dataToUse.thumbnail)) {
             return generateGuidanceMessage('thumbnail', dataToUse.thumbnail);
           }
@@ -1806,7 +1809,7 @@ export function registerEmbedTools(server: FastMCP) {
         }
 
         // Vérifier image
-        if (dataToUse.image) {
+        if (typeof dataToUse.image === 'string' && dataToUse.image.trim()) {
           if (!isLocalLogoUrl(dataToUse.image)) {
             return generateGuidanceMessage('image', dataToUse.image);
           }
@@ -1944,11 +1947,20 @@ export function registerEmbedTools(server: FastMCP) {
         }
 
         if (dataToUse.authorName) {
-          embed.setAuthor({
+          const _authorUrl =
+            typeof dataToUse.authorUrl === 'string' && dataToUse.authorUrl.trim()
+              ? dataToUse.authorUrl.trim()
+              : undefined;
+          const _authorIcon =
+            typeof dataToUse.authorIcon === 'string' && dataToUse.authorIcon.trim()
+              ? dataToUse.authorIcon.trim()
+              : undefined;
+          const _authorOpts: EmbedAuthorOptions = {
             name: replaceVariables(dataToUse.authorName, args.variables),
-            url: dataToUse.authorUrl,
-            iconURL: dataToUse.authorIcon,
-          });
+          };
+          if (_authorUrl) _authorOpts.url = _authorUrl;
+          if (_authorIcon) _authorOpts.iconURL = _authorIcon;
+          embed.setAuthor(_authorOpts);
         }
 
         if (dataToUse.footerIcon && !dataToUse.footerText) {
@@ -1962,10 +1974,14 @@ export function registerEmbedTools(server: FastMCP) {
           if (args.gradient) {
             footerText += ` | Gradient: ${args.gradient.start} → ${args.gradient.end}`;
           }
-          embed.setFooter({
-            text: footerText,
-            iconURL: dataToUse.footerIcon,
-          });
+          // FIX: Filter empty string — Discord.js rejects iconURL="" with "Received one or more errors"
+          const _footerIcon =
+            typeof dataToUse.footerIcon === 'string' && dataToUse.footerIcon.trim()
+              ? dataToUse.footerIcon.trim()
+              : undefined;
+          const _footerOpts: EmbedFooterOptions = { text: footerText };
+          if (_footerIcon) _footerOpts.iconURL = _footerIcon;
+          embed.setFooter(_footerOpts);
         }
 
         let processedFields = dataToUse.fields || [];

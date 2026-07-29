@@ -27,8 +27,9 @@ if (missing.length > 0) {
 }
 
 const launchBin = join(DIST, 'bin', 'launch.js');
-if (!existsSync(launchBin)) {
-  console.error('[postbuild] FAIL: dist/bin/launch.js not found (prebuild did not copy it)');
+const launchCjs = join(DIST, 'bin', 'launch.cjs');
+if (!existsSync(launchBin) && !existsSync(launchCjs)) {
+  console.error('[postbuild] FAIL: dist/bin/launch.{js,cjs} not found (prebuild did not copy it)');
   process.exit(1);
 }
 

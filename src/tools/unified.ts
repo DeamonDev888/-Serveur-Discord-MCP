@@ -70,6 +70,14 @@ import { applyTheme, generateGuidanceMessage } from './embeds_utils.js';
 import { executeListEmbeds, executeGetEmbedDetails, executeUpdateEmbed } from './editEmbed.js';
 import { executeCreerEmbedLite } from './creerEmbedLite.js';
 import {
+  resolveDiscordMessage,
+  serializeFullMessage,
+  parseDiscordMessageUrl,
+  isResolveError,
+  formatResolveError,
+  type ResolveInput,
+} from './resolveMessage.js';
+import {
   upsertPersistentButton,
   upsertPersistentMenu,
   type PersistentButton,
@@ -312,6 +320,16 @@ export const EmbedBaseParamsSchema = z.object({
     .describe('Champs additionnels (max 25)'),
   // OPTIONS
   timestamp: z.boolean().optional().default(false).describe('Ajouter timestamp'),
+  // RÉSOLUTION CROSS-CANAL (action: obtenir)
+  messageUrl: z
+    .string()
+    .optional()
+    .describe('URL Discord — alternative à channelId+messageId [obtenir]'),
+  followReferences: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe('Suivre message_reference et URLs Discord [obtenir, défaut: true]'),
   autoUpdate: z
     .object({
       enabled: z.boolean(),
@@ -659,19 +677,54 @@ async function executeMessageTool(args: z.infer<typeof MessageParamsSchema>): Pr
       await delMsg.delete();
       return `✅ Message supprimé | ID: ${messageId}${reason ? ` | Raison: ${reason}` : ''}`;
 
-    case 'lire':
+    case 'lire': {
+      // ── MODE MESSAGE UNIQUE : si messageId est fourni, fetch direct ──
+      // Correction du bug P0: gestion_messages.lire ignorait messageId et retournait
+      // toujours l'historique du canal. Maintenant on fetch le message exact + on
+      // sérialise tous les champs (reference, referencedMessage, embeds détaillés,
+      // attachments, components, messageSnapshots, etc.).
+      if (messageId) {
+        const resolveInput: ResolveInput = {
+          channelId,
+          messageId,
+          followReferences: false,
+        };
+
+        // Si une URL Discord est détectée dans la requête, on peut la suivre
+        const result = await resolveDiscordMessage(client, resolveInput);
+        if (isResolveError(result)) {
+          return formatResolveError(result);
+        }
+        return `📖 **Message** \`${result.id}\`:\n\`\`\`json\n${JSON.stringify(result, null, 2)}\n\`\`\``;
+      }
+
+      // ── MODE HISTORIQUE : aucun messageId → fetch l'historique du canal ──
       const messages = await channel.messages.fetch({ limit: limit || 10 });
       if (json) {
-        const data = messages.map(m => ({
-          id: m.id,
-          author: m.author.username,
-          content: m.content,
-          embeds: m.embeds.length,
-        }));
+        const data = messages.map(m => {
+          const serialized = serializeFullMessage(m);
+          // Format backward-compatible: id, author, content, embeds + champs enrichis
+          return {
+            id: serialized.id,
+            author: serialized.author.username,
+            content: serialized.content,
+            embeds: serialized.embedCount,
+            // Champs enrichis (nouveaux — ne cassent pas le format existant)
+            channelId: serialized.channelId,
+            guildId: serialized.guildId,
+            type: serialized.type,
+            url: serialized.url,
+            reference: serialized.reference,
+            embedCount: serialized.embedCount,
+            embedDetails: serialized.embeds,
+            attachments: serialized.attachments,
+          };
+        });
         return JSON.stringify(data);
       }
       const list = messages.map(m => `• ${m.author.username}: ${m.content}`).join('\n');
       return `📖 ${messages.size} messages:\n${list}`;
+    }
 
     case 'reagir':
       if (!messageId || !emoji) return '❌ messageId + emoji requis pour reagir';
@@ -706,11 +759,14 @@ async function executeEmbedTool(args: any): Promise<string> {
   }
 
   if (action === 'obtenir') {
-    if (!args.messageId) return '❌ messageId requis pour obtenir les détails';
+    if (!args.messageId && !args.messageUrl)
+      return '❌ messageId ou messageUrl requis pour obtenir les détails';
     return await executeGetEmbedDetails({
       channelId: args.channelId,
       messageId: args.messageId,
       embedIndex: args.embedIndex,
+      messageUrl: args.messageUrl,
+      followReferences: args.followReferences ?? true,
     });
   }
 
@@ -1171,11 +1227,11 @@ export function registerUnifiedTools(server: FastMCP) {
     description: `💬 MESSAGE TOOL - Gestion complète des messages Discord
 
 ACTIONS:
-  • send    - Envoyer un message texte
-  • edit    - Modifier un message existant
-  • delete  - Supprimer un message
-  • read    - Lire l'historique des messages
-  • react   - Ajouter une réaction
+  • envoyer   - Envoyer un message texte
+  • modifier  - Modifier un message existant
+  • supprimer - Supprimer un message
+  • lire      - Lire un message (si messageId) ou l'historique du canal
+  • reagir    - Ajouter une réaction
 
 PARAMS COMMUNS:
   action: action à effectuer
@@ -1192,16 +1248,21 @@ DELETE PARAMS:
   messageId: ID du message
   reason: Raison (optionnel)
 
-READ PARAMS:
+READ PARAMS (2 modes):
+  Mode message unique: si messageId est fourni, fetch le message exact
+    et retourne la sérialisation complète (reference, referencedMessage,
+    embeds détaillés, attachments, components, etc.).
+  Mode historique: sans messageId, fetch les N derniers messages du canal.
   limit: Nombre de messages (1-100, défaut 10)
-  json: true pour format JSON
+  json: true pour format JSON enrichi (inclus channelId, guildId, reference, embedDetails)
 
 REACT PARAMS:
   messageId: ID du message
   emoji: Emoji à ajouter
 
-EXEMPLE:
-  { "action": "send", "channelId": "123", "content": "Hello!" }`,
+EXEMPLES:
+  { "action": "envoyer", "channelId": "123", "content": "Hello!" }
+  { "action": "lire", "channelId": "123", "messageId": "456", "json": true }`,
     parameters: MessageParamsSchema,
     execute: async args => {
       try {
